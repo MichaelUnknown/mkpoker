@@ -1,0 +1,39 @@
+Language : Cpp
+BasedOnStyle : Google
+
+IndentWidth : 4
+ContinuationIndentWidth : 4
+SpacesBeforeTrailingComments : 4
+ColumnLimit : 140
+IndentPPDirectives : None
+
+DerivePointerAlignment : false
+PointerAlignment : Left
+
+AlignAfterOpenBracket : Align
+AlignConsecutiveAssignments : false
+
+AllowShortFunctionsOnASingleLine : Inline
+AllowShortLoopsOnASingleLine : false
+Cpp11BracedListStyle : true
+
+AlignTrailingComments : true
+ReflowComments : false
+
+NamespaceIndentation : All
+FixNamespaceComments : true
+AllowShortIfStatementsOnASingleLine : false
+AllowShortBlocksOnASingleLine : false
+
+BreakBeforeBraces : Custom
+BraceWrapping :
+  AfterClass : true
+  AfterControlStatement : true
+  AfterEnum : true
+  AfterFunction : true
+  AfterNamespace : true
+  AfterStruct : true
+  AfterUnion : true
+  BeforeCatch : true
+  BeforeElse : true
+  IndentBraces : false
