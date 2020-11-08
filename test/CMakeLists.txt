@@ -3,7 +3,9 @@
 ##########################################
 
 # cmake 3.14 for FetchContent
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
 # force shared crt
 # todo: check if this is only needed on windows
@@ -24,6 +26,10 @@ include(GoogleTest)
 macro(package_add_test TESTNAME TESTFILE)
     add_executable(${TESTNAME} ${TESTFILE})
     target_link_libraries(${TESTNAME} PRIVATE gtest gtest_main ${ARGN})
+    if (MKPOKER_ENABLE_CODE_COVERAGE)
+        target_compile_options(${TESTNAME} PUBLIC -O0 -g -fprofile-arcs -ftest-coverage)
+        target_link_options(${TESTNAME} PUBLIC -fprofile-arcs -ftest-coverage)
+    endif()
     gtest_discover_tests(${TESTNAME})
 endmacro()
 

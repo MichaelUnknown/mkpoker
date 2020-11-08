@@ -56,7 +56,7 @@ TEST(rank, rank_ctor_int)
     // test the valid int range
     for (int i = 0; i <= 12; ++i)
     {
-        rank r{rank_t{i}};
+        rank r{rank_t{uint8_t(i)}};
         EXPECT_EQ(i, r.m_rank);
     }
 
@@ -102,6 +102,12 @@ TEST(rank, rank_ctor_string)
             EXPECT_THROW(rank{s}, std::runtime_error);
         }
     }
+
+#ifndef _DEBUG
+    // these will trigger an assert in msvc/debug
+    EXPECT_THROW(rank{""}, std::runtime_error);
+#endif
+    EXPECT_THROW(rank{"too long"}, std::runtime_error);
 }
 
 TEST(rank, rank_comparison_operators)

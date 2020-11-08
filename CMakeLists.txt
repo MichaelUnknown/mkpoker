@@ -4,16 +4,16 @@
 
 # required for c++ 20
 # /W3 warning in msvc fixed with 3.15
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(mkpoker
     VERSION 0.1.0
     LANGUAGES CXX
     DESCRIPTION "mkpoker")
 
-    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
-    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
-    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
+#    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
+#    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
+#    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 # guard
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
@@ -26,20 +26,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
     # compile flags for clang
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -stdlib=libc++ -Wall -Wextra")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -stdlib=libc++ -xWall -xWextra")
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    #if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    #    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -stdlib=libc++ -Wall -Wextra")
+    #    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -stdlib=libc++ -xWall -xWextra")
+    #elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         # check the status of compiler flagss
 #        string(REGEX REPLACE "/W[0-9]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /W4 /wd4514 /wd4710 /wd5045 /wd4668")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
-    endif ()
+#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /W4 /wd4514 /wd4710 /wd5045 /wd4668")
+#        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
+#        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
+#    endif ()
 
-    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
-    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
-    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
+#    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
+#    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
+#    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
 
     # maybe change CMAKE_CXX_STANDARD etc.
     # ...
@@ -53,6 +53,8 @@ target_include_directories(mkpoker-base INTERFACE $<BUILD_INTERFACE:${CMAKE_CURR
 target_include_directories(mkpoker-base SYSTEM INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
 target_compile_features(mkpoker-base INTERFACE cxx_std_20)
 target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive- /std:c++latest>)
+target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:Clang>:-std=c++20 -stdlib=libc++ -Wall -Wextra>)
+target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:GNU>:-std=c++20 -Wall -Wextra>)
 
 
 

@@ -46,7 +46,7 @@ TEST(suit, suit_ctor_int)
     // test the valid int range
     for (int i = 0; i <= 3; ++i)
     {
-        suit s{suit_t{i}};
+        suit s{suit_t{uint8_t(i)}};
         EXPECT_EQ(i, s.m_suit);
     }
 
@@ -82,6 +82,12 @@ TEST(suit, suit_ctor_string)
             EXPECT_THROW(suit{s}, std::runtime_error);
         }
     }
+
+#ifndef _DEBUG
+    // these will trigger an assert in msvc/debug
+    EXPECT_THROW(suit{""}, std::runtime_error);
+#endif
+    EXPECT_THROW(suit{"too long"}, std::runtime_error);
 }
 
 TEST(suit, suit_comparison_operators)

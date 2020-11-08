@@ -69,10 +69,10 @@ namespace mkpoker::base
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return uint64_t(1) << m_card; }
 
         // returns the rank of the card
-        [[nodiscard]] constexpr rank rank() const noexcept { return base::rank{rank_t{m_card % c_num_ranks}}; }
+        [[nodiscard]] constexpr base::rank rank() const noexcept { return base::rank{rank_t{uint8_t(m_card % c_num_ranks)}}; }
 
         // returns the suit of the card
-        [[nodiscard]] constexpr suit suit() const noexcept { return base::suit{suit_t{m_card / c_num_ranks}}; }
+        [[nodiscard]] constexpr base::suit suit() const noexcept { return base::suit{suit_t{uint8_t(m_card / c_num_ranks)}}; }
 
         // return string representation, noexcept since we only allow valid card objects to be created
         [[nodiscard]] std::string str() const noexcept { return std::string(cardstrings.substr(static_cast<size_t>(m_card) * 2, 2)); }

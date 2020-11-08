@@ -1,0 +1,40 @@
+name: MacOS
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: configure
+      run: cmake -Bbuild
+      
+    - name: build release
+      run: cmake --build build --config "$env:BUILD_TYPE" -j4
+
+    - name: build debug
+      run: cmake --build build --config Debug -j4
+
+    - name: run tests release
+      run: |
+        cd build
+        ctest -C "$env:BUILD_TYPE" -VV
+
+    - name: run tests debug
+      run: |
+        cd build
+        ctest -C Debug -VV

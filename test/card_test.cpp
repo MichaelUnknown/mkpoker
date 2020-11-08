@@ -97,6 +97,7 @@ TEST(card, card_accessors)
 TEST(card, card_comparison_operators)
 {
     EXPECT_TRUE(card("Ac") > card("Ks"));
+    EXPECT_TRUE(card("As") > card("Ac"));
     EXPECT_TRUE(card("Kc") < card("Ac"));
     EXPECT_TRUE(card("Th") >= card("Th"));
     EXPECT_TRUE(card("7s") <= card("8h"));
