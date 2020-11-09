@@ -8,9 +8,6 @@ on:
     branches:
       - main
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
 
@@ -20,21 +17,32 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: configure
-      run: cmake -Bbuild
-      
-    - name: build release
-      run: cmake --build build --config "$env:BUILD_TYPE" -j4
+
+    - name: configure debug
+      shell: bash
+      run: cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug
 
     - name: build debug
-      run: cmake --build build --config Debug -j4
-
-    - name: run tests release
-      run: |
-        cd build
-        ctest -C "$env:BUILD_TYPE" -VV
+      shell: bash
+      run: cmake --build build/debug -j4
 
     - name: run tests debug
+      shell: bash
       run: |
-        cd build
-        ctest -C Debug -VV
+        cd build/debug
+        ctest -VV
+
+
+    - name: configure release
+      shell: bash
+      run: cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+      
+    - name: build release
+      shell: bash
+      run: cmake --build build/release -j4
+
+    - name: run tests release
+      shell: bash
+      run: |
+        cd build/release
+        ctest -VV

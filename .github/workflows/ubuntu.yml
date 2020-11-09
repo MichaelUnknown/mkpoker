@@ -22,6 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+
     - name: configure debug
       shell: bash
       run: cmake -B build/debug -DMKPOKER_ENABLE_CODE_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug
@@ -38,7 +39,10 @@ jobs:
 
     - name: code coverage
       shell: bash
-      run: bash <(curl -s https://codecov.io/bash)
+      run: |
+        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-10 10
+        bash <(curl -s https://codecov.io/bash)
+
 
     - name: configure release
       shell: bash

@@ -44,7 +44,7 @@ TEST(card, card_ctor_string)
 
     // invalid inputs
     EXPECT_THROW(card{"xy"}, std::runtime_error);
-    EXPECT_THROW(card{"too long"}, std::runtime_error);
+    EXPECT_THROW(card{"AcAsAdAh"}, std::runtime_error);
     EXPECT_THROW(card{"AA"}, std::runtime_error);
     EXPECT_THROW(card{"C2"}, std::runtime_error);
     EXPECT_THROW(card{"dA"}, std::runtime_error);

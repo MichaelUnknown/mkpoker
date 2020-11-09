@@ -52,14 +52,7 @@ namespace mkpoker::base
         // create from rank and suit: noexcept since those can only ever be valid objects
         constexpr card(const rank r, const suit s) noexcept : m_card(r.m_rank + s.m_suit * c_num_ranks) {}
         // create from rank and suit as integers, can throw
-        constexpr card(const rank_t rt, const suit_t st) : card(base::rank{rt}, base::suit{st})
-        {
-            //if (m_card < c_cardindex_min || m_card > c_cardindex_max)
-            //{
-            //    throw std::runtime_error("card(const rank_t, const suit_t): tried to create card with 'out of bounds' index'" +
-            //                             std::to_string(m_card) + "'");
-            //}
-        }
+        constexpr card(const rank_t rt, const suit_t st) : card(base::rank{rt}, base::suit{st}) {}
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // ACCESSORS
