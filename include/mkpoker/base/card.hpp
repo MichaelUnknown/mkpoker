@@ -31,8 +31,9 @@ namespace mkpoker::base
 
         // we only allow valid cards
         constexpr card() = delete;
+
         // create from integers, 0=2c ... 51=As, can throw
-        constexpr explicit card(const uint8_t cindex) : m_card(cindex)
+        constexpr explicit card(const uint8_t idx) : m_card(idx)
         {
             if (m_card < c_cardindex_min || m_card > c_cardindex_max)
             {
@@ -40,6 +41,7 @@ namespace mkpoker::base
                                          "'");
             }
         }
+
         // create from string ("2c"..."As"), can throw
         constexpr explicit card(const std::string_view sv) : m_card(base::rank{sv[0]}.m_rank + base::suit{sv[1]}.m_suit * c_num_ranks)
         {
@@ -49,8 +51,10 @@ namespace mkpoker::base
                     std::string("card(const string_view): tried to create card with string of wrong size: '").append(sv) + "'");
             }
         }
+
         // create from rank and suit: noexcept since those can only ever be valid objects
         constexpr card(const rank r, const suit s) noexcept : m_card(r.m_rank + s.m_suit * c_num_ranks) {}
+
         // create from rank and suit as integers, can throw
         constexpr card(const rank_t rt, const suit_t st) : card(base::rank{rt}, base::suit{st}) {}
 
