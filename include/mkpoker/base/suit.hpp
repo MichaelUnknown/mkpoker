@@ -39,6 +39,7 @@ namespace mkpoker::base
 
         // we only allow valid suits
         constexpr suit() = delete;
+
         // create from char (acdh), can throw
         constexpr explicit suit(const char c) : m_suit(from_char(c))
         {
@@ -47,6 +48,7 @@ namespace mkpoker::base
                 throw std::runtime_error(std::string("suit(const char): could not parse char '") + c + "'");
             }
         }
+
         // create from 'number', can throw
         constexpr explicit suit(const suit_t st) : m_suit(static_cast<uint8_t>(st))
         {
@@ -55,6 +57,7 @@ namespace mkpoker::base
                 throw std::runtime_error("suit(const suit_t): invalid number '" + std::to_string(m_suit) + "'");
             }
         }
+
         // create from string, can throw
         constexpr explicit suit(const std::string_view str) : m_suit(from_char(str[0]))
         {
