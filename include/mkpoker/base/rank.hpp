@@ -61,6 +61,7 @@ namespace mkpoker::base
 
         // we only allow valid ranks
         constexpr rank() = delete;
+
         // create from char, can throw
         constexpr explicit rank(const char c) : m_rank(from_char(c))
         {
@@ -69,6 +70,7 @@ namespace mkpoker::base
                 throw std::runtime_error(std::string("rank(const char): could not parse char '") + c + "'");
             }
         }
+
         // create from 'number', can throw
         constexpr explicit rank(const rank_t rt) : m_rank(static_cast<uint8_t>(rt))
         {
@@ -77,6 +79,7 @@ namespace mkpoker::base
                 throw std::runtime_error("rank(const rank_t): invalid number '" + std::to_string(m_rank) + "'");
             }
         }
+
         // create from string, can throw
         constexpr explicit rank(const std::string_view str) : m_rank(from_char(str[0]))
         {
