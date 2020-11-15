@@ -2,8 +2,6 @@
 #include <mkpoker/base/hand.hpp>
 
 #include <stdexcept>
-#include <string>
-#include <unordered_map>
 
 #include <gtest/gtest.h>
 
@@ -37,27 +35,26 @@ TEST(thand_2c, hand2c_ctor_string)
 #endif
 }
 
-//TEST(suit, suit_ctor_int)
-//{
-//    // test the valid unsigned int range
-//    for (uint8_t i = 0; i <= 3; ++i)
-//    {
-//        suit s{suit_t{i}};
-//        EXPECT_EQ(i, s.m_suit);
-//    }
-//    // test the valid int range
-//    for (int i = 0; i <= 3; ++i)
-//    {
-//        suit s{suit_t{uint8_t(i)}};
-//        EXPECT_EQ(i, s.m_suit);
-//    }
-//
-//    // some invalid range
-//    for (uint8_t i = 4; i < 255; ++i)
-//    {
-//        EXPECT_THROW(suit{suit_t{i}}, std::runtime_error);
-//    }
-//}
+TEST(thand_2c, hand2c_ctor_cardset)
+{
+    for (uint8_t i = 0; i < c_cardindex_max; ++i)
+    {
+        for (uint8_t j = i + 1; j < c_cardindex_max; ++j)
+        {
+            card c1{i};
+            card c2{j};
+            cardset cs(std::array<card, 2>{c1, c2});
+
+            card c1d{uint8_t(static_cast<uint8_t>(i - 1) % c_deck_size)};
+            card c2i{uint8_t(static_cast<uint8_t>(j + 1) % c_deck_size)};
+
+            EXPECT_EQ(hand_2c(cs), hand_2c(c2, c1));
+            EXPECT_EQ(hand_2c(cs), hand_2c(c1, c2));
+            EXPECT_EQ(hand_2c(cs), hand_2c(cs));
+            EXPECT_THROW(hand_2c(cs.combine(cardset(std::array<card, 2>{c1d, c2i}))), std::runtime_error);
+        }
+    }
+}
 
 //TEST(suit, suit_ctor_string)
 //{
