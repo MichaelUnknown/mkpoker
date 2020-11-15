@@ -8,7 +8,7 @@
 
 using namespace mkpoker::base;
 
-TEST(suit, suit_ctor_char)
+TEST(tsuit, suit_ctor_char)
 {
     std::unordered_map<char, uint8_t> valid_input;
     valid_input['c'] = 0;
@@ -35,7 +35,7 @@ TEST(suit, suit_ctor_char)
     }
 }
 
-TEST(suit, suit_ctor_int)
+TEST(tsuit, suit_ctor_int)
 {
     // test the valid unsigned int range
     for (uint8_t i = 0; i <= 3; ++i)
@@ -57,7 +57,7 @@ TEST(suit, suit_ctor_int)
     }
 }
 
-TEST(suit, suit_ctor_string)
+TEST(tsuit, suit_ctor_string)
 {
     std::unordered_map<std::string, uint8_t> valid_input;
     valid_input["c"] = 0;
@@ -90,7 +90,7 @@ TEST(suit, suit_ctor_string)
     EXPECT_THROW(suit{"too long"}, std::runtime_error);
 }
 
-TEST(suit, suit_comparison_operators)
+TEST(tsuit, suit_comparison_operators)
 {
     EXPECT_TRUE(suit{suit_t::diamonds} > suit{suit_t::clubs});
     EXPECT_TRUE(suit{suit_t::diamonds} < suit{suit_t::spades});

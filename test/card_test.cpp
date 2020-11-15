@@ -16,7 +16,7 @@ constexpr std::string_view cardstrings =
     "2h3h4h5h6h7h8h9hThJhQhKhAh"
     "2s3s4s5s6s7s8s9sTsJsQsKsAs";
 
-TEST(card, card_ctor_int)
+TEST(tcard, card_ctor_int)
 {
     // valid range
     for (uint8_t i = 0; i < c_deck_size; ++i)
@@ -33,7 +33,7 @@ TEST(card, card_ctor_int)
     }
 }
 
-TEST(card, card_ctor_string)
+TEST(tcard, card_ctor_string)
 {
     // valid range
     for (size_t i = 0; i < cardstrings.length(); i += 2)
@@ -57,7 +57,7 @@ TEST(card, card_ctor_string)
 #endif
 }
 
-TEST(card, card_ctor_ranksuit)
+TEST(tcard, card_ctor_ranksuit)
 {
     // valid range
     for (uint8_t i = 0; i < c_num_suits; ++i)
@@ -78,7 +78,7 @@ TEST(card, card_ctor_ranksuit)
     EXPECT_THROW(card(static_cast<rank_t>(0), static_cast<suit_t>(4)), std::runtime_error);
 }
 
-TEST(card, card_accessors)
+TEST(tcard, card_accessors)
 {
     constexpr char ranks[] = {'2', '3', 'K', 'A'};
     constexpr char suits[] = {'c', 'd', 'h', 's', 'C', 'D', 'H', 'S'};
@@ -94,7 +94,7 @@ TEST(card, card_accessors)
     }
 }
 
-TEST(card, card_comparison_operators)
+TEST(tcard, card_comparison_operators)
 {
     EXPECT_TRUE(card("Ac") > card("Ks"));
     EXPECT_TRUE(card("As") > card("Ac"));
