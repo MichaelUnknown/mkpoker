@@ -56,7 +56,12 @@ TEST(thand_2c, hand2c_ctor_cardset)
     }
 }
 
-//TEST(suit, suit_ctor_string)
+TEST(thand_2c, hand2c_comparison_operators)
+{
+    EXPECT_TRUE(hand_2c("2c2d") < hand_2c("AcAd"));
+}
+
+//TEST(hand, hand_ctor_string)
 //{
 //    std::unordered_map<std::string, uint8_t> valid_input;
 //    valid_input["c"] = 0;
@@ -73,28 +78,18 @@ TEST(thand_2c, hand2c_ctor_cardset)
 //    {
 //        if (const auto s = std::string(1, c); valid_input.contains(s))
 //        {
-//            EXPECT_EQ(valid_input.at(s), suit{s}.m_suit);
-//            EXPECT_EQ(std::string(1, static_cast<char>(std::tolower(c))), suit{s}.str());
+//            EXPECT_EQ(valid_input.at(s), hand{s}.m_hand);
+//            EXPECT_EQ(std::string(1, static_cast<char>(std::tolower(c))), hand{s}.str());
 //        }
 //        else
 //        {
-//            EXPECT_THROW(suit{s}, std::runtime_error);
+//            EXPECT_THROW(hand{s}, std::runtime_error);
 //        }
 //    }
 //
 //#ifndef _DEBUG
 //    // these will trigger an assert in msvc/debug
-//    EXPECT_THROW(suit{""}, std::runtime_error);
+//    EXPECT_THROW(hand{""}, std::runtime_error);
 //#endif
-//    EXPECT_THROW(suit{"too long"}, std::runtime_error);
-//}
-
-//TEST(suit, suit_comparison_operators)
-//{
-//    EXPECT_TRUE(suit{suit_t::diamonds} > suit{suit_t::clubs});
-//    EXPECT_TRUE(suit{suit_t::diamonds} < suit{suit_t::spades});
-//    EXPECT_TRUE(suit{suit_t::hearts} == suit{suit_t::hearts});
-//    EXPECT_TRUE(suit{suit_t::hearts} != suit{suit_t::spades});
-//    EXPECT_TRUE(suit{suit_t::diamonds} >= suit{suit_t::diamonds});
-//    EXPECT_TRUE(suit{suit_t::clubs} <= suit{suit_t::clubs});
+//    EXPECT_THROW(hand{"too long"}, std::runtime_error);
 //}
