@@ -103,7 +103,7 @@ namespace mkpoker::base
             }
 
             // fast CTOR for convenience, may throw, enable only for card
-            template <typename T = c_r_type, std::enable_if_t<is_card_v<T>, int> = 0>
+            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
             constexpr hand_helper(const uint8_t i1, const uint8_t i2) : hand_helper(c_r_type(i1), c_r_type(i2))
             {
             }
@@ -120,7 +120,7 @@ namespace mkpoker::base
             }
 
             // create from cardset, enable only for card
-            template <typename T = c_r_type, std::enable_if_t<is_card_v<T>, int> = 0>
+            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
             constexpr explicit hand_helper(const cardset cs)
                 : hand_helper(c_r_type{static_cast<uint8_t>(util::cross_idx_low64(cs.as_bitset()))},
                               c_r_type{static_cast<uint8_t>(util::cross_idx_high64(cs.as_bitset()))})
@@ -143,7 +143,7 @@ namespace mkpoker::base
             [[nodiscard]] constexpr auto as_pair() const noexcept { return std::make_pair(m_card1, m_card2); }
 
             // return as cardset, enable only for cards
-            template <typename T = c_r_type, std::enable_if_t<is_card_v<c_r_type>, int> = 0>
+            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
             [[nodiscard]] constexpr cardset as_cardset() const noexcept
             {
                 return cardset(as_bitset());
