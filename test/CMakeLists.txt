@@ -41,7 +41,9 @@ message(STATUS "test compiler flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
 package_add_test(suit_test suit_test.cpp mkpoker::base)
 package_add_test(rank_test rank_test.cpp mkpoker::base)
 package_add_test(card_test card_test.cpp mkpoker::base)
+
 package_add_test(cardset_test cardset_test.cpp mkpoker::base)
 package_add_test(hand_test hand_test.cpp mkpoker::base)
+package_add_test(range_test range_test.cpp mkpoker::base)
 
 package_add_test(bitset_test bitset_test.cpp mkpoker::base)

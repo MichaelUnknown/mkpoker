@@ -23,11 +23,11 @@ namespace mkpoker::base
     template <typename T>
     using is_rank = std::is_same<T, typename mkpoker::base::rank>;
     template <typename T>
-    constexpr bool is_rank_v = is_rank<T>::value;
+    inline constexpr bool is_rank_v = is_rank<T>::value;
     template <typename T>
     using is_card_or_rank = std::disjunction<is_card<T>, is_rank<T>>;
     template <typename T>
-    constexpr bool is_card_or_rank_v = is_card_or_rank<T>::value;
+    inline constexpr bool is_card_or_rank_v = is_card_or_rank<T>::value;
 
     inline namespace old
     {
@@ -38,8 +38,9 @@ namespace mkpoker::base
             using c_r_type = T;
             constexpr static auto char_count = is_card_v<c_r_type> ? 2 : 1;
 
-            //
+            ///////////////////////////////////////////////////////////////////////////////////////
             // private helper functions
+            ///////////////////////////////////////////////////////////////////////////////////////
 
             [[nodiscard]] constexpr auto choose_1(const c_r_type c1, const c_r_type c2) const noexcept
             {
@@ -102,9 +103,15 @@ namespace mkpoker::base
                 }
             }
 
-            // fast CTOR for convenience, may throw, enable only for card
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
-            constexpr hand_helper(const uint8_t i1, const uint8_t i2) : hand_helper(c_r_type(i1), c_r_type(i2))
+            // fast CTOR for convenience (card), may throw
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
+            constexpr hand_helper(const uint8_t ui1, const uint8_t ui2) : hand_helper(c_r_type(ui1), c_r_type(ui2))
+            {
+            }
+
+            // fast CTOR for convenience (card), may throw
+            template <typename U = c_r_type, std::enable_if_t<is_rank_v<U>, int> = 0>
+            constexpr hand_helper(const uint8_t ui1, const uint8_t ui2) : hand_helper(c_r_type(rank_t(ui1)), c_r_type(rank_t(ui2)))
             {
             }
 
