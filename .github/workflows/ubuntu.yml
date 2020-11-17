@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - hands1
   pull_request:
     branches:
       - main

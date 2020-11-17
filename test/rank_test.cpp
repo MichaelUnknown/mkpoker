@@ -8,7 +8,7 @@
 
 using namespace mkpoker::base;
 
-TEST(rank, rank_ctor_char)
+TEST(trank, rank_ctor_char)
 {
     std::unordered_map<char, uint8_t> valid_input;
     valid_input['2'] = 0;
@@ -45,7 +45,7 @@ TEST(rank, rank_ctor_char)
     }
 }
 
-TEST(rank, rank_ctor_int)
+TEST(trank, rank_ctor_int)
 {
     // test the valid unsigned int range
     for (uint8_t i = 0; i <= 12; ++i)
@@ -67,7 +67,7 @@ TEST(rank, rank_ctor_int)
     }
 }
 
-TEST(rank, rank_ctor_string)
+TEST(trank, rank_ctor_string)
 {
     std::unordered_map<std::string, uint8_t> valid_input;
     valid_input["2"] = 0;
@@ -110,7 +110,7 @@ TEST(rank, rank_ctor_string)
     EXPECT_THROW(rank{"too long"}, std::runtime_error);
 }
 
-TEST(rank, rank_comparison_operators)
+TEST(trank, rank_comparison_operators)
 {
     EXPECT_TRUE(rank{rank_t::three} > rank{rank_t::two});
     EXPECT_TRUE(rank{rank_t::seven} < rank{rank_t::jack});

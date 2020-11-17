@@ -8,7 +8,7 @@
 
 using namespace mkpoker::base;
 
-TEST(cardset, cardset_ctor_string)
+TEST(tcardset, cardset_ctor_string)
 {
     EXPECT_EQ("Ac", cardset("Ac").str());
     EXPECT_EQ(cardset("Ac").size(), 1);
@@ -41,7 +41,7 @@ TEST(cardset, cardset_ctor_string)
     EXPECT_THROW(cardset("99"), std::runtime_error);
 }
 
-TEST(cardset, cardset_ctor_container)
+TEST(tcardset, cardset_ctor_container)
 {
     const std::array<card, 3> c_arr{card{1}, card{7}, card{42}};
     const auto cs_a = cardset(c_arr);
@@ -56,7 +56,7 @@ TEST(cardset, cardset_ctor_container)
     EXPECT_EQ(c_v, cs_v.as_cards());
 }
 
-TEST(cardset, cardset_fill_clear)
+TEST(tcardset, cardset_fill_clear)
 {
     cardset all;
     all.fill();

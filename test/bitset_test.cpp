@@ -7,7 +7,7 @@
 using namespace mkpoker::base;
 using namespace mkpoker::util;
 
-TEST(bit, cross_idx_low)
+TEST(tbit, cross_idx_low)
 {
     for (auto i = 0; i < 16; ++i)
     {
@@ -26,7 +26,7 @@ TEST(bit, cross_idx_low)
     EXPECT_EQ(0, static_cast<uint8_t>(cross_idx_low64(0)));
 }
 
-TEST(bit, cross_idx_high)
+TEST(tbit, cross_idx_high)
 {
     for (auto i = 0; i < 16; ++i)
     {
