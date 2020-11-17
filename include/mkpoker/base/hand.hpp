@@ -47,9 +47,9 @@ namespace mkpoker::base
                 {
                     if (c1 < c2)
                     {
-                        return c1;
+                        return c2;
                     }
-                    return c2;
+                    return c1;
                 }
                 else
                 {
@@ -63,9 +63,9 @@ namespace mkpoker::base
                 {
                     if (c1 < c2)
                     {
-                        return c2;
+                        return c1;
                     }
-                    return c1;
+                    return c2;
                 }
                 else
                 {
@@ -267,12 +267,10 @@ namespace mkpoker::base
             }
 
             // get tuple of cards/ranks if N>2
-            //template <typename T = c_r_type, typename Indices = std::make_index_sequence<N>, std::enable_if_t<(N > 2), int> = 0>
-            template <typename Indices = std::make_index_sequence<N>>
+            template <typename Indices = std::make_index_sequence<N>, std::enable_if_t<(N > 2), int> = 0>
             [[nodiscard]] constexpr auto as_tuple() const noexcept
             {
-                return 1;
-                //as_tuple_impl(Indices{});
+                as_tuple_impl(Indices{});
             }
 
             // return as cardset, enable only for cards
@@ -304,14 +302,14 @@ namespace mkpoker::base
     }    // namespace v1
 
     // hand with two cards, no duplicates allowed, automatically ordered by ascending value
-    //using hand_2c = hand_helper<mkpoker::base::card, false, true>;
-    using hand_2c = v1::hand_helper<mkpoker::base::card, false, true, 2>;
+    using hand_2c = hand_helper<mkpoker::base::card, false, true>;
+    //using hand_2c = v1::hand_helper<mkpoker::base::card, false, true, 2>;
     //using hand_4c = v1::hand_helper<mkpoker::base::card, false, true, 4>;
 
     // part of a 'range': hand with two ranks, duplicates are allowed, not automatically ordered,
     // part is suited when the first rank is higher
-    //using hand_2r = hand_helper<mkpoker::base::rank, true, false>;
-    using hand_2r = v1::hand_helper<mkpoker::base::card, true, false, 2>;
+    using hand_2r = hand_helper<mkpoker::base::rank, true, false>;
+    //using hand_2r = v1::hand_helper<mkpoker::base::card, true, false, 2>;
     //using hand_4r = v1::hand_helper<mkpoker::base::card, true, false, 4>;
 
 }    // namespace mkpoker::base

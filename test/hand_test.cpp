@@ -19,13 +19,37 @@ TEST(thand_2c, hand2c_ctor_card)
             EXPECT_EQ(hand_2c(c1, c2), hand_2c(c2, c1));
             EXPECT_THROW(hand_2c(c1, c1), std::runtime_error);
             EXPECT_THROW(hand_2c(c2, c2), std::runtime_error);
+
+            std::string str = c1 < c2 ? c2.str() + c1.str() : c1.str() + c2.str();
+            EXPECT_EQ(str, hand_2c(c1, c2).str());
+            EXPECT_EQ(str, hand_2c(c2, c1).str());
         }
     }
 }
 
 TEST(thand_2c, hand2c_ctor_string)
 {
-    EXPECT_EQ(hand_2c("AsAc"), hand_2c("AcAs"));
+    for (uint8_t i = 0; i < c_cardindex_max; ++i)
+    {
+        for (uint8_t j = i + 1; j < c_cardindex_max; ++j)
+        {
+            card c1{i};
+            card c2{j};
+            const auto str1 = c1.str() + c2.str();
+            const auto str2 = c2.str() + c1.str();
+
+            EXPECT_EQ(hand_2c(str1), hand_2c(str2));
+            EXPECT_THROW(hand_2c(c1.str() + c1.str()), std::runtime_error);
+            EXPECT_THROW(hand_2c(c2.str() + c2.str()), std::runtime_error);
+            EXPECT_THROW(hand_2c(str1 + str2), std::runtime_error);
+
+            std::string str = c1 < c2 ? c2.str() + c1.str() : c1.str() + c2.str();
+            EXPECT_EQ(str, hand_2c(str1).str());
+            EXPECT_EQ(str, hand_2c(str2).str());
+        }
+    }
+
+    EXPECT_THROW(hand_2c("AsAcAd"), std::runtime_error);
     EXPECT_THROW(hand_2c("AsAcAdAh"), std::runtime_error);
 
 #ifndef _DEBUG
@@ -33,6 +57,23 @@ TEST(thand_2c, hand2c_ctor_string)
     EXPECT_THROW(hand_2c("AsA"), std::runtime_error);
     EXPECT_THROW(hand_2c("AA"), std::runtime_error);
 #endif
+}
+
+TEST(thand_2c, hand2c_ctor_fast)
+{
+    for (uint8_t i = 0; i < c_cardindex_max; ++i)
+    {
+        for (uint8_t j = i + 1; j < c_cardindex_max; ++j)
+        {
+            EXPECT_EQ(hand_2c(i, j), hand_2c(j, i));
+            EXPECT_THROW(hand_2c(i, i), std::runtime_error);
+            EXPECT_THROW(hand_2c(j, j), std::runtime_error);
+
+            std::string str = card{i} < card{j} ? card{j}.str() + card{i}.str() : card{i}.str() + card{j}.str();
+            EXPECT_EQ(str, hand_2c(i, j).str());
+            EXPECT_EQ(str, hand_2c(j, i).str());
+        }
+    }
 }
 
 TEST(thand_2c, hand2c_ctor_cardset)
@@ -58,38 +99,13 @@ TEST(thand_2c, hand2c_ctor_cardset)
 
 TEST(thand_2c, hand2c_comparison_operators)
 {
+    EXPECT_TRUE(hand_2c("2c2d") != hand_2c("AcAd"));
     EXPECT_TRUE(hand_2c("2c2d") < hand_2c("AcAd"));
-}
+    EXPECT_TRUE(hand_2c("2c2d") <= hand_2c("2c2d"));
+    EXPECT_TRUE(hand_2c("2c2d") >= hand_2c("2c2d"));
+    EXPECT_TRUE(hand_2c("AcAd") > hand_2c("2c2d"));
+    EXPECT_TRUE(hand_2c("AcAd") == hand_2c("AcAd"));
 
-//TEST(hand, hand_ctor_string)
-//{
-//    std::unordered_map<std::string, uint8_t> valid_input;
-//    valid_input["c"] = 0;
-//    valid_input["d"] = 1;
-//    valid_input["h"] = 2;
-//    valid_input["s"] = 3;
-//    valid_input["C"] = 0;
-//    valid_input["D"] = 1;
-//    valid_input["H"] = 2;
-//    valid_input["S"] = 3;
-//
-//    // test the char range, but convert to string
-//    for (unsigned char c = 0; c < 255; ++c)
-//    {
-//        if (const auto s = std::string(1, c); valid_input.contains(s))
-//        {
-//            EXPECT_EQ(valid_input.at(s), hand{s}.m_hand);
-//            EXPECT_EQ(std::string(1, static_cast<char>(std::tolower(c))), hand{s}.str());
-//        }
-//        else
-//        {
-//            EXPECT_THROW(hand{s}, std::runtime_error);
-//        }
-//    }
-//
-//#ifndef _DEBUG
-//    // these will trigger an assert in msvc/debug
-//    EXPECT_THROW(hand{""}, std::runtime_error);
-//#endif
-//    EXPECT_THROW(hand{"too long"}, std::runtime_error);
-//}
+    EXPECT_TRUE(hand_2c("2c2d") < hand_2c("2c2h"));
+    EXPECT_TRUE(hand_2c("2c2s") > hand_2c("2d2h"));
+}
