@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -34,7 +35,16 @@ namespace mkpoker::base
         template <std::size_t N>
         constexpr explicit cardset(const std::array<card, N>& ct) noexcept
         {
-            for (const auto c : ct)
+            for (auto&& c : ct)
+            {
+                m_cards |= static_cast<card>(c).as_bitset();
+            }
+        }
+
+        // create with initializer list
+        constexpr explicit cardset(std::initializer_list<card> l) noexcept
+        {
+            for (auto&& c : l)
             {
                 m_cards |= static_cast<card>(c).as_bitset();
             }
@@ -43,7 +53,7 @@ namespace mkpoker::base
         // create with a container of cards
         explicit cardset(const std::vector<card>& ct) noexcept
         {
-            for (const auto c : ct)
+            for (auto&& c : ct)
             {
                 m_cards |= static_cast<card>(c).as_bitset();
             }
