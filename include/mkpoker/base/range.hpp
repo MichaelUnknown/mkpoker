@@ -309,11 +309,25 @@ namespace mkpoker::base
         // get the numer of entries (hand_2r objects) with value > 0 (not counting the factor 4/6/12)
         [[nodiscard]] constexpr uint8_t size() const noexcept
         {
+            // msvc 16.8 and gcc 10 support c++ 20 constexpr accumualte
+#if defined(__GNUC__) || (_MSC_VER)
             return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0), [](const uint8_t r, const uint16_t value) -> uint8_t {
                 if (value > 0)
                     return static_cast<uint8_t>(r + 1);
                 return r;
             });
+#else
+            // clang 11 does not support c++20 constexpr accumualte yet
+            uint8_t ret = 0;
+            for (uint8_t i = 0; i < NUM_RANK * NUM_RANK; i++)
+            {
+                if (const auto value = m_combos[i]; value > 0)
+                {
+                    ++ret;
+                }
+            }
+            return ret;
+#endif
         }
 
         // return max value for each index
