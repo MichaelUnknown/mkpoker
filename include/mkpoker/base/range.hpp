@@ -310,7 +310,7 @@ namespace mkpoker::base
         [[nodiscard]] constexpr uint8_t size() const noexcept
         {
             // msvc 16.8 and gcc 10 support c++ 20 constexpr accumualte
-#if defined(__GNUC__) || (_MSC_VER)
+#if defined(__GNUC__) || defined(_MSC_VER)
             return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0), [](const uint8_t r, const uint16_t value) -> uint8_t {
                 if (value > 0)
                     return static_cast<uint8_t>(r + 1);
@@ -319,7 +319,7 @@ namespace mkpoker::base
 #else
             // clang 11 does not support c++20 constexpr accumualte yet
             uint8_t ret = 0;
-            for (uint8_t i = 0; i < NUM_RANK * NUM_RANK; i++)
+            for (uint8_t i = 0; i < c_range_size; i++)
             {
                 if (const auto value = m_combos[i]; value > 0)
                 {
@@ -394,7 +394,7 @@ namespace mkpoker::base
         [[nodiscard]] std::string str() const noexcept
         {
             std::string out{};
-            for (uint8_t i = 0; i < c_num_ranks * c_num_ranks; i++)
+            for (uint8_t i = 0; i < c_range_size; i++)
             {
                 const int8_t top = c_rank_ace - i % c_num_ranks;
                 const int8_t left = c_rank_ace - i / c_num_ranks;
@@ -512,7 +512,7 @@ namespace mkpoker::base
         // set all values to 100
         void fill() noexcept
         {
-            for (uint8_t i = 0; i < c_num_ranks * c_num_ranks; i++)
+            for (uint8_t i = 0; i < c_range_size; i++)
             {
                 m_combos[i] = get_max_value(i);
             }
@@ -521,7 +521,7 @@ namespace mkpoker::base
         // set value at index i, throws if invalid input
         void set_value(const uint8_t index, const uint16_t value)
         {
-            if (index >= c_num_ranks * c_num_ranks)
+            if (index > c_rangeindex_max)
             {
                 throw std::runtime_error("set_value(const uint8_t, const uint16_t): value out of bounds '" + std::to_string(value) + "'");
             }
