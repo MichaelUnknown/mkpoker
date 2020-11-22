@@ -36,6 +36,17 @@ TEST(trange, range_ctor_array)
 TEST(trange, range_ctor_str)
 {
     EXPECT_THROW(const range r1{"xy"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"A"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AAKs+"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AKx"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AK+"}, std::runtime_error);
+
+    // one trailing comma should be fine, not multiple
+    EXPECT_NO_THROW(const range r1{"AKs,"}, std::runtime_error);
+
+    EXPECT_THROW(const range r1{"AKs,,"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AJs+,,QJo"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AA++"}, std::runtime_error);
 
     const range r2{"99+"};
     EXPECT_EQ(r2.size(), 6);
@@ -47,8 +58,13 @@ TEST(trange, range_ctor_str)
     EXPECT_EQ(range("43o,67o").size(), 2);
     EXPECT_EQ(range("43o,67o").size_total(), 24);
 
+    EXPECT_EQ(range("QJs,89s").size(), 2);
+    EXPECT_EQ(range("QJs,89s").size_total(), 8);
+
     EXPECT_EQ(range("A3s+").size(), 11);
+    EXPECT_EQ(range("A3s+").size_total(), 44);
     EXPECT_EQ(range("A3o+").size(), 11);
+    EXPECT_EQ(range("A3o+").size_total(), 11 * 12);
 
     range r3{};
     r3.fill();
