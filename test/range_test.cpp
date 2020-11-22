@@ -13,7 +13,7 @@ TEST(trange, range_ctor_default)
     for (uint8_t i = 0; i < c_range_size; ++i)
     {
         EXPECT_EQ(empty_range[i], 0);
-        EXPECT_EQ(empty_range.get_value(i), 0);
+        EXPECT_EQ(empty_range.value_of(i), 0);
     }
 }
 
@@ -22,8 +22,6 @@ TEST(trange, range_ctor_vector)
     const std::vector<hand_2r> vhr{hand_2r{"AA"}, hand_2r{"43"}, hand_2r{"QK"}};
     EXPECT_EQ(range(vhr).size(), 3);
     EXPECT_EQ(range(vhr).size_total(), 22);
-    EXPECT_EQ(range(vhr).get_value(hand_2r{"AA"}), 600);
-    EXPECT_EQ(range(vhr).get_normalized_value(hand_2r{"AA"}), 100);
 }
 
 TEST(trange, range_ctor_array)
@@ -35,13 +33,13 @@ TEST(trange, range_ctor_array)
 
 TEST(trange, range_ctor_str)
 {
-    EXPECT_THROW(const range r1{"xy"}, std::runtime_error);
     EXPECT_THROW(const range r1{"A"}, std::runtime_error);
     EXPECT_THROW(const range r1{"AAKs+"}, std::runtime_error);
     EXPECT_THROW(const range r1{"AKx"}, std::runtime_error);
     EXPECT_THROW(const range r1{"AK+"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"xy"}, std::runtime_error);
 
-    // one trailing comma should be fine, not multiple
+    // one trailing comma should be fine
     EXPECT_NO_THROW(const range r1{"AKs,"});
 
     EXPECT_THROW(const range r1{"AKs,,"}, std::runtime_error);
@@ -65,56 +63,54 @@ TEST(trange, range_ctor_str)
     EXPECT_EQ(range("A3s+").size_total(), 44);
     EXPECT_EQ(range("A3o+").size(), 11);
     EXPECT_EQ(range("A3o+").size_total(), 11 * 12);
-
-    range r3{};
-    r3.fill();
-    EXPECT_EQ(r3.size(), 169);
-    EXPECT_EQ(r3.size_total(), 1326);
-    r3.clear();
-    EXPECT_EQ(r3.size(), 0);
 }
-
-/*
-TEST(trange, range_ctor_handmap)
-{
-    const handmap hm{"AQs+"};
-    const range r{hm};
-    const handmap hm2 = r.to_handmap();
-    const range r2{hm2};
-    EXPECT_EQ(r.str(), r2.str());
-    EXPECT_EQ(hm.str(), hm2.str());
-}
-*/
-
-TEST(trange, range_hand_index_roundtrip)
-{
-    EXPECT_THROW(range{}.hand(c_range_size), std::runtime_error);
-    for (uint8_t i = 0; i < c_range_size; i++)
-    {
-        EXPECT_EQ(i, range().index(range().hand(i)));
-    }
-}
-
-/*
-TEST(trange, range_handmap_roundtrip)
-{
-    const range r{"88+,A6s+,2Qo+"};
-    //std::cout << r.str();
-    const range r2{r.to_handmap()};
-    EXPECT_EQ(r.str(), r2.str());
-    EXPECT_EQ(r, r2);
-}
-*/
 
 TEST(trange, range_static_functions)
 {
+    // range / index cheat sheet:
+    // A|K|Q|J|T|9|8|7|6|5|4|3|2
+    // -+-+-+-+-+-+-+-+-+-+-+-+-
+    // 0|1|2|3|4|5|6|7|8|9|A|B|C
+    // suited combos have the higher value first:
+    // AK = AKs, KA = AKo etc.
+
+    // index
+    // AA = 0*13+0, AK = 0*13+1, AQ=0*13+2 etc.
+    // KA = 1*13+0, QA = 2*13+0, etc.
+    // T5s (T5) should be: 4*13+9
+    // T5o (5T) should be: 9*13+4
+    hand_2r T5s{"T5"};
+    hand_2r T5o{"5T"};
+    EXPECT_EQ(range::index(T5s), 4 * 13 + 9);
+    EXPECT_EQ(range::index(T5o), 9 * 13 + 4);
+    EXPECT_EQ(range::hand(4 * 13 + 9), T5s);
+    EXPECT_EQ(range::hand(9 * 13 + 4), T5o);
+
+    // index also works with hand_2c, order of cards doesn't matter here, suits are relevant
+    hand_2c h2c_T5s{"Tc5c"};
+    hand_2c h2c_T5o{"Tc5d"};
+    EXPECT_EQ(range::index(h2c_T5s), 4 * 13 + 9);
+    EXPECT_EQ(range::index(h2c_T5o), 9 * 13 + 4);
+
     // max value
-    //EXPECT_EQ(100, mkpoker::base::range::get_max_value(1));
+    EXPECT_EQ(range::get_max_value(T5s), 400);
+    EXPECT_EQ(range::get_max_value(T5o), 1200);
+    EXPECT_EQ(range::get_max_value(hand_2r("AA")), 600);
+    EXPECT_EQ(range::get_max_value(hand_2r("KK")), 600);
+    EXPECT_EQ(range::get_max_value(hand_2r("33")), 600);
+    EXPECT_EQ(range::get_max_value(hand_2r("22")), 600);
+    EXPECT_EQ(range::get_max_value(4 * 13 + 9), 400);
+    EXPECT_EQ(range::get_max_value(9 * 13 + 4), 1200);
+    EXPECT_EQ(range::get_max_value(0), 600);
+    EXPECT_EQ(range::get_max_value(14), 600);
+    EXPECT_EQ(range::get_max_value(28), 600);
+    EXPECT_EQ(range::get_max_value(154), 600);
+    EXPECT_EQ(range::get_max_value(168), 600);
 }
 
 TEST(trange, range_accessors)
 {
-    // size
+    // size, size_total
     const range r1{"KK+"};
     EXPECT_EQ(2, r1.size());
     EXPECT_EQ(2 * 6, r1.size_total());
@@ -133,10 +129,66 @@ TEST(trange, range_accessors)
     EXPECT_EQ(7 * 6 + 8 * 4 + 10 * 12, r5.size_total());
 
     // get value
-    EXPECT_EQ(0, r1.get_value(hand_2r(1, 2)));
-    EXPECT_EQ(0, r1.get_value(168));
-    EXPECT_THROW(r1.get_value(169), std::runtime_error);
+    EXPECT_EQ(0, r1.value_of(hand_2r(1, 2)));
+    EXPECT_EQ(0, r1.value_of(168));
+    EXPECT_THROW(static_cast<void>(r1.value_of(169)), std::runtime_error);
 }
+
+TEST(trange, range_mutators)
+{
+    range r0{};
+    r0.fill();
+    EXPECT_EQ(r0.size(), 169);
+    EXPECT_EQ(r0.size_total(), 1326);
+    r0.clear();
+    EXPECT_EQ(r0.size(), 0);
+
+    hand_2r aces{"AA"};
+    hand_2r kings{"KK"};
+
+    r0.set_value(0, 100);
+    EXPECT_EQ(r0.size(), 1);
+    EXPECT_EQ(r0.size_total(), 6);
+    EXPECT_EQ(r0.value_of(aces), 100);
+
+    r0.set_value(kings, 100);
+    EXPECT_EQ(r0.size(), 2);
+    EXPECT_EQ(r0.size_total(), 12);
+    EXPECT_EQ(r0.value_of(14), 100);
+}
+
+TEST(trange, range_hand_index_roundtrip)
+{
+    for (uint8_t i = 0; i < c_range_size; i++)
+    {
+        EXPECT_EQ(i, range::index(range::hand(i)));
+    }
+
+    EXPECT_THROW(static_cast<void>(range::hand(c_range_size)), std::runtime_error);
+}
+
+/*
+TEST(trange, range_ctor_handmap)
+{
+    const handmap hm{"AQs+"};
+    const range r{hm};
+    const handmap hm2 = r.to_handmap();
+    const range r2{hm2};
+    EXPECT_EQ(r.str(), r2.str());
+    EXPECT_EQ(hm.str(), hm2.str());
+}
+*/
+
+/*
+TEST(trange, range_handmap_roundtrip)
+{
+    const range r{"88+,A6s+,2Qo+"};
+    //std::cout << r.str();
+    const range r2{r.to_handmap()};
+    EXPECT_EQ(r.str(), r2.str());
+    EXPECT_EQ(r, r2);
+}
+*/
 
 TEST(trange, range_comp_operators)
 {

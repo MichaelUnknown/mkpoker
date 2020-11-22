@@ -265,6 +265,35 @@ namespace mkpoker::base
             }
         }
 
+        // return max value for each index
+        [[nodiscard]] constexpr static uint16_t get_max_value(const uint8_t index) noexcept
+        {
+            const uint8_t top = c_rank_ace - index % c_num_ranks;
+            const uint8_t left = c_rank_ace - index / c_num_ranks;
+
+            if (top == left)
+            {
+                // pair => factor 6
+                return 100 * 6;
+            }
+            else
+            {
+                if (const bool is_suited = left > top; is_suited)
+                {
+                    // suited => factor 4
+                    return 100 * 4;
+                }
+                else
+                {
+                    // must be non-suited
+                    return 100 * 12;
+                }
+            }
+        }
+
+        // return max value for each hand_2r
+        [[nodiscard]] constexpr static uint16_t get_max_value(const hand_2r h) { return get_max_value(index(h)); }
+
         ///////////////////////////////////////////////////////////////////////////////////////
         // ACCESSORS
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -331,62 +360,33 @@ namespace mkpoker::base
 #endif
         }
 
-        // return max value for each index
-        [[nodiscard]] constexpr uint16_t get_max_value(const uint8_t index) const noexcept
-        {
-            const uint8_t top = c_rank_ace - index % c_num_ranks;
-            const uint8_t left = c_rank_ace - index / c_num_ranks;
-
-            if (top == left)
-            {
-                // pair => factor 6
-                return 100 * 6;
-            }
-            else
-            {
-                if (const bool is_suited = left > top; is_suited)
-                {
-                    // suited => factor 4
-                    return 100 * 4;
-                }
-                else
-                {
-                    // must be non-suited
-                    return 100 * 12;
-                }
-            }
-        }
-
-        // return max value for each hand_2r
-        [[nodiscard]] constexpr uint16_t get_max_value(const hand_2r h) const { return get_max_value(index(h)); }
-
         // get value at index i
-        [[nodiscard]] constexpr uint16_t get_value(const uint8_t index) const
+        [[nodiscard]] constexpr uint16_t value_of(const uint8_t index) const
         {
             if (index > c_rangeindex_max)
             {
-                throw std::runtime_error("get_value() index out of bounds: " + std::to_string(index));
+                throw std::runtime_error("value_of() index out of bounds: " + std::to_string(index));
             }
 
             return m_combos[index];
         }
 
         // get value for hand_2r h
-        [[nodiscard]] constexpr uint16_t get_value(const hand_2r h) const noexcept { return m_combos[index(h)]; }
+        [[nodiscard]] constexpr uint16_t value_of(const hand_2r h) const noexcept { return m_combos[index(h)]; }
 
         // get normalized value at index i
-        [[nodiscard]] constexpr uint16_t get_normalized_value(const uint8_t index) const
+        [[nodiscard]] constexpr uint16_t normalized_value_of(const uint8_t index) const
         {
             if (index > c_rangeindex_max)
             {
-                throw std::runtime_error("get_value() index out of bounds: " + std::to_string(index));
+                throw std::runtime_error("value_of() index out of bounds: " + std::to_string(index));
             }
 
             return m_combos[index] * 100 / get_max_value(index);
         }
 
         // get normalized value for hand_2r h
-        [[nodiscard]] constexpr uint16_t get_normalized_value(const hand_2r h) const noexcept
+        [[nodiscard]] constexpr uint16_t normalized_value_of(const hand_2r h) const noexcept
         {
             return m_combos[index(h)] * 100 / get_max_value(index(h));
         }
@@ -469,7 +469,7 @@ namespace mkpoker::base
         // convert from handmap
         void from_handmap(const handmap& cm) noexcept
         {
-            auto sum_for_hands = [&cm](const uint16_t ret, const hand& h) -> uint16_t { return ret + cm.get_value(h); };
+            auto sum_for_hands = [&cm](const uint16_t ret, const hand& h) -> uint16_t { return ret + cm.value_of(h); };
 
             for (uint8_t i = 0; i < c_range_size; ++i)
             {
@@ -556,8 +556,8 @@ namespace mkpoker::base
         //
         // overloads for operator[]
 
-        constexpr uint16_t operator[](const uint8_t ui) const { return get_value(ui); }
-        constexpr uint16_t operator[](const hand_2r h2r) const noexcept { return get_value(h2r); }
+        constexpr uint16_t operator[](const uint8_t ui) const { return value_of(ui); }
+        constexpr uint16_t operator[](const hand_2r h2r) const noexcept { return value_of(h2r); }
 
         //
         // comparison operators
