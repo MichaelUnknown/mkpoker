@@ -6,19 +6,23 @@
 # /W3 warning in msvc fixed with 3.15
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
+
 project(mkpoker
     VERSION 0.1.0
     LANGUAGES CXX
     DESCRIPTION "mkpoker")
 
+
 #    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
 #    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
 #    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
+
 
 # guard
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
     message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there.")
 endif()
+
 
 # configuration for dev, only executes if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -57,7 +61,6 @@ target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:Clang>:-std=c+
 target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:GNU>:-std=c++20 -Wall -Wextra>)
 
 
-
 # additional stuff, execute only if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
@@ -75,7 +78,3 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 	message(STATUS "Doxygen not found, not building docs")
     endif()
 endif()
-
-
-
-

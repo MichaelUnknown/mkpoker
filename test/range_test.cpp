@@ -33,19 +33,6 @@ TEST(trange, range_ctor_array)
 
 TEST(trange, range_ctor_str)
 {
-    EXPECT_THROW(const range r1{"A"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"AAKs+"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"AKx"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"AK+"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"xy"}, std::runtime_error);
-
-    // one trailing comma should be fine
-    EXPECT_NO_THROW(const range r1{"AKs,"});
-
-    EXPECT_THROW(const range r1{"AKs,,"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"AJs+,,QJo"}, std::runtime_error);
-    EXPECT_THROW(const range r1{"AA++"}, std::runtime_error);
-
     const range r2{"99+"};
     EXPECT_EQ(r2.size(), 6);
     EXPECT_EQ(r2.size_total(), 36);
@@ -63,6 +50,30 @@ TEST(trange, range_ctor_str)
     EXPECT_EQ(range("A3s+").size_total(), 44);
     EXPECT_EQ(range("A3o+").size(), 11);
     EXPECT_EQ(range("A3o+").size_total(), 11 * 12);
+
+    // too many / few tokens
+    EXPECT_THROW(const range r1{"A"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AAKs+"}, std::runtime_error);
+
+    // not a pair
+    EXPECT_THROW(const range r1{"AK"}, std::runtime_error);
+
+    // wrong 3rd token
+    EXPECT_THROW(const range r1{"AKx"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AK+"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AAo"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"JJs"}, std::runtime_error);
+
+    // wrong 4th token
+    EXPECT_THROW(const range r1{"AA++"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AKso"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"99+s"}, std::runtime_error);
+
+    // one trailing comma should be fine
+    EXPECT_NO_THROW(const range r1{"AKs,"});
+    // wrong commas
+    EXPECT_THROW(const range r1{"AKs,,"}, std::runtime_error);
+    EXPECT_THROW(const range r1{"AJs+,,QJo"}, std::runtime_error);
 }
 
 TEST(trange, range_static_functions)
@@ -81,16 +92,21 @@ TEST(trange, range_static_functions)
     // T5o (5T) should be: 9*13+4
     hand_2r T5s{"T5"};
     hand_2r T5o{"5T"};
+    hand_2r JJ{"JJ"};
     EXPECT_EQ(range::index(T5s), 4 * 13 + 9);
     EXPECT_EQ(range::index(T5o), 9 * 13 + 4);
+    EXPECT_EQ(range::index(JJ), 3 * 13 + 3);
     EXPECT_EQ(range::hand(4 * 13 + 9), T5s);
     EXPECT_EQ(range::hand(9 * 13 + 4), T5o);
+    EXPECT_EQ(range::hand(3 * 13 + 3), JJ);
 
     // index also works with hand_2c, order of cards doesn't matter here, suits are relevant
     hand_2c h2c_T5s{"Tc5c"};
     hand_2c h2c_T5o{"Tc5d"};
+    hand_2c h2c_JJ{"JcJh"};
     EXPECT_EQ(range::index(h2c_T5s), 4 * 13 + 9);
     EXPECT_EQ(range::index(h2c_T5o), 9 * 13 + 4);
+    EXPECT_EQ(range::index(h2c_JJ), 3 * 13 + 3);
 
     // max value
     EXPECT_EQ(range::get_max_value(T5s), 400);
@@ -150,6 +166,10 @@ TEST(trange, range_mutators)
     EXPECT_EQ(r0.size(), 1);
     EXPECT_EQ(r0.size_total(), 6);
     EXPECT_EQ(r0.value_of(aces), 100);
+
+    EXPECT_THROW(r0.set_value(c_range_size, 100), std::runtime_error);
+    EXPECT_THROW(r0.set_value(0, range::get_max_value(0) + 1), std::runtime_error);
+    EXPECT_THROW(r0.set_value(range::hand(0), range::get_max_value(0) + 1), std::runtime_error);
 
     r0.set_value(kings, 100);
     EXPECT_EQ(r0.size(), 2);

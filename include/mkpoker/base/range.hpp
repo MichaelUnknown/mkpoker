@@ -538,7 +538,6 @@ namespace mkpoker::base
         // set value at hand_2r
         void set_value(const hand_2r h2r, const uint16_t value)
         {
-            // should this be const auto& [...] instead?
             const auto idx = index(h2r);
 
             if (value > get_max_value(idx))
