@@ -203,7 +203,7 @@ namespace mkpoker::base
             // set each h2r to max
             for (const auto hor : ct)
             {
-                m_combos[index(hor)] = get_max_value(hor);
+                m_combos[index(hor)] = max_value(hor);
             }
         }
 
@@ -266,7 +266,7 @@ namespace mkpoker::base
         }
 
         // return max value for each index
-        [[nodiscard]] constexpr static uint16_t get_max_value(const uint8_t index) noexcept
+        [[nodiscard]] constexpr static uint16_t max_value(const uint8_t index) noexcept
         {
             const uint8_t top = c_rank_ace - index % c_num_ranks;
             const uint8_t left = c_rank_ace - index / c_num_ranks;
@@ -292,7 +292,7 @@ namespace mkpoker::base
         }
 
         // return max value for each hand_2r
-        [[nodiscard]] constexpr static uint16_t get_max_value(const hand_2r h) { return get_max_value(index(h)); }
+        [[nodiscard]] constexpr static uint16_t max_value(const hand_2r h) { return max_value(index(h)); }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // ACCESSORS
@@ -382,13 +382,13 @@ namespace mkpoker::base
                 throw std::runtime_error("value_of() index out of bounds: " + std::to_string(index));
             }
 
-            return m_combos[index] * 100 / get_max_value(index);
+            return m_combos[index] * 100 / max_value(index);
         }
 
         // get normalized value for hand_2r h
         [[nodiscard]] constexpr uint16_t normalized_value_of(const hand_2r h) const noexcept
         {
-            return m_combos[index(h)] * 100 / get_max_value(index(h));
+            return m_combos[index(h)] * 100 / max_value(index(h));
         }
 
         // print complete information about stored range
@@ -515,7 +515,7 @@ namespace mkpoker::base
         {
             for (uint8_t i = 0; i < c_range_size; i++)
             {
-                m_combos[i] = get_max_value(i);
+                m_combos[i] = max_value(i);
             }
         }
 
@@ -527,7 +527,7 @@ namespace mkpoker::base
                 throw std::runtime_error("set_value(const uint8_t, const uint16_t): value out of bounds '" + std::to_string(value) + "'");
             }
 
-            if (value > get_max_value(index))
+            if (value > max_value(index))
             {
                 throw std::runtime_error("set_value(const uint8_t, const uint16_t): value out of bounds '" + std::to_string(value) + "'");
             }
@@ -540,7 +540,7 @@ namespace mkpoker::base
         {
             const auto idx = index(h2r);
 
-            if (value > get_max_value(idx))
+            if (value > max_value(idx))
             {
                 throw std::runtime_error("set_value(const hand_2r): value out of bounds '" + std::to_string(value) + "'");
             }
@@ -562,8 +562,6 @@ namespace mkpoker::base
         // comparison operators
 
         constexpr bool operator==(const range&) const noexcept = default;
-        //bool operator==(const range& r) const noexcept { return m_combos == r.m_combos; }
-        //bool operator!=(const range& r) const noexcept { return !operator==(r); }
     };
 
 }    // namespace mkpoker::base

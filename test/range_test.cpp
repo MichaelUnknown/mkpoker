@@ -109,19 +109,19 @@ TEST(trange, range_static_functions)
     EXPECT_EQ(range::index(h2c_JJ), 3 * 13 + 3);
 
     // max value
-    EXPECT_EQ(range::get_max_value(T5s), 400);
-    EXPECT_EQ(range::get_max_value(T5o), 1200);
-    EXPECT_EQ(range::get_max_value(hand_2r("AA")), 600);
-    EXPECT_EQ(range::get_max_value(hand_2r("KK")), 600);
-    EXPECT_EQ(range::get_max_value(hand_2r("33")), 600);
-    EXPECT_EQ(range::get_max_value(hand_2r("22")), 600);
-    EXPECT_EQ(range::get_max_value(4 * 13 + 9), 400);
-    EXPECT_EQ(range::get_max_value(9 * 13 + 4), 1200);
-    EXPECT_EQ(range::get_max_value(0), 600);
-    EXPECT_EQ(range::get_max_value(14), 600);
-    EXPECT_EQ(range::get_max_value(28), 600);
-    EXPECT_EQ(range::get_max_value(154), 600);
-    EXPECT_EQ(range::get_max_value(168), 600);
+    EXPECT_EQ(range::max_value(T5s), 400);
+    EXPECT_EQ(range::max_value(T5o), 1200);
+    EXPECT_EQ(range::max_value(hand_2r("AA")), 600);
+    EXPECT_EQ(range::max_value(hand_2r("KK")), 600);
+    EXPECT_EQ(range::max_value(hand_2r("33")), 600);
+    EXPECT_EQ(range::max_value(hand_2r("22")), 600);
+    EXPECT_EQ(range::max_value(4 * 13 + 9), 400);
+    EXPECT_EQ(range::max_value(9 * 13 + 4), 1200);
+    EXPECT_EQ(range::max_value(0), 600);
+    EXPECT_EQ(range::max_value(14), 600);
+    EXPECT_EQ(range::max_value(28), 600);
+    EXPECT_EQ(range::max_value(154), 600);
+    EXPECT_EQ(range::max_value(168), 600);
 }
 
 TEST(trange, range_accessors)
@@ -168,8 +168,8 @@ TEST(trange, range_mutators)
     EXPECT_EQ(r0.value_of(aces), 100);
 
     EXPECT_THROW(r0.set_value(c_range_size, 100), std::runtime_error);
-    EXPECT_THROW(r0.set_value(0, range::get_max_value(0) + 1), std::runtime_error);
-    EXPECT_THROW(r0.set_value(range::hand(0), range::get_max_value(0) + 1), std::runtime_error);
+    EXPECT_THROW(r0.set_value(0, range::max_value(0) + 1), std::runtime_error);
+    EXPECT_THROW(r0.set_value(range::hand(0), range::max_value(0) + 1), std::runtime_error);
 
     r0.set_value(kings, 100);
     EXPECT_EQ(r0.size(), 2);
