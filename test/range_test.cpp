@@ -42,7 +42,7 @@ TEST(trange, range_ctor_str)
     EXPECT_THROW(const range r1{"AK+"}, std::runtime_error);
 
     // one trailing comma should be fine, not multiple
-    EXPECT_NO_THROW(const range r1{"AKs,"}, std::runtime_error);
+    EXPECT_NO_THROW(const range r1{"AKs,"});
 
     EXPECT_THROW(const range r1{"AKs,,"}, std::runtime_error);
     EXPECT_THROW(const range r1{"AJs+,,QJo"}, std::runtime_error);
