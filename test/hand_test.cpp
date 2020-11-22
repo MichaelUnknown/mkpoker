@@ -84,7 +84,7 @@ TEST(thand_2c, hand2c_ctor_cardset)
         {
             card c1{i};
             card c2{j};
-            cardset cs(std::array<card, 2>{c1, c2});
+            cardset cs({c1, c2});
 
             card c1d{uint8_t(static_cast<uint8_t>(i - 1) % c_deck_size)};
             card c2i{uint8_t(static_cast<uint8_t>(j + 1) % c_deck_size)};
@@ -92,9 +92,21 @@ TEST(thand_2c, hand2c_ctor_cardset)
             EXPECT_EQ(hand_2c(cs), hand_2c(c2, c1));
             EXPECT_EQ(hand_2c(cs), hand_2c(c1, c2));
             EXPECT_EQ(hand_2c(cs), hand_2c(cs));
-            EXPECT_THROW(hand_2c(cs.combine(cardset(std::array<card, 2>{c1d, c2i}))), std::runtime_error);
+            EXPECT_THROW(hand_2c(cs.combine(cardset({c1d, c2i}))), std::runtime_error);
         }
     }
+}
+
+TEST(thand_2c, hand2c_conversions)
+{
+    hand_2c h1("AsAc");
+    hand_2c h2("2dJh");
+
+    auto cs1 = h1.as_cardset();
+    auto cs2 = h2.as_cardset();
+
+    EXPECT_EQ(h1.as_bitset(), cs1.as_bitset());
+    EXPECT_EQ(h2.as_bitset(), cs2.as_bitset());
 }
 
 TEST(thand_2c, hand2c_comparison_operators)

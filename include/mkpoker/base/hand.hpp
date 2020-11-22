@@ -3,6 +3,7 @@
 #include <mkpoker/base/card.hpp>
 #include <mkpoker/base/cardset.hpp>
 
+#include <array>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -23,11 +24,11 @@ namespace mkpoker::base
     template <typename T>
     using is_rank = std::is_same<T, typename mkpoker::base::rank>;
     template <typename T>
-    constexpr bool is_rank_v = is_rank<T>::value;
+    inline constexpr bool is_rank_v = is_rank<T>::value;
     template <typename T>
     using is_card_or_rank = std::disjunction<is_card<T>, is_rank<T>>;
     template <typename T>
-    constexpr bool is_card_or_rank_v = is_card_or_rank<T>::value;
+    inline constexpr bool is_card_or_rank_v = is_card_or_rank<T>::value;
 
     inline namespace old
     {
@@ -38,8 +39,9 @@ namespace mkpoker::base
             using c_r_type = T;
             constexpr static auto char_count = is_card_v<c_r_type> ? 2 : 1;
 
-            //
+            ///////////////////////////////////////////////////////////////////////////////////////
             // private helper functions
+            ///////////////////////////////////////////////////////////////////////////////////////
 
             [[nodiscard]] constexpr auto choose_1(const c_r_type c1, const c_r_type c2) const noexcept
             {
@@ -102,9 +104,15 @@ namespace mkpoker::base
                 }
             }
 
-            // fast CTOR for convenience, may throw, enable only for card
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
-            constexpr hand_helper(const uint8_t i1, const uint8_t i2) : hand_helper(c_r_type(i1), c_r_type(i2))
+            // fast CTOR for convenience (card), may throw
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
+            constexpr hand_helper(const uint8_t ui1, const uint8_t ui2) : hand_helper(c_r_type(ui1), c_r_type(ui2))
+            {
+            }
+
+            // fast CTOR for convenience (card), may throw
+            template <typename U = c_r_type, std::enable_if_t<is_rank_v<U>, int> = 0>
+            constexpr hand_helper(const uint8_t ui1, const uint8_t ui2) : hand_helper(c_r_type(rank_t(ui1)), c_r_type(rank_t(ui2)))
             {
             }
 
@@ -120,7 +128,7 @@ namespace mkpoker::base
             }
 
             // create from cardset, enable only for card
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
             constexpr explicit hand_helper(const cardset cs)
                 : hand_helper(c_r_type{static_cast<uint8_t>(util::cross_idx_low64(cs.as_bitset()))},
                               c_r_type{static_cast<uint8_t>(util::cross_idx_high64(cs.as_bitset()))})
@@ -143,10 +151,10 @@ namespace mkpoker::base
             [[nodiscard]] constexpr auto as_pair() const noexcept { return std::make_pair(m_card1, m_card2); }
 
             // return as cardset, enable only for cards
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
             [[nodiscard]] constexpr cardset as_cardset() const noexcept
             {
-                return cardset(as_bitset());
+                return cardset({m_card1, m_card2});
             }
 
             // return string representation, is noexcept since we only allow valid objects to be created
@@ -168,6 +176,9 @@ namespace mkpoker::base
 
     namespace v1
     {
+        //
+        // note: not implemented yet, will not compile / fail tests
+
         // helper class for hand_2c, hand_2r
         template <typename T, bool allow_duplicates, bool is_auto_ordered, std::size_t N, std::enable_if_t<is_card_or_rank_v<T>, int> = 0>
         class hand_helper
@@ -236,7 +247,7 @@ namespace mkpoker::base
             }
 
             // create from cardset, enable only for card
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT> && N == 2, int> = 0>
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U> && N == 2, int> = 0>
             constexpr explicit hand_helper(const cardset cs)
                 : hand_helper(c_r_type{static_cast<uint8_t>(util::cross_idx_low64(cs.as_bitset()))},
                               c_r_type{static_cast<uint8_t>(util::cross_idx_high64(cs.as_bitset()))})
@@ -274,10 +285,10 @@ namespace mkpoker::base
             }
 
             // return as cardset, enable only for cards
-            template <typename TT = c_r_type, std::enable_if_t<is_card_v<TT>, int> = 0>
+            template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
             [[nodiscard]] constexpr cardset as_cardset() const noexcept
             {
-                return cardset(as_bitset());
+                return cardset(m_arr);
             }
 
             // return string representation, is noexcept since we only allow valid objects to be created
