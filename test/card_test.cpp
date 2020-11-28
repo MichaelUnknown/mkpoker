@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace mkpoker::base;
+using namespace mkp;
 
 constexpr std::string_view cardstrings =
     "2c3c4c5c6c7c8c9cTcJcQcKcAc"

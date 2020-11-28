@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace mkpoker::base;
+using namespace mkp;
 
 TEST(thand_2c, hand2c_ctor_card)
 {

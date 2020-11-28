@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-namespace mkpoker::base
+namespace mkp
 {
     inline namespace constants
     {
@@ -564,4 +564,4 @@ namespace mkpoker::base
         constexpr bool operator==(const range&) const noexcept = default;
     };
 
-}    // namespace mkpoker::base
+}    // namespace mkp

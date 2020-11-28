@@ -1,8 +1,3 @@
-##########################################
-## base cmake file ##
-##########################################
-
-# required for c++ 20
 # /W3 warning in msvc fixed with 3.15
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
@@ -13,12 +8,6 @@ project(mkpoker
     DESCRIPTION "mkpoker")
 
 
-#    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
-#    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
-#    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
-
-
-# guard
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
     message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there.")
 endif()
@@ -29,28 +18,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-    # compile flags for clang
-    #if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    #    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -stdlib=libc++ -Wall -Wextra")
-    #    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -stdlib=libc++ -xWall -xWextra")
-    #elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        # check the status of compiler flagss
-#        string(REGEX REPLACE "/W[0-9]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /W4 /wd4514 /wd4710 /wd5045 /wd4668")
-#        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
-#        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /permissive- /wd4514 /wd4710 /wd5045 /wd4668")
-#    endif ()
-
-#    message(STATUS "init compiler flags: ${CMAKE_CXX_FLAGS}")
-#    message(STATUS "init compiler flags debug: ${CMAKE_CXX_FLAGS_DEBUG}")
-#    message(STATUS "init compiler flags release: ${CMAKE_CXX_FLAGS_RELEASE}")
-
-    # maybe change CMAKE_CXX_STANDARD etc.
-    # ...
 endif()
 
 
-# base library header only
+# base library, header only
 add_library(mkpoker-base INTERFACE)
 add_library(mkpoker::base ALIAS mkpoker-base)
 target_include_directories(mkpoker-base INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>)

@@ -4,8 +4,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace mkpoker::base;
-using namespace mkpoker::util;
+using namespace mkp;
 
 TEST(tbit, cross_idx_low)
 {

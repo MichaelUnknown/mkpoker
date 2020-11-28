@@ -7,10 +7,6 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
-# force shared crt
-# todo: check if this is only needed on windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
 # get GTest
 include(FetchContent)
 FetchContent_Declare(
@@ -19,6 +15,9 @@ FetchContent_Declare(
     GIT_TAG        release-1.10.0
 )
 FetchContent_MakeAvailable(googletest)
+# force shared crt
+# todo: check if this is only needed on windows
+#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 # for gtest_discover_tests
 include(GoogleTest)
@@ -45,5 +44,7 @@ package_add_test(card_test card_test.cpp mkpoker::base)
 package_add_test(cardset_test cardset_test.cpp mkpoker::base)
 package_add_test(hand_test hand_test.cpp mkpoker::base)
 package_add_test(range_test range_test.cpp mkpoker::base)
+
+package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp mkpoker::base)
 
 package_add_test(bitset_test bitset_test.cpp mkpoker::base)

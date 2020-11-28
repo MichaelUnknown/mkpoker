@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-namespace mkpoker::base
+namespace mkp
 {
     // encodes the first 52 bits as cards in canonical order (ascending clubs,diamonds,hearts,spades)
     class cardset
@@ -80,7 +80,7 @@ namespace mkpoker::base
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // return size / number of unique cards
-        [[nodiscard]] size_t size() const noexcept { return util::cross_popcnt64(m_cards); }
+        [[nodiscard]] size_t size() const noexcept { return cross_popcnt64(m_cards); }
 
         // return bit mask
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return m_cards; }
@@ -93,7 +93,7 @@ namespace mkpoker::base
             for (uint64_t mask = m_cards; mask;)
             {
                 // create a card by getting the position of first bit
-                const auto idx = util::cross_idx_low64(mask);
+                const auto idx = cross_idx_low64(mask);
                 out += card(idx).str();
                 // clear that bit
                 mask &= mask - 1;
@@ -133,11 +133,11 @@ namespace mkpoker::base
             std::array<pui16, 4> temp{{{uint16_t(0), mask_c}, {uint16_t(1), mask_d}, {uint16_t(2), mask_h}, {uint16_t(3), mask_s}}};
 
             std::sort(temp.begin(), temp.end(), [](const pui16& lhs, const pui16& rhs) {
-                if (util::cross_popcnt16(lhs.second) == util::cross_popcnt16(rhs.second))
+                if (cross_popcnt16(lhs.second) == cross_popcnt16(rhs.second))
                 {
                     return lhs.second > rhs.second;
                 }
-                return util::cross_popcnt16(lhs.second) > util::cross_popcnt16(rhs.second);
+                return cross_popcnt16(lhs.second) > cross_popcnt16(rhs.second);
             });
 
             std::array<uint8_t, 4> ret{};
@@ -171,7 +171,7 @@ namespace mkpoker::base
             for (uint64_t mask = m_cards; mask;)
             {
                 // create a card by getting the position of lowest bit
-                const auto idx = util::cross_idx_low64(mask);
+                const auto idx = cross_idx_low64(mask);
                 ret.emplace_back(card(idx));
                 // clear that bit
                 mask &= mask - 1;
@@ -205,7 +205,7 @@ namespace mkpoker::base
         // helper functions
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        constexpr std::strong_ordering operator<=>(const cardset&) const noexcept = default;
+        constexpr auto operator<=>(const cardset&) const noexcept = default;
     };
 
-}    // namespace mkpoker::base
+}    // namespace mkp

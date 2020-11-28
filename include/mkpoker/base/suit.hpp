@@ -7,7 +7,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace mkpoker::base
+namespace mkp
 {
     inline namespace constants
     {
@@ -90,7 +90,7 @@ namespace mkpoker::base
 
         // we do provide ordering, so the type can be used with set, map etc.
 
-        constexpr std::strong_ordering operator<=>(const suit&) const noexcept = default;
+        constexpr auto operator<=>(const suit&) const noexcept = default;
 
        private:
         // return matching char,
@@ -148,4 +148,4 @@ namespace mkpoker::base
     static_assert(std::is_nothrow_copy_constructible_v<suit>, "suit should be trivially & nothrow copy/move constructible");
     static_assert(std::is_nothrow_move_constructible_v<suit>, "suit should be trivially & nothrow copy/move constructible");
 
-}    // namespace mkpoker::base
+}    // namespace mkp

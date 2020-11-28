@@ -6,7 +6,7 @@
 #ifdef _MSC_VER
 #include <bit>
 
-namespace mkpoker::util
+namespace mkp
 {
     // wrappers
 
@@ -36,11 +36,11 @@ namespace mkpoker::util
             return 0;
         return static_cast<uint8_t>(63 - std::countl_zero(mask));
     }
-}    // namespace mkpoker::util
+}    // namespace mkp
 
 #elif defined(__clang__) || defined(__GNUC__)
 
-namespace mkpoker::util
+namespace mkp
 {
     inline uint8_t cross_popcnt16(const uint16_t mask) { return __builtin_popcount(mask); }
 
@@ -92,7 +92,7 @@ namespace mkpoker::util
             return 0;
         return static_cast<uint8_t>(63 - cross_lzcnt64(mask));
     }
-}    // namespace mkpoker::util
+}    // namespace mkp
 
 #else
 
