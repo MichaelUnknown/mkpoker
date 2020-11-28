@@ -164,13 +164,19 @@ namespace mkp
                 break;
 
             // should have major rank, check if valid
+            case c_straight:
+            case c_straight_flush:
+                if (major <= c_rank_four)
+                {
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                                             std::to_string(type) + " and major_rank " + std::to_string(major));
+                }
+                [[fallthrough]];
             case c_one_pair:
             case c_two_pair:
             case c_three_of_a_kind:
-            case c_straight:
             case c_full_house:
             case c_four_of_a_kind:
-            case c_straight_flush:
                 if (major > c_rank_ace)
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +

@@ -77,26 +77,46 @@ TEST(tholdem_eval_result, hevr_kickers)
 
 TEST(tholdem_eval_result, hevr_make_he_result)
 {
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush + 1, 0, 0, 0)), std::runtime_error);
+
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 31)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, c_rank_eight, 0, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, c_rank_eight, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 63)), std::runtime_error);
 
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 7)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 13, 0, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_five, c_rank_eight, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 0, 0, 15)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 13, 0, 7)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, c_rank_seven, 7)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 15)), std::runtime_error);
 
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 1)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, 13, c_rank_five, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, 13, 1)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 3)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_eight, 1)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_five, c_rank_eight, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, 13, c_rank_five, 1)), std::runtime_error);
 
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 3)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 7)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, 13, 0, 3)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 7)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, c_rank_seven, 3)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, 0, 0)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, 13, 0, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, c_rank_three, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, 0, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_four, 0, 0)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 31)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, c_rank_five, 0, 31)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, c_rank_five, 31)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 63)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_king, 0)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_jack, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_king, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, 13, c_rank_king, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, 13, 0)), std::runtime_error);
 
     // todo: cover remaining types
 
