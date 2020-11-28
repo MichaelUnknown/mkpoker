@@ -1,10 +1,20 @@
 #include <mkpoker/holdem/holdem_evaluation_result.hpp>
 
+#include <array>
+#include <limits>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
 
 using namespace mkp;
+
+constexpr auto types = {c_no_pair, c_one_pair,   c_two_pair,       c_three_of_a_kind, c_straight,
+                        c_flush,   c_full_house, c_four_of_a_kind, c_straight_flush};
+constexpr auto ranks = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
+                        c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
+constexpr std::array<uint8_t, 13> arr_ranks = {c_rank_two,   c_rank_three, c_rank_four, c_rank_five, c_rank_six,
+                                               c_rank_seven, c_rank_eight, c_rank_nine, c_rank_ten,  c_rank_jack,
+                                               c_rank_queen, c_rank_king,  c_rank_ace};
 
 TEST(tholdem_eval_result, ctor)
 {
@@ -19,10 +29,7 @@ TEST(tholdem_eval_result, ctor)
 
 TEST(tholdem_eval_result, hevr_type)
 {
-    const auto v = {c_no_pair, c_one_pair,   c_two_pair,       c_three_of_a_kind, c_straight,
-                    c_flush,   c_full_house, c_four_of_a_kind, c_straight_flush};
-
-    for (auto&& e : v)
+    for (auto&& e : types)
     {
         EXPECT_EQ(holdem_evaluation_result(e, 0, 0, 0).type(), e);
     }
@@ -30,10 +37,7 @@ TEST(tholdem_eval_result, hevr_type)
 
 TEST(tholdem_eval_result, hevr_major)
 {
-    const auto v = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
-                    c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
-
-    for (auto&& e : v)
+    for (auto&& e : ranks)
     {
         EXPECT_EQ(holdem_evaluation_result(c_full_house, e, 0, 0).major_rank(), rank(rank_t{e}));
     }
@@ -41,10 +45,7 @@ TEST(tholdem_eval_result, hevr_major)
 
 TEST(tholdem_eval_result, hevr_minor)
 {
-    const auto v = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
-                    c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
-
-    for (auto&& e : v)
+    for (auto&& e : ranks)
     {
         EXPECT_EQ(holdem_evaluation_result(c_full_house, 0, e, 0).minor_rank(), rank(rank_t{e}));
     }
@@ -52,21 +53,70 @@ TEST(tholdem_eval_result, hevr_minor)
 
 TEST(tholdem_eval_result, hevr_kickers)
 {
-    const std::array<uint8_t, 13> a = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
-                                       c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
-    for (auto i1 = 0; i1 < a.size(); ++i1)
+    static_assert(arr_ranks.size() == c_num_ranks);
+
+    for (auto i1 = 0; i1 < c_num_ranks; ++i1)
     {
-        for (auto i2 = i1 + 1; i2 < a.size(); ++i2)
+        for (auto i2 = i1 + 1; i2 < c_num_ranks; ++i2)
         {
-            for (auto i3 = i2 + 1; i3 < a.size(); ++i3)
+            for (auto i3 = i2 + 1; i3 < c_num_ranks; ++i3)
             {
-                for (auto i4 = i3 + 1; i4 < a.size(); ++i4)
+                for (auto i4 = i3 + 1; i4 < c_num_ranks; ++i4)
                 {
-                    for (auto i5 = i4 + 1; i5 < a.size(); ++i5)
+                    for (auto i5 = i4 + 1; i5 < c_num_ranks; ++i5)
                     {
-                        const uint16_t kickers = uint16_t(1 << a[i1]) | uint16_t(1 << a[i2]) | uint16_t(1 << a[i3]) | uint16_t(1 << a[i4]) |
-                                                 uint16_t(1 << a[i5]);
+                        const uint16_t kickers = uint16_t(1 << arr_ranks[i1]) | uint16_t(1 << arr_ranks[i2]) |
+                                                 uint16_t(1 << arr_ranks[i3]) | uint16_t(1 << arr_ranks[i4]) | uint16_t(1 << arr_ranks[i5]);
                         EXPECT_EQ(holdem_evaluation_result(c_no_pair, 0, 0, kickers).kickers(), kickers);
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST(tholdem_eval_result, hevr_make_he_result)
+{
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 31)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, c_rank_eight, 0, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, c_rank_eight, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 63)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 7)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 13, 0, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_five, c_rank_eight, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 0, 0, 15)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 1)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 3)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_eight, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_five, c_rank_eight, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, 13, c_rank_five, 1)), std::runtime_error);
+
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 3)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 7)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, 13, 0, 3)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, c_rank_seven, 3)), std::runtime_error);
+
+    // todo: cover remaining types
+
+    // check for equality
+    for (auto&& ty : types)
+    {
+        for (auto&& ma : ranks)
+        {
+            for (auto&& mi : ranks)
+            {
+                //for (uint16_t ki = 0; ki < std::numeric_limits<uint16_t>::max(); ++ki)
+                for (uint16_t ki = 0; ki < 31; ++ki)
+                {
+                    try
+                    {
+                        const auto res = make_he_result(ty, ma, mi, ki);
+                        EXPECT_EQ(res, holdem_evaluation_result(ty, ma, mi, ki));
+                    }
+                    catch (...)
+                    {
                     }
                 }
             }

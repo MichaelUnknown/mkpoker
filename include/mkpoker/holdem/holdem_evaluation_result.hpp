@@ -148,7 +148,7 @@ namespace mkp
         constexpr auto operator<=>(const holdem_evaluation_result&) const = default;
     };
 
-    constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
+    [[nodiscard]] constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
     {
         // check type an major rank
         switch (type)
@@ -201,6 +201,13 @@ namespace mkp
                 break;
             // should have minor rank, check if valid
             case c_two_pair:
+                if (minor > major)
+                {
+                    throw std::runtime_error(
+                        "make_he_result(...): failed to create result, minor rank must be smaller than major rank for type " +
+                        std::to_string(type));
+                }
+                [[fallthrough]];
             case c_full_house:
                 if (minor == major)
                 {
