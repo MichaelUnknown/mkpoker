@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mkpoker/base/rank.hpp>
+#include <mkpoker/util/bit.hpp>
 
 #include <array>
 #include <bitset>
@@ -25,8 +26,8 @@ namespace mkp
         constexpr uint8_t c_mask_type = 0b0000'1111;
 
         constexpr uint8_t c_offset_minor = c_num_ranks;
-        constexpr uint8_t c_offset_major = c_num_ranks + 4;
-        constexpr uint8_t c_offset_type = c_num_ranks + 8;
+        constexpr uint8_t c_offset_major = c_offset_minor + 4;
+        constexpr uint8_t c_offset_type = c_offset_major + 4;
     }    // namespace consts
 
     // size: 32 bits
@@ -90,13 +91,13 @@ namespace mkp
         // major rank, used for pair(s), full house and straight (flush)
         [[nodiscard]] constexpr rank major_rank() const noexcept
         {
-            return rank(rank_t{c_mask_ranks_numbers & (m_result >> c_offset_major)});
+            return rank(rank_t(c_mask_ranks_numbers & (m_result >> c_offset_major)));
         };
 
         // minor rank, used for full house and two pair
         [[nodiscard]] constexpr rank minor_rank() const noexcept
         {
-            return rank(rank_t{c_mask_ranks_numbers & (m_result >> c_offset_minor)});
+            return rank(rank_t(c_mask_ranks_numbers & (m_result >> c_offset_minor)));
         };
 
         // up to 5 cards that are not paired, also used for all flush cards
@@ -132,7 +133,7 @@ namespace mkp
         }
 
         // all the bits as string
-        [[nodiscard]] std::string bitstr() const { return std::bitset<25>(m_result).to_string(); }
+        [[nodiscard]] std::string bitstr() const noexcept { return std::bitset<25>(m_result).to_string(); }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS
@@ -149,25 +150,129 @@ namespace mkp
 
     constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
     {
+        // check type an major rank
         switch (type)
         {
+            // should not have major rank
             case c_no_pair:
-                if (major > 0 || minor > 0)
+            case c_flush:
+                if (major > 0)
                 {
-                    throw std::runtime_error("a");
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                                             std::to_string(type) + " and major_rank " + std::to_string(major));
                 }
                 break;
+
+            // should have major rank, check if valid
             case c_one_pair:
-            case c_three_of_a_kind:
-            case c_four_of_a_kind:
             case c_two_pair:
-            case c_full_house:
+            case c_three_of_a_kind:
             case c_straight:
+            case c_full_house:
+            case c_four_of_a_kind:
             case c_straight_flush:
-            case c_flush:
+                if (major > c_rank_ace)
+                {
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                                             std::to_string(type) + " and major_rank " + std::to_string(major));
+                }
+                break;
+
             default:
                 throw std::runtime_error("make_he_result(...): failed to create her result with invalid hand type " + std::to_string(type));
         }
+
+        // check minor
+        switch (type)
+        {
+            // should not have minor rank
+            case c_no_pair:
+            case c_one_pair:
+            case c_three_of_a_kind:
+            case c_straight:
+            case c_flush:
+            case c_four_of_a_kind:
+            case c_straight_flush:
+                if (minor > 0)
+                {
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal minor rank with type " +
+                                             std::to_string(type) + " and minor_rank " + std::to_string(minor));
+                }
+                break;
+            // should have minor rank, check if valid
+            case c_two_pair:
+            case c_full_house:
+                if (minor == major)
+                {
+                    throw std::runtime_error("make_he_result(...): failed to create result, major and minor rank must differ for type " +
+                                             std::to_string(type));
+                }
+                if (minor > c_rank_ace)
+                {
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                                             std::to_string(type) + " and minor_rank " + std::to_string(minor));
+                }
+                break;
+        }
+
+        auto fail_kickers = [&] {
+            throw std::runtime_error("make_he_result(...): failed to create result, illegal number of kickers with type " +
+                                     std::to_string(type) + " and kickers: " + std::bitset<16>(kickers).to_string());
+        };
+
+        // check kickers
+        switch (type)
+        {
+            // should have a specific number of kickers
+            // we also allow less kickers for partial evaluations (e.g. hands of 3 or 4 cards)
+            case c_no_pair:
+                if (cross_popcnt16(kickers) > 5)
+                {
+                    fail_kickers();
+                }
+                break;
+            case c_one_pair:
+                if (cross_popcnt16(kickers) > 3 || uint16_t(1 << major) & kickers)
+                {
+                    fail_kickers();
+                }
+                break;
+            case c_two_pair:
+                if (cross_popcnt16(kickers) > 1 || (uint16_t(1 << major) | uint16_t(1 << minor)) & kickers)
+                {
+                    fail_kickers();
+                }
+                break;
+            case c_three_of_a_kind:
+                if (cross_popcnt16(kickers) > 2 || uint16_t(1 << major) & kickers)
+                {
+                    fail_kickers();
+                }
+                break;
+            case c_flush:
+                if (cross_popcnt16(kickers) > 5)
+                {
+                    fail_kickers();
+                }
+                break;
+            case c_four_of_a_kind:
+                if (cross_popcnt16(kickers) > 1 || uint16_t(1 << major) == kickers)
+                {
+                    fail_kickers();
+                }
+                break;
+
+            // should not have kickers
+            case c_straight:
+            case c_full_house:
+            case c_straight_flush:
+                if (cross_popcnt16(kickers) > 0)
+                {
+                    fail_kickers();
+                }
+                break;
+        }
+
         return holdem_evaluation_result(type, major, minor, kickers);
     }
 
