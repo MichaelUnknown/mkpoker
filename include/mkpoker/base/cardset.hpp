@@ -142,7 +142,12 @@ namespace mkp
         [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
+#if defined(__clang__)
+        // clang 11 does not support c++ 20 constexpr sort yet
+        [[nodiscard]] std::array<uint8_t, 4> get_normalization_vector() const noexcept
+#else
         [[nodiscard]] constexpr std::array<uint8_t, 4> get_normalization_vector() const noexcept
+#endif
         {
             // break down the cards into individual suits and sort by amount of cards, then highest card
             // then return the vector which performs this exact transformation
