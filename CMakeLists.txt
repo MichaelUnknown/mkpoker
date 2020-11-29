@@ -28,8 +28,8 @@ target_include_directories(mkpoker-base INTERFACE $<BUILD_INTERFACE:${CMAKE_CURR
 target_include_directories(mkpoker-base SYSTEM INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
 target_compile_features(mkpoker-base INTERFACE cxx_std_20)
 target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive- /std:c++latest>)
-target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:Clang>:-std=c++20 -stdlib=libc++ -Wall -Wextra>)
-target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:GNU>:-std=c++20 -Wall -Wextra>)
+target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:Clang>:-std=c++20 -stdlib=libc++ -Wall -Wextra -Wpedantic>)
+target_compile_options(mkpoker-base INTERFACE $<$<CXX_COMPILER_ID:GNU>:-std=c++20 -Wall -Wextra -Wpedantic>)
 
 
 # additional stuff, execute only if this is the main project

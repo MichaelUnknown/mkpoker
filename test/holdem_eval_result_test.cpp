@@ -1,7 +1,6 @@
 #include <mkpoker/holdem/holdem_evaluation_result.hpp>
 
 #include <array>
-#include <limits>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
@@ -10,11 +9,9 @@ using namespace mkp;
 
 constexpr auto types = {c_no_pair, c_one_pair,   c_two_pair,       c_three_of_a_kind, c_straight,
                         c_flush,   c_full_house, c_four_of_a_kind, c_straight_flush};
-constexpr auto ranks = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
-                        c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
-constexpr std::array<uint8_t, 13> arr_ranks = {c_rank_two,   c_rank_three, c_rank_four, c_rank_five, c_rank_six,
-                                               c_rank_seven, c_rank_eight, c_rank_nine, c_rank_ten,  c_rank_jack,
-                                               c_rank_queen, c_rank_king,  c_rank_ace};
+
+constexpr std::array<uint8_t, 13> ranks = {c_rank_two,  c_rank_three, c_rank_four, c_rank_five,  c_rank_six,  c_rank_seven, c_rank_eight,
+                                           c_rank_nine, c_rank_ten,   c_rank_jack, c_rank_queen, c_rank_king, c_rank_ace};
 
 TEST(tholdem_eval_result, ctor)
 {
@@ -53,7 +50,7 @@ TEST(tholdem_eval_result, hevr_minor)
 
 TEST(tholdem_eval_result, hevr_kickers)
 {
-    static_assert(arr_ranks.size() == c_num_ranks);
+    static_assert(ranks.size() == c_num_ranks);
 
     for (auto i1 = 0; i1 < c_num_ranks; ++i1)
     {
@@ -65,8 +62,8 @@ TEST(tholdem_eval_result, hevr_kickers)
                 {
                     for (auto i5 = i4 + 1; i5 < c_num_ranks; ++i5)
                     {
-                        const uint16_t kickers = uint16_t(1 << arr_ranks[i1]) | uint16_t(1 << arr_ranks[i2]) |
-                                                 uint16_t(1 << arr_ranks[i3]) | uint16_t(1 << arr_ranks[i4]) | uint16_t(1 << arr_ranks[i5]);
+                        const uint16_t kickers = uint16_t(1 << ranks[i1]) | uint16_t(1 << ranks[i2]) | uint16_t(1 << ranks[i3]) |
+                                                 uint16_t(1 << ranks[i4]) | uint16_t(1 << ranks[i5]);
                         EXPECT_EQ(holdem_evaluation_result(c_no_pair, 0, 0, kickers).kickers(), kickers);
                     }
                 }

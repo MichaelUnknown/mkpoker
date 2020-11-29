@@ -46,5 +46,6 @@ package_add_test(hand_test hand_test.cpp mkpoker::base)
 package_add_test(range_test range_test.cpp mkpoker::base)
 
 package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp mkpoker::base)
+package_add_test(holdem_eval_test holdem_eval_test.cpp mkpoker::base)
 
 package_add_test(bitset_test bitset_test.cpp mkpoker::base)
