@@ -8,6 +8,7 @@ using namespace mkp;
 
 TEST(tbit, bit_make_bitset)
 {
+    EXPECT_EQ(make_bitset(0), uint64_t(1));
     EXPECT_EQ(make_bitset(1, 2, 4, 6), uint64_t(0b0101'0110));
 }
 

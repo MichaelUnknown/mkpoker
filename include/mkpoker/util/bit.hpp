@@ -9,6 +9,7 @@ namespace mkp
     template <typename... Args>
     [[nodiscard]] constexpr uint64_t make_bitset(Args... args)
     {
+        static_assert((std::is_integral_v<Args> && ...), "make_bitset(Args...) expects integral types");
         return ((uint64_t(1) << args) | ...);
     }
 
