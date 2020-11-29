@@ -1,6 +1,7 @@
 #include <mkpoker/base/cardset.hpp>
 
 #include <array>
+#include <random>
 #include <stdexcept>
 #include <vector>
 
@@ -65,16 +66,37 @@ TEST(tcardset, cardset_fill_clear)
     EXPECT_EQ(all.size(), 0);
 }
 
-//TEST(cardset, cardset_rotate_suit)
-//{
-//    const cardset cs1("2c6dThKs");
-//    const cardset cs2("2d6hTsKc");
-//    const cardset cs3("2h6sTcKd");
-//    const cardset cs4("2s6cTdKh");
-//    EXPECT_EQ(cs1.rotate_suits(0, 1, 2, 3), cs1);
-//    EXPECT_EQ(cs1.rotate_suits(1, 2, 3, 0), cs2);
-//    EXPECT_EQ(cs1.rotate_suits(2, 3, 0, 1), cs3);
-//    EXPECT_EQ(cs1.rotate_suits(3, 0, 1, 2), cs4);
-//    EXPECT_EQ(cs2.rotate_suits(3, 0, 1, 2), cs1);
-//    EXPECT_THROW(cs1.rotate_suits(0, 1, 2, -1), std::runtime_error);
-//}
+TEST(tcardset, cardset_str)
+{
+    const cardset cs("2cThKs6d3c");
+    EXPECT_EQ(cs.str(), std::string("2c3c6dThKs"));
+}
+
+TEST(tcardset, cardset_combine)
+{
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<uint64_t> dist(1, c_cardset_full);
+
+    for (auto i = 0; i < 10000;)
+    {
+        try
+        {
+            const cardset cs(dist(rng));
+            const auto cards = cs.as_cards();
+            cardset cs2 = cs;
+            cardset cs3{};
+            for (auto&& c : cards)
+            {
+                cs2 = cs2.combine(c);
+                cs3 = cs3.combine(c);
+            }
+            EXPECT_EQ(cs, cs2);
+            EXPECT_EQ(cs, cs3);
+            EXPECT_EQ(cs.str(), cs2.str());
+            ++i;
+        }
+        catch (...)
+        {
+        }
+    }
+}

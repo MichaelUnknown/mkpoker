@@ -13,7 +13,7 @@ namespace mkp
 {
     inline namespace constants
     {
-        constexpr uint8_t c_deck_size = 13 * c_num_suits;
+        constexpr uint8_t c_deck_size = c_num_ranks * c_num_suits;
         constexpr uint8_t c_cardindex_min = 0;
         constexpr uint8_t c_cardindex_max = c_deck_size - 1;
     }    // namespace constants
@@ -35,7 +35,7 @@ namespace mkp
         // create from integers, 0=2c ... 51=As, can throw
         constexpr explicit card(const uint8_t idx) : m_card(idx)
         {
-            if (m_card < c_cardindex_min || m_card > c_cardindex_max)
+            if (m_card > c_cardindex_max)
             {
                 throw std::runtime_error("card(const uint8_t): tried to create card with 'out of bounds' index '" + std::to_string(m_card) +
                                          "'");

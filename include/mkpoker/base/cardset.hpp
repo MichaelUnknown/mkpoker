@@ -14,14 +14,23 @@
 
 namespace mkp
 {
+    inline namespace constants
+    {
+        constexpr uint64_t c_cardset_full = 0xFFFF'FFFF'FFFF'FFFF >> (64 - c_deck_size);
+    }    // namespace constants
+
     // encodes the first 52 bits as cards in canonical order (ascending clubs,diamonds,hearts,spades)
     class cardset
     {
         // internal encoding
         uint64_t m_cards = 0;
 
-        // private ctor to create from bitset (needed for rotate suits and combine), relies on sanatized (valid) input
-        constexpr explicit cardset(const uint64_t& bitset) noexcept : m_cards(bitset) {}
+        // private helper to create from bitset (needed for rotate suits and combine)
+        constexpr auto set(const uint64_t& bitset) noexcept
+        {
+            m_cards = bitset;
+            return *this;
+        }
 
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +39,19 @@ namespace mkp
 
         // empty set
         cardset() = default;
+
+        // create from bitset
+        constexpr explicit cardset(const uint64_t& bitset) : m_cards(bitset)
+        {
+            if (bitset > c_cardset_full)
+            {
+                throw std::runtime_error("cardset(const uint64_t): cardset max value (" + std::to_string(c_cardset_full) +
+                                         ") exceeded by argument " + std::to_string(bitset));
+            }
+        }
+
+        //
+        // todo: make this nice with concepts, once all the major compiler support them
 
         // create with a container of cards
         template <std::size_t N>
@@ -102,7 +124,7 @@ namespace mkp
         }
 
         // check if the card is in the set
-        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & c.m_card) != 0; }
+        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
         [[nodiscard]] constexpr bool contains(const cardset cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
@@ -114,10 +136,10 @@ namespace mkp
         [[nodiscard]] constexpr bool intersects(const cardset cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
 
         // returns a new cs, combine with card
-        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset(m_cards | c.m_card); }
+        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
 
         // returns a new cs, combine with cardset
-        [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset(m_cards | cs.m_cards); }
+        [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
         [[nodiscard]] std::array<uint8_t, 4> get_normalization_vector() const noexcept
@@ -156,10 +178,10 @@ namespace mkp
                 throw std::runtime_error("duplicate or invalid arguments provided for rotate_suits");
             }
 
-            return cardset((m_cards & c_mask_ranks) << c_num_ranks * r[0] |
-                           ((m_cards >> (1 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[1] |
-                           ((m_cards >> (2 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[2] |
-                           ((m_cards >> (3 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[3]);
+            return cardset{}.set((m_cards & c_mask_ranks) << c_num_ranks * r[0] |
+                                 ((m_cards >> (1 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[1] |
+                                 ((m_cards >> (2 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[2] |
+                                 ((m_cards >> (3 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[3]);
         }
 
         // returns as vector of cards
@@ -187,7 +209,7 @@ namespace mkp
         constexpr void clear() noexcept { m_cards = 0; }
 
         // fill with all cards
-        constexpr void fill() noexcept { m_cards = ~(0xFFFF'FFFF'FFFF'FFFF << c_deck_size); }
+        constexpr void fill() noexcept { m_cards = c_cardset_full; }
 
         // insert a single card
         constexpr void insert(const card c) noexcept { m_cards |= c.m_card; }
