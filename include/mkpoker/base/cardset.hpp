@@ -80,7 +80,7 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // return size / number of unique cards
-        [[nodiscard]] size_t size() const noexcept { return cross_popcnt64(m_cards); }
+        [[nodiscard]] size_t size() const noexcept { return std::popcount(m_cards); }
 
         // return bit mask
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return m_cards; }
@@ -133,11 +133,11 @@ namespace mkp
             std::array<pui16, 4> temp{{{uint16_t(0), mask_c}, {uint16_t(1), mask_d}, {uint16_t(2), mask_h}, {uint16_t(3), mask_s}}};
 
             std::sort(temp.begin(), temp.end(), [](const pui16& lhs, const pui16& rhs) {
-                if (cross_popcnt16(lhs.second) == cross_popcnt16(rhs.second))
+                if (std::popcount(lhs.second) == std::popcount(rhs.second))
                 {
                     return lhs.second > rhs.second;
                 }
-                return cross_popcnt16(lhs.second) > cross_popcnt16(rhs.second);
+                return std::popcount(lhs.second) > std::popcount(rhs.second);
             });
 
             std::array<uint8_t, 4> ret{};

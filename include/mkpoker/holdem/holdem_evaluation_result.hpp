@@ -239,37 +239,37 @@ namespace mkp
             // should have a specific number of kickers
             // we also allow less kickers for partial evaluations (e.g. hands of 3 or 4 cards)
             case c_no_pair:
-                if (cross_popcnt16(kickers) > 5)
+                if (std::popcount(kickers) > 5)
                 {
                     fail_kickers();
                 }
                 break;
             case c_one_pair:
-                if (cross_popcnt16(kickers) > 3 || uint16_t(1 << major) & kickers)
+                if (std::popcount(kickers) > 3 || uint16_t(1 << major) & kickers)
                 {
                     fail_kickers();
                 }
                 break;
             case c_two_pair:
-                if (cross_popcnt16(kickers) > 1 || (uint16_t(1 << major) | uint16_t(1 << minor)) & kickers)
+                if (std::popcount(kickers) > 1 || (uint16_t(1 << major) | uint16_t(1 << minor)) & kickers)
                 {
                     fail_kickers();
                 }
                 break;
             case c_three_of_a_kind:
-                if (cross_popcnt16(kickers) > 2 || uint16_t(1 << major) & kickers)
+                if (std::popcount(kickers) > 2 || uint16_t(1 << major) & kickers)
                 {
                     fail_kickers();
                 }
                 break;
             case c_flush:
-                if (cross_popcnt16(kickers) > 5)
+                if (std::popcount(kickers) > 5)
                 {
                     fail_kickers();
                 }
                 break;
             case c_four_of_a_kind:
-                if (cross_popcnt16(kickers) > 1 || uint16_t(1 << major) == kickers)
+                if (std::popcount(kickers) > 1 || uint16_t(1 << major) == kickers)
                 {
                     fail_kickers();
                 }
@@ -279,7 +279,7 @@ namespace mkp
             case c_straight:
             case c_full_house:
             case c_straight_flush:
-                if (cross_popcnt16(kickers) > 0)
+                if (std::popcount(kickers) > 0)
                 {
                     fail_kickers();
                 }

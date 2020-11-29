@@ -40,19 +40,19 @@ namespace mkp
                 }
             };
 
-            if (cross_popcnt16(mask_c) >= 5)
+            if (std::popcount(mask_c) >= 5)
             {
                 return flush_or_straight_flush(mask_c);
             }
-            else if (cross_popcnt16(mask_d) >= 5)
+            else if (std::popcount(mask_d) >= 5)
             {
                 return flush_or_straight_flush(mask_d);
             }
-            else if (cross_popcnt16(mask_h) >= 5)
+            else if (std::popcount(mask_h) >= 5)
             {
                 return flush_or_straight_flush(mask_h);
             }
-            else if (cross_popcnt16(mask_s) >= 5)
+            else if (std::popcount(mask_s) >= 5)
             {
                 return flush_or_straight_flush(mask_s);
             }
@@ -79,7 +79,7 @@ namespace mkp
         {
             // mask_pair_fh below checks for exactly 2 identical cards and can thus miss if we have trips + trips
             // since we only evaluate 7 cards at max, there can be no other pairs in case of double trips
-            if (cross_popcnt16(mask_trips) > 1)
+            if (std::popcount(mask_trips) > 1)
             {
                 return holdem_evaluation_result(c_full_house, cross_idx_high16(mask_trips), cross_idx_low16(mask_trips), 0);
             }
@@ -110,7 +110,7 @@ namespace mkp
         // 5)
         // pair / two pair
         const uint16_t mask_pair = (mask_all_cards ^ (mask_c ^ mask_d ^ mask_h ^ mask_s));
-        if (const auto num_pairs = cross_popcnt16(mask_pair); num_pairs > 1)
+        if (const auto num_pairs = std::popcount(mask_pair); num_pairs > 1)
         {
             // get the two highest ranks from the mask (keep in minde - with 6/7 cards, there can be 3 pairs)
             const auto high_rank = cross_idx_high16(mask_pair);
