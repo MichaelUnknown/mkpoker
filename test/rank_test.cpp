@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace mkpoker::base;
+using namespace mkp;
 
 TEST(trank, rank_ctor_char)
 {

@@ -9,11 +9,11 @@
 #include <string>
 #include <string_view>
 
-namespace mkpoker::base
+namespace mkp
 {
     inline namespace constants
     {
-        constexpr uint8_t c_deck_size = 13 * c_num_suits;
+        constexpr uint8_t c_deck_size = c_num_ranks * c_num_suits;
         constexpr uint8_t c_cardindex_min = 0;
         constexpr uint8_t c_cardindex_max = c_deck_size - 1;
     }    // namespace constants
@@ -35,7 +35,7 @@ namespace mkpoker::base
         // create from integers, 0=2c ... 51=As, can throw
         constexpr explicit card(const uint8_t idx) : m_card(idx)
         {
-            if (m_card < c_cardindex_min || m_card > c_cardindex_max)
+            if (m_card > c_cardindex_max)
             {
                 throw std::runtime_error("card(const uint8_t): tried to create card with 'out of bounds' index '" + std::to_string(m_card) +
                                          "'");
@@ -43,7 +43,7 @@ namespace mkpoker::base
         }
 
         // create from string ("2c"..."As"), can throw
-        constexpr explicit card(const std::string_view sv) : m_card(base::rank{sv[0]}.m_rank + base::suit{sv[1]}.m_suit * c_num_ranks)
+        constexpr explicit card(const std::string_view sv) : m_card(mkp::rank{sv[0]}.m_rank + mkp::suit{sv[1]}.m_suit * c_num_ranks)
         {
             if (const auto len = sv.length(); len != 2)
             {
@@ -56,7 +56,7 @@ namespace mkpoker::base
         constexpr card(const rank r, const suit s) noexcept : m_card(r.m_rank + s.m_suit * c_num_ranks) {}
 
         // create from rank and suit as integers, can throw
-        constexpr card(const rank_t rt, const suit_t st) : card(base::rank{rt}, base::suit{st}) {}
+        constexpr card(const rank_t rt, const suit_t st) : card(mkp::rank{rt}, mkp::suit{st}) {}
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // ACCESSORS
@@ -66,10 +66,10 @@ namespace mkpoker::base
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return uint64_t(1) << m_card; }
 
         // returns the rank of the card
-        [[nodiscard]] constexpr base::rank rank() const noexcept { return base::rank{rank_t{uint8_t(m_card % c_num_ranks)}}; }
+        [[nodiscard]] constexpr mkp::rank rank() const noexcept { return mkp::rank{rank_t{uint8_t(m_card % c_num_ranks)}}; }
 
         // returns the suit of the card
-        [[nodiscard]] constexpr base::suit suit() const noexcept { return base::suit{suit_t{uint8_t(m_card / c_num_ranks)}}; }
+        [[nodiscard]] constexpr mkp::suit suit() const noexcept { return mkp::suit{suit_t{uint8_t(m_card / c_num_ranks)}}; }
 
         // return string representation, noexcept since we only allow valid card objects to be created
         [[nodiscard]] std::string str() const noexcept { return std::string(cardstrings.substr(static_cast<size_t>(m_card) * 2, 2)); }
@@ -119,4 +119,4 @@ namespace mkpoker::base
     static_assert(std::is_nothrow_copy_constructible_v<card>, "card should be trivially & nothrow copy/move constructible");
     static_assert(std::is_nothrow_move_constructible_v<card>, "card should be trivially & nothrow copy/move constructible");
 
-}    // namespace mkpoker::base
+}    // namespace mkp

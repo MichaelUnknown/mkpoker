@@ -12,24 +12,46 @@
 #include <string_view>
 #include <vector>
 
-namespace mkpoker::base
+namespace mkp
 {
+    inline namespace constants
+    {
+        constexpr uint64_t c_cardset_full = 0xFFFF'FFFF'FFFF'FFFF >> (64 - c_deck_size);
+    }    // namespace constants
+
     // encodes the first 52 bits as cards in canonical order (ascending clubs,diamonds,hearts,spades)
     class cardset
     {
         // internal encoding
         uint64_t m_cards = 0;
 
-        // private ctor to create from bitset (needed for rotate suits and combine), relies on sanatized (valid) input
-        constexpr explicit cardset(const uint64_t& bitset) noexcept : m_cards(bitset) {}
+        // private helper to create from bitset (needed for rotate suits and combine)
+        constexpr auto set(const uint64_t& bitset) noexcept
+        {
+            m_cards = bitset;
+            return *this;
+        }
 
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        // empty set
+        // empty cardset
         cardset() = default;
+
+        // create from bitset
+        constexpr explicit cardset(const uint64_t& bitset) : m_cards(bitset)
+        {
+            if (bitset > c_cardset_full)
+            {
+                throw std::runtime_error("cardset(const uint64_t): cardset max value (" + std::to_string(c_cardset_full) +
+                                         ") exceeded by argument " + std::to_string(bitset));
+            }
+        }
+
+        //
+        // todo: make this niceer with concepts, once all the major compiler support them
 
         // create with a container of cards
         template <std::size_t N>
@@ -80,7 +102,7 @@ namespace mkpoker::base
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // return size / number of unique cards
-        [[nodiscard]] size_t size() const noexcept { return util::cross_popcnt64(m_cards); }
+        [[nodiscard]] constexpr size_t size() const noexcept { return std::popcount(m_cards); }
 
         // return bit mask
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return m_cards; }
@@ -93,7 +115,7 @@ namespace mkpoker::base
             for (uint64_t mask = m_cards; mask;)
             {
                 // create a card by getting the position of first bit
-                const auto idx = util::cross_idx_low64(mask);
+                const auto idx = cross_idx_low64(mask);
                 out += card(idx).str();
                 // clear that bit
                 mask &= mask - 1;
@@ -102,7 +124,7 @@ namespace mkpoker::base
         }
 
         // check if the card is in the set
-        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & c.m_card) != 0; }
+        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
         [[nodiscard]] constexpr bool contains(const cardset cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
@@ -114,13 +136,18 @@ namespace mkpoker::base
         [[nodiscard]] constexpr bool intersects(const cardset cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
 
         // returns a new cs, combine with card
-        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset(m_cards | c.m_card); }
+        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
 
         // returns a new cs, combine with cardset
-        [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset(m_cards | cs.m_cards); }
+        [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
+#if defined(__clang__)
+        // clang 11 does not support c++ 20 constexpr sort yet
         [[nodiscard]] std::array<uint8_t, 4> get_normalization_vector() const noexcept
+#else
+        [[nodiscard]] constexpr std::array<uint8_t, 4> get_normalization_vector() const noexcept
+#endif
         {
             // break down the cards into individual suits and sort by amount of cards, then highest card
             // then return the vector which performs this exact transformation
@@ -133,11 +160,11 @@ namespace mkpoker::base
             std::array<pui16, 4> temp{{{uint16_t(0), mask_c}, {uint16_t(1), mask_d}, {uint16_t(2), mask_h}, {uint16_t(3), mask_s}}};
 
             std::sort(temp.begin(), temp.end(), [](const pui16& lhs, const pui16& rhs) {
-                if (util::cross_popcnt16(lhs.second) == util::cross_popcnt16(rhs.second))
+                if (std::popcount(lhs.second) == std::popcount(rhs.second))
                 {
                     return lhs.second > rhs.second;
                 }
-                return util::cross_popcnt16(lhs.second) > util::cross_popcnt16(rhs.second);
+                return std::popcount(lhs.second) > std::popcount(rhs.second);
             });
 
             std::array<uint8_t, 4> ret{};
@@ -156,10 +183,10 @@ namespace mkpoker::base
                 throw std::runtime_error("duplicate or invalid arguments provided for rotate_suits");
             }
 
-            return cardset((m_cards & c_mask_ranks) << c_num_ranks * r[0] |
-                           ((m_cards >> (1 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[1] |
-                           ((m_cards >> (2 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[2] |
-                           ((m_cards >> (3 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[3]);
+            return cardset{}.set((m_cards & c_mask_ranks) << c_num_ranks * r[0] |
+                                 ((m_cards >> (1 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[1] |
+                                 ((m_cards >> (2 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[2] |
+                                 ((m_cards >> (3 * c_num_ranks)) & c_mask_ranks) << c_num_ranks * r[3]);
         }
 
         // returns as vector of cards
@@ -171,7 +198,7 @@ namespace mkpoker::base
             for (uint64_t mask = m_cards; mask;)
             {
                 // create a card by getting the position of lowest bit
-                const auto idx = util::cross_idx_low64(mask);
+                const auto idx = cross_idx_low64(mask);
                 ret.emplace_back(card(idx));
                 // clear that bit
                 mask &= mask - 1;
@@ -187,7 +214,7 @@ namespace mkpoker::base
         constexpr void clear() noexcept { m_cards = 0; }
 
         // fill with all cards
-        constexpr void fill() noexcept { m_cards = ~(0xFFFF'FFFF'FFFF'FFFF << c_deck_size); }
+        constexpr void fill() noexcept { m_cards = c_cardset_full; }
 
         // insert a single card
         constexpr void insert(const card c) noexcept { m_cards |= c.m_card; }
@@ -205,7 +232,7 @@ namespace mkpoker::base
         // helper functions
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        constexpr std::strong_ordering operator<=>(const cardset&) const noexcept = default;
+        constexpr auto operator<=>(const cardset&) const noexcept = default;
     };
 
-}    // namespace mkpoker::base
+}    // namespace mkp

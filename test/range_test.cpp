@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace mkpoker::base;
+using namespace mkp;
 
 TEST(trange, range_ctor_default)
 {

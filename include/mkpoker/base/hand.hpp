@@ -12,17 +12,17 @@
 #include <type_traits>
 #include <utility>
 
-namespace mkpoker::base
+namespace mkp
 {
     //
     // some TMP helpers
 
     template <typename T>
-    using is_card = std::is_same<T, typename mkpoker::base::card>;
+    using is_card = std::is_same<T, typename mkp::card>;
     template <typename T>
     constexpr bool is_card_v = is_card<T>::value;
     template <typename T>
-    using is_rank = std::is_same<T, typename mkpoker::base::rank>;
+    using is_rank = std::is_same<T, typename mkp::rank>;
     template <typename T>
     inline constexpr bool is_rank_v = is_rank<T>::value;
     template <typename T>
@@ -30,7 +30,7 @@ namespace mkpoker::base
     template <typename T>
     inline constexpr bool is_card_or_rank_v = is_card_or_rank<T>::value;
 
-    inline namespace old
+    inline namespace v0
     {
         // helper class for hand_2c, hand_2r
         template <typename T, bool allow_duplicates, bool is_auto_ordered, std::enable_if_t<is_card_or_rank_v<T>, int> = 0>
@@ -130,8 +130,8 @@ namespace mkpoker::base
             // create from cardset, enable only for card
             template <typename U = c_r_type, std::enable_if_t<is_card_v<U>, int> = 0>
             constexpr explicit hand_helper(const cardset cs)
-                : hand_helper(c_r_type{static_cast<uint8_t>(util::cross_idx_low64(cs.as_bitset()))},
-                              c_r_type{static_cast<uint8_t>(util::cross_idx_high64(cs.as_bitset()))})
+                : hand_helper(c_r_type{static_cast<uint8_t>(cross_idx_low64(cs.as_bitset()))},
+                              c_r_type{static_cast<uint8_t>(cross_idx_high64(cs.as_bitset()))})
             {
                 if (cs.size() != 2)
                 {
@@ -172,7 +172,7 @@ namespace mkpoker::base
 
             constexpr auto operator<=>(const hand_helper& h) const noexcept = default;
         };
-    }    // namespace old
+    }    // namespace v0
 
     namespace v1
     {
@@ -249,8 +249,8 @@ namespace mkpoker::base
             // create from cardset, enable only for card
             template <typename U = c_r_type, std::enable_if_t<is_card_v<U> && N == 2, int> = 0>
             constexpr explicit hand_helper(const cardset cs)
-                : hand_helper(c_r_type{static_cast<uint8_t>(util::cross_idx_low64(cs.as_bitset()))},
-                              c_r_type{static_cast<uint8_t>(util::cross_idx_high64(cs.as_bitset()))})
+                : hand_helper(c_r_type{static_cast<uint8_t>(cross_idx_low64(cs.as_bitset()))},
+                              c_r_type{static_cast<uint8_t>(cross_idx_high64(cs.as_bitset()))})
             {
                 if (cs.size() != 2)
                 {
@@ -313,14 +313,13 @@ namespace mkpoker::base
     }    // namespace v1
 
     // hand with two cards, no duplicates allowed, automatically ordered by ascending value
-    using hand_2c = hand_helper<mkpoker::base::card, false, true>;
-    //using hand_2c = v1::hand_helper<mkpoker::base::card, false, true, 2>;
-    //using hand_4c = v1::hand_helper<mkpoker::base::card, false, true, 4>;
+    using hand_2c = hand_helper<card, false, true>;
+    //using hand_2c = v1::hand_helper<card, false, true, 2>;
+    //using hand_4c = v1::hand_helper<card, false, true, 4>;
 
     // part of a 'range': hand with two ranks, duplicates are allowed, not automatically ordered,
     // part is suited when the first rank is higher
-    using hand_2r = hand_helper<mkpoker::base::rank, true, false>;
-    //using hand_2r = v1::hand_helper<mkpoker::base::card, true, false, 2>;
-    //using hand_4r = v1::hand_helper<mkpoker::base::card, true, false, 4>;
+    using hand_2r = hand_helper<rank, true, false>;
+    //using hand_2r = v1::hand_helper<rank, true, false, 2>;
 
-}    // namespace mkpoker::base
+}    // namespace mkp
