@@ -1,6 +1,7 @@
 #include <mkpoker/base/cardset.hpp>
 
 #include <array>
+#include <bitset>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -8,6 +9,21 @@
 #include <gtest/gtest.h>
 
 using namespace mkp;
+
+TEST(tcardset, cardset_ctor_bitset)
+{
+    const cardset empty{};
+    const cardset some{0b1100'0000'0101'1111'0101'1000};
+    const cardset all{c_cardset_full};
+
+    EXPECT_EQ(empty.size(), 0);
+    EXPECT_EQ(some.size(), 11);
+    EXPECT_EQ(all.size(), 52);
+    EXPECT_THROW(cardset{0xFFFF'FFFF'FFFF'FFFF}, std::runtime_error);
+    EXPECT_THROW(cardset{0xFFFF'FFFF'FFFF'FFFF << c_deck_size}, std::runtime_error);
+    EXPECT_THROW(cardset{uint64_t(1) << c_deck_size}, std::runtime_error);
+    EXPECT_THROW(cardset{c_cardset_full + 1}, std::runtime_error);
+}
 
 TEST(tcardset, cardset_ctor_string)
 {

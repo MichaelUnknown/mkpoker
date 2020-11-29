@@ -6,7 +6,12 @@
 
 using namespace mkp;
 
-TEST(tbit, cross_idx_low)
+TEST(tbit, bit_make_bitset)
+{
+    EXPECT_EQ(make_bitset(1, 2, 4, 6), uint64_t(0b0101'0110));
+}
+
+TEST(tbit, bit_ross_idx_low)
 {
     for (auto i = 0; i < 16; ++i)
     {
@@ -23,9 +28,13 @@ TEST(tbit, cross_idx_low)
     // gtest seems to ignore the return type on the right side, so static cast it
     EXPECT_EQ(0, static_cast<uint8_t>(cross_idx_low16(0)));
     EXPECT_EQ(0, static_cast<uint8_t>(cross_idx_low64(0)));
+    EXPECT_EQ(0, cross_idx_low16(0));
+    EXPECT_EQ(0, cross_idx_low64(0));
+    EXPECT_EQ(cross_idx_low64(0), 0);
+    EXPECT_EQ(cross_idx_low16(0), 0);
 }
 
-TEST(tbit, cross_idx_high)
+TEST(tbit, bit_cross_idx_high)
 {
     for (auto i = 0; i < 16; ++i)
     {

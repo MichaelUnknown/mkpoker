@@ -5,6 +5,13 @@
 
 namespace mkp
 {
+    // make a bitset out of ints
+    template <typename... Args>
+    [[nodiscard]] constexpr uint64_t make_bitset(Args... args)
+    {
+        return ((uint64_t(1) << args) | ...);
+    }
+
     // wrappers
 
     constexpr uint8_t cross_idx_low16(const uint16_t mask)

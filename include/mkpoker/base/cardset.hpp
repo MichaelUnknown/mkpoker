@@ -37,7 +37,7 @@ namespace mkp
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        // empty set
+        // empty cardset
         cardset() = default;
 
         // create from bitset
@@ -51,7 +51,7 @@ namespace mkp
         }
 
         //
-        // todo: make this nice with concepts, once all the major compiler support them
+        // todo: make this niceer with concepts, once all the major compiler support them
 
         // create with a container of cards
         template <std::size_t N>
@@ -102,7 +102,7 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // return size / number of unique cards
-        [[nodiscard]] size_t size() const noexcept { return std::popcount(m_cards); }
+        [[nodiscard]] constexpr size_t size() const noexcept { return std::popcount(m_cards); }
 
         // return bit mask
         [[nodiscard]] constexpr uint64_t as_bitset() const noexcept { return m_cards; }
@@ -142,7 +142,7 @@ namespace mkp
         [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
-        [[nodiscard]] std::array<uint8_t, 4> get_normalization_vector() const noexcept
+        [[nodiscard]] constexpr std::array<uint8_t, 4> get_normalization_vector() const noexcept
         {
             // break down the cards into individual suits and sort by amount of cards, then highest card
             // then return the vector which performs this exact transformation
