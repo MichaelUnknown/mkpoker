@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <initializer_list>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -50,34 +51,21 @@ namespace mkp
             }
         }
 
-        //
-        // todo: make this niceer with concepts, once all the major compiler support them
-
-        // create with a container of cards
-        template <std::size_t N>
-        constexpr explicit cardset(const std::array<card, N>& ct) noexcept
+        // create with span (works for any contiguous container)
+        constexpr explicit cardset(const std::span<const card> sp) noexcept
         {
-            for (auto&& c : ct)
+            for (auto&& c : sp)
             {
-                m_cards |= static_cast<card>(c).as_bitset();
+                m_cards |= c.as_bitset();
             }
         }
 
-        // create with initializer list
-        constexpr explicit cardset(std::initializer_list<card> l) noexcept
+        // create with init list
+        constexpr explicit cardset(const std::initializer_list<const card> li) noexcept
         {
-            for (auto&& c : l)
+            for (auto&& c : li)
             {
-                m_cards |= static_cast<card>(c).as_bitset();
-            }
-        }
-
-        // create with a container of cards
-        explicit cardset(const std::vector<card>& ct) noexcept
-        {
-            for (auto&& c : ct)
-            {
-                m_cards |= static_cast<card>(c).as_bitset();
+                m_cards |= c.as_bitset();
             }
         }
 
