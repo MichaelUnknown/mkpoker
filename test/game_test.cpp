@@ -1,6 +1,7 @@
 #include <mkpoker/game/game.hpp>
 
 #include <array>
+#include <cstdint>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -20,8 +21,8 @@ TEST(tgame, gb_cards_ctor)
     EXPECT_THROW(static_cast<void>(gb_cards<4>(cards)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(gb_cards<5>(cards)), std::runtime_error);
 
-    const auto g1a = gb_cards<2>(std::span(cards.data(), 9));
-    const auto g1b = gb_cards<2>(std::span(v_cards.data(), 9));
+    const auto g1a = gb_cards<2>(std::span<const card>(cards.data(), 9));
+    const auto g1b = gb_cards<2>(std::span<const card>(v_cards.data(), 9));
     const auto g6a = gb_cards<6>(cards);
     const auto g6b = gb_cards<6>(v_cards);
 
@@ -33,6 +34,8 @@ TEST(tgame, gb_cards_ctor)
 
 TEST(tgame, game_ctor)
 {
+    EXPECT_THROW(static_cast<void>(gamestate<2>(999)), std::runtime_error);
+
     const auto g2 = gamestate<2>(2000);
     const auto g3 = gamestate<3>(2000);
     const auto g4 = gamestate<4>(2000);

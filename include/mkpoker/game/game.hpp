@@ -150,18 +150,17 @@ namespace mkp
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        // we only allow valid games
+        // we only allow valid objects
         gb_cards() = delete;
 
-        // create with array cards
+        // create with matching arrays
         constexpr explicit gb_cards(const std::array<card, 5>& board, const std::array<hand_2c, N>& hands) : m_board(board), m_hands(hands)
         {
-            if (cardset(board)
-                    .combine(std::accumulate(m_hands.cbegin(), m_hands.cend(), cardset{},
-                                             [](const auto val, const hand_2c elem) { return val.combine(elem.as_cardset()); }))
-                    .size() != 2 * N + 5)
+            if (std::reduce(m_hands.cbegin(), m_hands.cend(), cardset(board), [](cardset val, const hand_2c elem) {
+                    return val.combine(elem.as_cardset());
+                }).size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
+                throw std::runtime_error("gb_cards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
@@ -170,9 +169,9 @@ namespace mkp
             : m_board(make_array_fn<card, 5>([&](const uint8_t i) { return all_cards[i]; })),
               m_hands(make_array_fn<hand_2c, N>([&](const uint8_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
         {
-            if (all_cards.size() != 2 * N + 5 || cardset{all_cards}.size() != 2 * N + 5)
+            if (all_cards.size() != 2 * N + 5 || cardset(all_cards).size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
+                throw std::runtime_error("gb_cards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
@@ -262,7 +261,7 @@ namespace mkp
         // amount chips for pot size calculations
         [[nodiscard]] constexpr int32_t chips_committed() const
         {
-            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+            return std::reduce(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
         }
 
         // total pot size for
@@ -277,8 +276,8 @@ namespace mkp
         // players alive (i.e. not OUT)
         [[nodiscard]] constexpr int num_players_alive() const
         {
-            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0,
-                                   [](const auto val, const auto elem) { return elem != gb_playerstate_t::OUT ? val + 1 : val; });
+            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0,
+                               [](const auto val, const auto elem) { return elem != gb_playerstate_t::OUT ? val + 1 : val; });
             //uint8_t count = 0;
             //for (const auto state : m_playerstate)
             //{
@@ -291,7 +290,7 @@ namespace mkp
         // players who can act (i.e. ALIVE or INIT)
         [[nodiscard]] constexpr int num_players_actionable() const
         {
-            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const auto val, const auto elem) {
+            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const auto val, const auto elem) {
                 return (elem == gb_playerstate_t::INIT || elem == gb_playerstate_t::ALIVE) ? val + 1 : val;
             });
 

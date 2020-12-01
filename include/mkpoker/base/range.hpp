@@ -352,7 +352,7 @@ namespace mkp
             return ret;
 #else
             // msvc 16.8 and gcc 10 support c++ 20 constexpr accumualte
-            return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0), [](const uint8_t r, const uint16_t value) -> uint8_t {
+            return std::reduce(m_combos.cbegin(), m_combos.cend(), uint8_t(0), [](const uint8_t r, const uint16_t value) -> uint8_t {
                 if (value > 0)
                     return static_cast<uint8_t>(r + 1);
                 return r;
@@ -480,7 +480,7 @@ namespace mkp
                 {
                     // pair
                     const auto v_hands = mkpoker::util::generate_pairs(mkpoker::cards::rank{top});
-                    const auto sum = std::accumulate(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
+                    const auto sum = std::reduce(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
                     set_value(i, sum);
                 }
                 else
@@ -489,13 +489,13 @@ namespace mkp
                     if (const bool is_suited = left > top; is_suited)
                     {
                         const auto v_hands = mkpoker::util::generate_suited(mkpoker::cards::rank{left}, mkpoker::cards::rank{top});
-                        const auto sum = std::accumulate(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
+                        const auto sum = std::reduce(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
                         set_value(i, sum);
                     }
                     else
                     {
                         const auto v_hands = mkpoker::util::generate_nonsuited(mkpoker::cards::rank{left}, mkpoker::cards::rank{top});
-                        const auto sum = std::accumulate(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
+                        const auto sum = std::reduce(v_hands.cbegin(), v_hands.cend(), (uint16_t)0, sum_for_hands);
                         set_value(i, sum);
                     }
                 }
