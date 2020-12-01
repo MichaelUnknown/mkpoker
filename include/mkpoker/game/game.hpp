@@ -276,14 +276,15 @@ namespace mkp
         // players alive (i.e. not OUT)
         [[nodiscard]] constexpr int num_players_alive() const
         {
-            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0,
-                               [](const int val, const gb_playerstate_t elem) { return elem != gb_playerstate_t::OUT ? val + 1 : val; });
+            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
+                return elem != gb_playerstate_t::OUT ? val + 1 : val;
+            });
         }
 
         // players who can act (i.e. ALIVE or INIT)
         [[nodiscard]] constexpr int num_players_actionable() const
         {
-            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) {
+            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) {
                 return (elem == gb_playerstate_t::INIT || elem == gb_playerstate_t::ALIVE) ? val + 1 : val;
             });
         }
