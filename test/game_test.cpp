@@ -1,6 +1,7 @@
 #include <mkpoker/game/game.hpp>
 
 #include <array>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -8,20 +9,26 @@
 
 using namespace mkp;
 
-TEST(tgame, game_gb_cards_2p_ctor)
+TEST(tgame, gb_cards_ctor)
 {
-    std::array<card, 9> a_cards = {card("Ac"), card("Ad"), card("Kc"), card("Qh"), card("Ts"),
-                                   card("7c"), card("6c"), card("9d"), card("9s")};
-    std::vector<card> v_cards(a_cards.cbegin(), a_cards.cend());
+    const auto cards = make_array_fn<card, 17>([](const uint8_t i) { return card(i); });
+    const auto same_cards = make_array_fn<card, 17>([](auto) { return card("Ac"); });
+    std::vector<card> v_cards(cards.cbegin(), cards.cend());
 
-    const auto g1 = gb_cards<2>(v_cards);
-    const auto g2 = gb_cards<2>(v_cards);
+    EXPECT_THROW(static_cast<void>(gb_cards<2>(cards)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gb_cards<3>(cards)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gb_cards<4>(cards)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gb_cards<5>(cards)), std::runtime_error);
 
-    EXPECT_EQ(g1, g2);
+    const auto g1a = gb_cards<2>(std::span(cards.data(), 9));
+    const auto g1b = gb_cards<2>(std::span(v_cards.data(), 9));
+    const auto g6a = gb_cards<6>(cards);
+    const auto g6b = gb_cards<6>(v_cards);
 
-    std::vector<card> v_duplicate(a_cards.cbegin(), a_cards.cend() - 1);
-    v_duplicate.push_back(card("Ac"));
-    EXPECT_THROW(static_cast<void>(gb_cards<2>(v_duplicate)), std::runtime_error);
+    EXPECT_EQ(g1a, g1b);
+    EXPECT_EQ(g6a, g6b);
+    EXPECT_THROW(static_cast<void>(gb_cards<2>(same_cards)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gb_cards<6>(same_cards)), std::runtime_error);
 }
 
 TEST(tgame, game_ctor)

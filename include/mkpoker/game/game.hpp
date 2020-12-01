@@ -159,20 +159,20 @@ namespace mkp
             if (cardset(board)
                     .combine(std::accumulate(m_hands.cbegin(), m_hands.cend(), cardset{},
                                              [](const auto val, const hand_2c elem) { return val.combine(elem.as_cardset()); }))
-                    .size() != 5 + N * 2)
+                    .size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to 9");
+                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
         // create with span of cards (works for any contiguous container)
         explicit gb_cards(const std::span<const card> all_cards)
-            : m_board(make_array_fn<card, 5>([&](const std::size_t i) { return all_cards[i]; })),
-              m_hands(make_array_fn<hand_2c, N>([&](const std::size_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
+            : m_board(make_array_fn<card, 5>([&](const uint8_t i) { return all_cards[i]; })),
+              m_hands(make_array_fn<hand_2c, N>([&](const uint8_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
         {
-            if (all_cards.size() != 9 || cardset{all_cards}.size() != 9)
+            if (all_cards.size() != 2 * N + 5 || cardset{all_cards}.size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(span<card>): number of (unique) cards is not equal to 9");
+                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
