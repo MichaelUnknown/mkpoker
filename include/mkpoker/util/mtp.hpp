@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <type_traits>
 #include <utility>
 
 namespace mkp
@@ -39,5 +40,11 @@ namespace mkp
         using Sequence = std::make_index_sequence<N>;
         return detail::int_array_impl_fn<T>(f, Sequence{});
     }
+
+    template <typename T>
+    struct forward_as_
+    {
+        [[nodiscard]] constexpr T&& operator()(T&& t) const noexcept { return std::forward<T>(t); }
+    };
 
 }    // namespace mkp
