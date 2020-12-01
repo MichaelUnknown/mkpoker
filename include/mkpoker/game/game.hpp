@@ -277,44 +277,15 @@ namespace mkp
         [[nodiscard]] constexpr int num_players_alive() const
         {
             return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0,
-                               [](const auto val, const auto elem) { return elem != gb_playerstate_t::OUT ? val + 1 : val; });
-            //uint8_t count = 0;
-            //for (const auto state : m_playerstate)
-            //{
-            //    if (state != gb_playerstate_t::OUT)
-            //        ++count;
-            //}
-            //return count;
+                               [](const int val, const gb_playerstate_t elem) { return elem != gb_playerstate_t::OUT ? val + 1 : val; });
         }
 
         // players who can act (i.e. ALIVE or INIT)
         [[nodiscard]] constexpr int num_players_actionable() const
         {
-            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const auto val, const auto elem) {
+            return std::reduce(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) {
                 return (elem == gb_playerstate_t::INIT || elem == gb_playerstate_t::ALIVE) ? val + 1 : val;
             });
-
-            //uint8_t count = 0;
-            //// count players who are not out nor all in
-            //for (uint8_t pos = 0; pos < N; ++pos)
-            //{
-            //    if (const auto state = m_playerstate[pos]; state == gb_playerstate_t::INIT)
-            //    {
-            //        // INIT will be set to ALLIN if player has no more chips, so INIT players will always be able to act
-            //        ++count;
-            //    }
-            //    else if (state == gb_playerstate_t::ALIVE)
-            //    {
-            //        // this player checked, called, or raised
-            //        // if chips committed are less than highest bet, he still can (must) call or even bet
-            //        if (m_chips_front[pos] < current_highest_bet())
-            //        {
-            //            ++count;
-            //        }
-            //    }
-            //    // else out / all in => do not count
-            //}
-            //return count;
         }
 
        public:
