@@ -138,40 +138,41 @@ namespace mkp
     };
 
     //
-    // base class representing just the cards
-    struct gb_cards_2p
+    // base representing just the cards
+    template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
+    class gb_cards
     {
+       public:
         const std::array<card, 5> m_board;
-        const std::array<hand_2c, 2> m_hands;
+        const std::array<hand_2c, N> m_hands;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // we only allow valid games
-        gb_cards_2p() = delete;
+        gb_cards() = delete;
 
         // create with array cards
-        constexpr explicit gb_cards_2p(const std::array<card, 5>& board, const std::array<hand_2c, 2>& hands)
-            : m_board(board), m_hands(hands)
+        constexpr explicit gb_cards(const std::array<card, 5>& board, const std::array<hand_2c, N>& hands) : m_board(board), m_hands(hands)
         {
-            //std::span<const hand_2c> hds(hands);
-            //std::span<const card> hds(&hands[0], 4);
-
-            if (cardset{board}.combine(hands[0].as_cardset()).combine(hands[1].as_cardset()).size() != 9)
+            if (cardset(board)
+                    .combine(std::accumulate(m_hands.cbegin(), m_hands.cend(), cardset{},
+                                             [](const auto val, const hand_2c elem) { return val.combine(elem.as_cardset()); }))
+                    .size() != 5 + N * 2)
             {
                 throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to 9");
             }
         }
 
         // create with span of cards (works for any contiguous container)
-        explicit gb_cards_2p(const std::span<const card> all_cards)
-            : m_board({all_cards[4], all_cards[5], all_cards[6], all_cards[7], all_cards[8]}),
-              m_hands({{{all_cards[0], all_cards[1]}, {all_cards[2], all_cards[3]}}})
+        explicit gb_cards(const std::span<const card> all_cards)
+            : m_board(make_array_fn<card, 5>([&](const std::size_t i) { return all_cards[i]; })),
+              m_hands(make_array_fn<hand_2c, N>([&](const std::size_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
         {
-            if (cardset{all_cards}.size() != 9)
+            if (all_cards.size() != 9 || cardset{all_cards}.size() != 9)
             {
-                throw std::runtime_error("gb_cards(array<card,9>): number of unique cards is not equal to 9");
+                throw std::runtime_error("gb_cards(span<card>): number of (unique) cards is not equal to 9");
             }
         }
 
@@ -200,6 +201,7 @@ namespace mkp
         }
 
         // debug info
+        // todo: N
         [[nodiscard]] auto str_cards() const noexcept
         {
             std::string ret{"("};
@@ -222,8 +224,8 @@ namespace mkp
 
         // provide operator for equality
 
-        constexpr auto operator<=>(const gb_cards_2p&) const noexcept = delete;
-        constexpr bool operator==(const gb_cards_2p&) const noexcept = default;
+        constexpr auto operator<=>(const gb_cards&) const noexcept = delete;
+        constexpr bool operator==(const gb_cards&) const noexcept = default;
     };
 
     //
@@ -260,7 +262,7 @@ namespace mkp
         // amount chips for pot size calculations
         [[nodiscard]] constexpr int32_t chips_committed() const
         {
-            return std::accumulate(m_chips_front.begin(), m_chips_front.end(), int32_t(0));
+            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
         }
 
         // total pot size for
@@ -269,7 +271,7 @@ namespace mkp
         // highest bet
         [[nodiscard]] constexpr int32_t current_highest_bet() const
         {
-            return *std::max_element(m_chips_front.begin(), m_chips_front.end());
+            return *std::max_element(m_chips_front.cbegin(), m_chips_front.cend());
         }
 
         // players alive (i.e. not OUT)
@@ -325,11 +327,11 @@ namespace mkp
 
         // create a new game with starting stacksize
         gamestate(const int32_t stacksize)
-            : m_chips_start(init_array<N>(stacksize)),
-              m_chips_behind(init_array_fn<N, int32_t>(
+            : m_chips_start(make_array<N>(stacksize)),
+              m_chips_behind(make_array_fn<int32_t, N>(
                   [&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
-              m_chips_front(init_array_fn<N, int32_t>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
-              m_playerstate(init_array<N>(gb_playerstate_t::INIT)),
+              m_chips_front(make_array_fn<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
+              m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
               m_pot(0),
               m_minraise(1000),
               m_current(round0_first_player),
@@ -389,11 +391,13 @@ namespace mkp
 
             // winner collects all
 
-            //const auto indices = init_array_fn<N, uint8_t>(std::identity{});
-            const auto indices = init_array_fn<N, uint8_t>(forward_as_<uint8_t>{});
+            // maybe check index_sequence_for...
+            // const auto indices = init_array_fn<N, uint8_t>(std::identity{});
+
+            const auto indices = make_array_fn<uint8_t, N>(forward_as<uint8_t>{});
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const auto index) { return m_playerstate[index] != gb_playerstate_t::OUT; });
-            return init_array_fn<N, int32_t>([&](std::size_t i) {
+            return make_array_fn<int32_t, N>([&](std::size_t i) {
                 return i == winner                                                               // invested: "- (chips_start - chips_now)"
                            ? m_pot + chips_committed() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
                            : m_chips_behind[i] - m_chips_start[i];                               // loser: -invested
@@ -562,22 +566,11 @@ namespace mkp
                 }
                 else
                 {
-                    m_gamestate = static_cast<gb_gamestate_t>(static_cast<int>(m_gamestate) + 1);
-                    m_minraise = 1000;
-                    std::transform(m_playerstate.begin(), m_playerstate.end(), m_playerstate.begin(), [](gb_playerstate_t st) {
-                        if (st == gb_playerstate_t::ALIVE)
-                            return gb_playerstate_t::INIT;
-                        else
-                            return st;
-                    });
-                    //for (auto& e : m_playerstate)
-                    //{
-                    //    if (e == gb_playerstate_t::ALIVE)
-                    //    {
-                    //        e = gb_playerstate_t::INIT;
-                    //    }
-                    //}
                     m_current = gb_pos_t::SB;
+                    m_minraise = 1000;
+                    m_gamestate = static_cast<gb_gamestate_t>(static_cast<int>(m_gamestate) + 1);
+                    std::transform(m_playerstate.begin(), m_playerstate.end(), m_playerstate.begin(),
+                                   [](gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
                 }
             }
             else
@@ -592,6 +585,7 @@ namespace mkp
                 } while (m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::OUT ||
                          m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::ALLIN);
             }
+
 #if !defined(NDEBUG)
             m_debug_alive = num_players_alive();
             m_debug_actionable = num_players_actionable();

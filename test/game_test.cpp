@@ -14,14 +14,14 @@ TEST(tgame, game_gb_cards_2p_ctor)
                                    card("7c"), card("6c"), card("9d"), card("9s")};
     std::vector<card> v_cards(a_cards.cbegin(), a_cards.cend());
 
-    const auto g1 = gb_cards_2p(v_cards);
-    const auto g2 = gb_cards_2p(v_cards);
+    const auto g1 = gb_cards<2>(v_cards);
+    const auto g2 = gb_cards<2>(v_cards);
 
     EXPECT_EQ(g1, g2);
 
     std::vector<card> v_duplicate(a_cards.cbegin(), a_cards.cend() - 1);
     v_duplicate.push_back(card("Ac"));
-    EXPECT_THROW(static_cast<void>(gb_cards_2p(v_duplicate)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gb_cards<2>(v_duplicate)), std::runtime_error);
 }
 
 TEST(tgame, game_ctor)
