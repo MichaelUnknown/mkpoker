@@ -179,7 +179,7 @@ namespace mkp
             }
             return ret;
 #else
-            const auto indices = make_array<int, N>(std::identity{});
+            constexpr auto indices = make_array<int, N>(std::identity{});
             return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const auto index) -> int {
                 return (m_playerstate[index] == gb_playerstate_t::INIT ||
                         (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))

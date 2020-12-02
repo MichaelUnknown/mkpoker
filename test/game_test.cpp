@@ -64,6 +64,10 @@ TEST(tgame, game_gamecards_ctor_span)
 TEST(tgame, game_gamestate_ctor)
 {
     EXPECT_THROW(static_cast<void>(gamestate<2>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<3>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<4>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<5>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<6>(999)), std::runtime_error);
 
     const auto g2 = gamestate<2>(2000);
     const auto g3 = gamestate<3>(2000);
@@ -173,7 +177,7 @@ TEST(tgame, game_gamestate_execute_action)
     game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
     game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
     game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    // state should be tirm bet
+    // state should be turn bet
     EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::TURN_BET);
     // everyone calls
     game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
@@ -206,6 +210,9 @@ TEST(tgame, game_gamestate_comp)
     EXPECT_EQ(games2[0], games2[0]);
     EXPECT_EQ(games2[0], games2[1]);
     EXPECT_NE(games2[0], games2[2]);
+    EXPECT_EQ(games2[0].str_state(), games2[0].str_state());
+    EXPECT_EQ(games2[0].str_state(), games2[1].str_state());
+    EXPECT_NE(games2[0].str_state(), games2[2].str_state());
 
     EXPECT_EQ(games3[0], games3[0]);
     EXPECT_EQ(games3[0], games3[1]);
@@ -222,4 +229,7 @@ TEST(tgame, game_gamestate_comp)
     EXPECT_EQ(games6[0], games6[0]);
     EXPECT_EQ(games6[0], games6[1]);
     EXPECT_NE(games6[0], games6[2]);
+    EXPECT_EQ(games6[0].str_state(), games6[0].str_state());
+    EXPECT_EQ(games6[0].str_state(), games6[1].str_state());
+    EXPECT_NE(games6[0].str_state(), games6[2].str_state());
 }

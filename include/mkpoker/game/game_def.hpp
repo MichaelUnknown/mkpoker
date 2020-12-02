@@ -122,9 +122,29 @@ namespace mkp
         gb_action_t m_action;
         gb_pos_t m_pos;
 
+        // it looks like clang 11 cannot construct player_action_t as POD, but needs an explicit ctor...
+        player_action_t() = default;
+        constexpr player_action_t(int32_t amount, gb_action_t action, gb_pos_t pos) noexcept
+            : m_amount(amount), m_action(action), m_pos(pos){};
+
         [[nodiscard]] std::string str() const { return to_string(m_action).append("(" + std::to_string(m_amount) + ")"); }
 
         constexpr auto operator<=>(const player_action_t&) const noexcept = delete;
         constexpr bool operator==(const player_action_t&) const noexcept = default;
     };
+
+    static_assert(std::is_standard_layout_v<player_action_t>, "player_action_t should have standard layout");
+    static_assert(std::is_trivial_v<player_action_t>, "player_action_t should be trivial");
+
+    static_assert(std::is_nothrow_constructible_v<player_action_t, int32_t, gb_action_t, gb_pos_t>,
+                  "player_action_t should be nothrow constructible from int32_t, gb_action_t and gb_pos_t");
+
+    static_assert(std::is_trivially_copyable_v<player_action_t>, "player_action_t should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_copy_constructible_v<player_action_t>,
+                  "player_action_t should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_move_constructible_v<player_action_t>,
+                  "player_action_t should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_copy_constructible_v<player_action_t>,
+                  "player_action_t should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_move_constructible_v<player_action_t>, "card should be trivially & nothrow copy/move constructible");
 }    // namespace mkp
