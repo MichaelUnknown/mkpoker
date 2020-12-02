@@ -352,11 +352,9 @@ namespace mkp
             return ret;
 #else
             // msvc 16.8 and gcc 10 support c++ 20 constexpr accumualte
-            return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0), [](const uint8_t r, const uint16_t value) -> uint8_t {
-                if (value > 0)
-                    return static_cast<uint8_t>(r + 1);
-                return r;
-            });
+            return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0),
+                                   [](const uint8_t r, const uint16_t value) -> uint8_t { return value > 0 ? r + 1 : r; });
+            // was: static_cast<uint8_t>(r + 1);
 #endif
         }
 

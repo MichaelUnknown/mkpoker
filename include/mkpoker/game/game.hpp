@@ -37,7 +37,7 @@ namespace mkp
             FLOP_BET,
             TURN_BET,
             RIVER_BET,
-            SHOWDOWN_FIN
+            GAME_FIN
         };
 
         // possible player states
@@ -75,8 +75,8 @@ namespace mkp
                     return std::string("TURN_BET");
                 case gb_gamestate_t::RIVER_BET:
                     return std::string("RIVER_BET");
-                case gb_gamestate_t::SHOWDOWN_FIN:
-                    return std::string("SHOWDOWN_FIN");
+                case gb_gamestate_t::GAME_FIN:
+                    return std::string("GAME_FIN");
 
                 default:
                     throw std::runtime_error("to_string(const gb_gamestate_t): invalid game state " +
@@ -159,7 +159,7 @@ namespace mkp
         // create with matching arrays
         constexpr explicit gb_cards(const std::array<card, 5>& board, const std::array<hand_2c, N>& hands) : m_board(board), m_hands(hands)
         {
-            if (std::reduce(m_hands.cbegin(), m_hands.cend(), cardset(board), [](cardset val, const hand_2c elem) {
+            if (std::accumulate(m_hands.cbegin(), m_hands.cend(), cardset(board), [](cardset val, const hand_2c elem) {
                     return val.combine(elem.as_cardset());
                 }).size() != 2 * N + 5)
             {
@@ -247,48 +247,61 @@ namespace mkp
         gb_gamestate_t m_gamestate;
 
 #if !defined(NDEBUG)
-        int m_debug_alive = num_players_alive();
-        int m_debug_actionable = num_players_actionable();
+        int m_debug_alive = num_alive();
+        int m_debug_actionable = num_actionable();
+        int m_debug_future = num_future_actionable();
 #endif
 
-        // which player starts betting in the first round? heads up: BB, otherweise: UTG
+        // which player starts betting in the first round? heads up: BB(==BTN), otherweise: UTG
         static constexpr auto round0_first_player = N > 2 ? gb_pos_t::UTG : gb_pos_t::BB;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // internal helpers
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        // chips to call for current player
-        [[nodiscard]] constexpr int32_t amount_to_call() const { return current_highest_bet() - m_chips_front[active_player()]; }
-
-        // amount chips for pot size calculations
-        [[nodiscard]] constexpr int32_t chips_committed() const
-        {
-            return std::reduce(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
-        }
-
-        // total pot size for
-        [[nodiscard]] constexpr int32_t total_pot_size() const { return m_pot + chips_committed(); }
-
         // highest bet
-        [[nodiscard]] constexpr int32_t current_highest_bet() const
+        [[nodiscard]] constexpr int32_t current_highest_bet() const noexcept
         {
             return *std::max_element(m_chips_front.cbegin(), m_chips_front.cend());
         }
 
+        // amount chips for pot size calculations
+        [[nodiscard]] constexpr int32_t chips_committed() const noexcept
+        {
+            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+        }
+
+        // chips to call for current player
+        [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
+
+        // total pot size for
+        [[nodiscard]] constexpr int32_t total_pot_size() const noexcept { return m_pot + chips_committed(); }
+
         // players alive (i.e. not OUT)
-        [[nodiscard]] constexpr int num_players_alive() const
+        [[nodiscard]] constexpr int num_alive() const noexcept
         {
             return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
                 return elem != gb_playerstate_t::OUT ? val + 1 : val;
             });
         }
 
-        // players who can act (i.e. ALIVE or INIT)
-        [[nodiscard]] constexpr int num_players_actionable() const
+        // players who can act (i.e. INIT or ALIVE && able to call/bet)
+        [[nodiscard]] constexpr int num_actionable() const noexcept
         {
-            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) {
-                return (elem == gb_playerstate_t::INIT || elem == gb_playerstate_t::ALIVE) ? val + 1 : val;
+            const auto indices = make_array<int, N>(std::identity{});
+            return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const auto index) -> int {
+                return (m_playerstate[index] == gb_playerstate_t::INIT ||
+                        (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
+                           ? val + 1
+                           : val;
+            });
+        }
+
+        // players who can act in the next betting round (i.e. not OUT or ALLIN)
+        [[nodiscard]] constexpr int num_future_actionable() const noexcept
+        {
+            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
+                return elem != gb_playerstate_t::OUT && elem != gb_playerstate_t::ALLIN ? val + 1 : val;
             });
         }
 
@@ -300,11 +313,31 @@ namespace mkp
         gamestate() = delete;
 
         // create a new game with starting stacksize
+        template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
         gamestate(const int32_t stacksize)
             : m_chips_start(make_array<N>(stacksize)),
               m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
+              m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
+              m_pot(0),
+              m_minraise(1000),
+              m_current(round0_first_player),
+              m_gamestate(gb_gamestate_t::PREFLOP_BET)
+        {
+            if (stacksize < 1000)
+            {
+                throw std::runtime_error("gamestate(const int): stacksize below 1000 mBB");
+            }
+        }
+
+        // create a new game with starting stacksize, specialization for heads up
+        template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
+        gamestate(const int32_t stacksize)
+            : m_chips_start(make_array<N>(stacksize)),
+              m_chips_behind(
+                  make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize; })),
+              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 1000 : i == 1 ? 500 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
               m_pot(0),
               m_minraise(1000),
@@ -337,30 +370,30 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // is the game finished?
-        [[nodiscard]] constexpr bool in_terminal_state() const noexcept { return m_gamestate == gb_gamestate_t::SHOWDOWN_FIN; }
+        [[nodiscard]] constexpr bool in_terminal_state() const noexcept { return m_gamestate == gb_gamestate_t::GAME_FIN; }
 
         // do we have a showdown or did all but one player fold
-        [[nodiscard]] constexpr bool is_showdown() const { return num_players_alive() > 1; }
+        [[nodiscard]] constexpr bool is_showdown() const noexcept { return num_alive() > 1; }
 
         // return current gamestate
-        [[nodiscard]] constexpr gb_gamestate_t gamestate_v() const { return m_gamestate; }
+        [[nodiscard]] constexpr gb_gamestate_t gamestate_v() const noexcept { return m_gamestate; }
 
         // return current player
-        [[nodiscard]] constexpr uint8_t active_player() const { return static_cast<uint8_t>(m_current); }
+        [[nodiscard]] constexpr uint8_t active_player() const noexcept { return static_cast<uint8_t>(m_current); }
 
         // return current player
-        [[nodiscard]] constexpr gb_pos_t active_player_v() const { return m_current; }
+        [[nodiscard]] constexpr gb_pos_t active_player_v() const noexcept { return m_current; }
 
         // return payout on terminal state (only for states with no showdown required)
-        [[nodiscard]] constexpr std::array<int32_t, N> get_payouts() const
+        [[nodiscard]] constexpr std::array<int32_t, N> effective_payouts() const
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("get_payouts(): game not in terminal state");
+                throw std::runtime_error("effective_payouts(): game not in terminal state");
             }
             if (is_showdown())
             {
-                throw std::runtime_error("get_payouts(): terminale state involves showdown but no cards are given");
+                throw std::runtime_error("effective_payouts(): terminale state involves showdown but no cards are given");
             }
 
             // winner collects all
@@ -379,20 +412,20 @@ namespace mkp
         }
 
         // return values required for pot size calculations
-        [[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const
+        [[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const noexcept
         {
             return std::make_pair(total_pot_size(), amount_to_call());
         }
 
         // get all possible actions
-        [[nodiscard]] std::vector<player_action_t> get_possible_actions() const
+        [[nodiscard]] std::vector<player_action_t> get_possible_actions() const noexcept
         {
             std::vector<player_action_t> ret;
             uint8_t pos = active_player();
 
             // early exit if player already folded or all in or game finished
             if (m_playerstate[pos] == gb_playerstate_t::OUT || m_playerstate[pos] == gb_playerstate_t::ALLIN ||
-                m_gamestate == gb_gamestate_t::SHOWDOWN_FIN)
+                m_gamestate == gb_gamestate_t::GAME_FIN)
             {
                 return ret;
             }
@@ -477,23 +510,29 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // update game according to action
-        constexpr void execute_action(const player_action_t& pa)
+        constexpr void execute_action(const player_action_t& pa) noexcept(
+#if !defined(NDEBUG)
+            false
+#else
+            true
+#endif
+        )
         {
             const uint8_t pos = static_cast<uint8_t>(pa.m_pos);
 
+#if !defined(NDEBUG)
+            // check if active player is a match
             if (m_current != pa.m_pos)
             {
                 throw std::runtime_error("execute_action(): active player of action and game state differ");
-            };
+            }
 
-#if !defined(NDEBUG)
             // check if action is valid (expensive)
-            const auto all_actions = this->get_possible_actions();
-            if (std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
+            if (const auto all_actions = this->get_possible_actions();
+                std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
             {
                 throw std::runtime_error("execute_action(): tried to execute invalid action");
             }
-
 #endif
 
             // adjust chips and player state if necessary
@@ -508,16 +547,7 @@ namespace mkp
                     m_playerstate[pos] = gb_playerstate_t::ALIVE;
                     break;
                 case gb_action_t::CALL:
-                case gb_action_t::RAISE: {
-                    if (const int32_t raise_size = pa.m_amount + m_chips_front[pos] - current_highest_bet(); raise_size > m_minraise)
-                    {
-                        m_minraise = raise_size;
-                    }
-                    m_chips_behind[pos] -= pa.m_amount;
-                    m_chips_front[pos] += pa.m_amount;
-                    m_playerstate[pos] = gb_playerstate_t::ALIVE;
-                    break;
-                }
+                case gb_action_t::RAISE:
                 case gb_action_t::ALLIN:
                     if (const int32_t raise_size = pa.m_amount + m_chips_front[pos] - current_highest_bet(); raise_size > m_minraise)
                     {
@@ -525,36 +555,49 @@ namespace mkp
                     }
                     m_chips_behind[pos] -= pa.m_amount;
                     m_chips_front[pos] += pa.m_amount;
-                    m_playerstate[pos] = gb_playerstate_t::ALLIN;
+                    m_playerstate[pos] = m_chips_behind[pos] == 0 ? gb_playerstate_t::ALLIN : gb_playerstate_t::ALIVE;
                     break;
             }
 
-            if (num_players_alive() == 1)
+#if !defined(NDEBUG)
+            m_debug_alive = num_alive();
+            m_debug_actionable = num_actionable();
+            m_debug_future = num_future_actionable();
+#endif
+
+            if (const auto num_act = num_actionable(); num_alive() < 2 || (num_act == 0 && num_future_actionable() < 2))
             {
                 //
                 // the entire hand ended
                 //
 
-                m_gamestate = gb_gamestate_t::SHOWDOWN_FIN;
+                m_gamestate = gb_gamestate_t::GAME_FIN;
             }
-            else if (num_players_actionable() == 0)
+            else if (num_act == 0)
             {
                 //
-                // this round ended
-                // reset minbet and players who are not all in, new active player is always SB
-                // but do nothinng, when the game is over
+                // this round ended, reset minbet and player state
+                //
 
                 if (m_gamestate == gb_gamestate_t::RIVER_BET)
                 {
-                    m_gamestate = gb_gamestate_t::SHOWDOWN_FIN;
+                    // do nothinng, when the game is over
+                    m_gamestate = gb_gamestate_t::GAME_FIN;
                 }
                 else
                 {
+                    // active player at round start is always SB unless folded or allin
                     m_current = gb_pos_t::SB;
+                    while (m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::OUT ||
+                           m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::ALLIN)
+                    {
+                        m_current = static_cast<gb_pos_t>((static_cast<uint8_t>(m_current) + 1) % N);
+                    }
+
                     m_minraise = 1000;
                     m_gamestate = static_cast<gb_gamestate_t>(static_cast<int>(m_gamestate) + 1);
                     std::transform(m_playerstate.begin(), m_playerstate.end(), m_playerstate.begin(),
-                                   [](gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
+                                   [](const gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
                 }
             }
             else
@@ -571,8 +614,9 @@ namespace mkp
             }
 
 #if !defined(NDEBUG)
-            m_debug_alive = num_players_alive();
-            m_debug_actionable = num_players_actionable();
+            m_debug_alive = num_alive();
+            m_debug_actionable = num_actionable();
+            m_debug_future = num_future_actionable();
 #endif
         }
 
