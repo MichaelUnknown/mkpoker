@@ -135,6 +135,9 @@ namespace mkp
         gb_pos_t m_pos;
 
         [[nodiscard]] std::string str() const { return to_string(m_action).append("(" + std::to_string(m_amount) + ")"); }
+
+        constexpr auto operator<=>(const player_action_t&) const noexcept = delete;
+        constexpr bool operator==(const player_action_t&) const noexcept = default;
     };
 
     //
@@ -166,8 +169,8 @@ namespace mkp
 
         // create with span of cards (works for any contiguous container)
         explicit gb_cards(const std::span<const card> all_cards)
-            : m_board(make_array_fn<card, 5>([&](const uint8_t i) { return all_cards[i]; })),
-              m_hands(make_array_fn<hand_2c, N>([&](const uint8_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
+            : m_board(make_array<card, 5>([&](const uint8_t i) { return all_cards[i]; })),
+              m_hands(make_array<hand_2c, N>([&](const uint8_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
         {
             if (all_cards.size() != 2 * N + 5 || cardset(all_cards).size() != 2 * N + 5)
             {
@@ -299,9 +302,9 @@ namespace mkp
         // create a new game with starting stacksize
         gamestate(const int32_t stacksize)
             : m_chips_start(make_array<N>(stacksize)),
-              m_chips_behind(make_array_fn<int32_t, N>(
-                  [&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
-              m_chips_front(make_array_fn<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
+              m_chips_behind(
+                  make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
+              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
               m_pot(0),
               m_minraise(1000),
@@ -363,12 +366,12 @@ namespace mkp
             // winner collects all
 
             // maybe check index_sequence_for...
-            // const auto indices = init_array_fn<N, uint8_t>(std::identity{});
+            // const auto indices = init_array<N, uint8_t>(std::identity{});
 
-            const auto indices = make_array_fn<uint8_t, N>(forward_as<uint8_t>{});
+            const auto indices = make_array<int, N>(std::identity{});
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const auto index) { return m_playerstate[index] != gb_playerstate_t::OUT; });
-            return make_array_fn<int32_t, N>([&](std::size_t i) {
+            return make_array<int32_t, N>([&](std::size_t i) {
                 return i == winner                                                               // invested: "- (chips_start - chips_now)"
                            ? m_pot + chips_committed() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
                            : m_chips_behind[i] - m_chips_start[i];                               // loser: -invested
@@ -480,8 +483,18 @@ namespace mkp
 
             if (m_current != pa.m_pos)
             {
-                throw std::runtime_error("active player of action and game state differ");
+                throw std::runtime_error("execute_action(): active player of action and game state differ");
             };
+
+#if !defined(NDEBUG)
+            // check if action is valid (expensive)
+            const auto all_actions = this->get_possible_actions();
+            if (std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
+            {
+                throw std::runtime_error("execute_action(): tried to execute invalid action");
+            }
+
+#endif
 
             // adjust chips and player state if necessary
             switch (pa.m_action)

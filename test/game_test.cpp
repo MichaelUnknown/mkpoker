@@ -10,10 +10,10 @@
 
 using namespace mkp;
 
-TEST(tgame, gb_cards_ctor)
+TEST(tgame, game_gamecards_ctor)
 {
-    const auto cards = make_array_fn<card, 17>([](const uint8_t i) { return card(i); });
-    const auto same_cards = make_array_fn<card, 17>([](auto) { return card("Ac"); });
+    const auto cards = make_array<card, 17>([](const uint8_t i) { return card(i); });
+    const auto same_cards = make_array<card, 17>([](auto) { return card("Ac"); });
     std::vector<card> v_cards(cards.cbegin(), cards.cend());
 
     EXPECT_THROW(static_cast<void>(gb_cards<2>(cards)), std::runtime_error);
@@ -32,7 +32,7 @@ TEST(tgame, gb_cards_ctor)
     EXPECT_THROW(static_cast<void>(gb_cards<6>(same_cards)), std::runtime_error);
 }
 
-TEST(tgame, game_ctor)
+TEST(tgame, game_gamestate_ctor)
 {
     EXPECT_THROW(static_cast<void>(gamestate<2>(999)), std::runtime_error);
 
@@ -59,4 +59,16 @@ TEST(tgame, game_ctor)
     EXPECT_THROW(static_cast<void>(g4.get_payouts()), std::runtime_error);
     EXPECT_THROW(static_cast<void>(g5.get_payouts()), std::runtime_error);
     EXPECT_THROW(static_cast<void>(g6.get_payouts()), std::runtime_error);
+}
+
+TEST(tgame, game_gamestate_execute_action)
+{
+    auto start = gamestate<2>(3000);
+    EXPECT_GT(start.get_possible_actions().size(), 0);
+    EXPECT_THROW(start.execute_action(player_action_t{1499, gb_action_t::RAISE, start.active_player_v()}), std::runtime_error);
+
+    start.execute_action(player_action_t{1500, gb_action_t::RAISE, start.active_player_v()});
+    EXPECT_EQ(start.active_player(), 0);
+    EXPECT_EQ(start.in_terminal_state(), false);
+    EXPECT_EQ(start.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
 }
