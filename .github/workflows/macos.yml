@@ -20,11 +20,11 @@ jobs:
 
     - name: configure debug
       shell: bash
-      run: cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug
+      run: cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
 
     - name: build debug
       shell: bash
-      run: cmake --build build/debug -j4
+      run: cmake --build build/debug -j4 -v
 
     - name: run tests debug
       shell: bash
@@ -39,7 +39,7 @@ jobs:
       
     - name: build release
       shell: bash
-      run: cmake --build build/release -j4
+      run: cmake --build build/release -j4 -v
 
     - name: run tests release
       shell: bash

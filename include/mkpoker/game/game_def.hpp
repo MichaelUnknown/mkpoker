@@ -48,72 +48,72 @@ namespace mkp
             ALLIN
         };
 
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // string conversions
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] std::string to_string(const gb_gamestate_t gs)
-        {
-            switch (gs)
-            {
-                case gb_gamestate_t::PREFLOP_BET:
-                    return std::string("PREFLOP_BET");
-                case gb_gamestate_t::FLOP_BET:
-                    return std::string("FLOP_BET");
-                case gb_gamestate_t::TURN_BET:
-                    return std::string("TURN_BET");
-                case gb_gamestate_t::RIVER_BET:
-                    return std::string("RIVER_BET");
-                case gb_gamestate_t::GAME_FIN:
-                    return std::string("GAME_FIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_gamestate_t): invalid game state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(gs)>>(gs)));
-            }
-        }
-
-        [[nodiscard]] std::string to_string(const gb_playerstate_t ps)
-        {
-            switch (ps)
-            {
-                case gb_playerstate_t::INIT:
-                    return std::string("INIT");
-                case gb_playerstate_t::OUT:
-                    return std::string("OUT");
-                case gb_playerstate_t::ALIVE:
-                    return std::string("ALIVE");
-                case gb_playerstate_t::ALLIN:
-                    return std::string("ALLIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(ps)>>(ps)));
-            }
-        }
-
-        [[nodiscard]] std::string to_string(const gb_action_t a)
-        {
-            switch (a)
-            {
-                case gb_action_t::FOLD:
-                    return std::string("FOLD");
-                case gb_action_t::CHECK:
-                    return std::string("CHECK");
-                case gb_action_t::CALL:
-                    return std::string("CALL");
-                case gb_action_t::RAISE:
-                    return std::string("RAISE");
-                case gb_action_t::ALLIN:
-                    return std::string("ALLIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(a)>>(a)));
-            }
-        }
-
     }    // namespace constants
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // string conversions
+    ///////////////////////////////////////////////////////////////////////////////////////
+
+    [[nodiscard]] std::string to_string(const gb_gamestate_t gs)
+    {
+        switch (gs)
+        {
+            case gb_gamestate_t::PREFLOP_BET:
+                return std::string("PREFLOP_BET");
+            case gb_gamestate_t::FLOP_BET:
+                return std::string("FLOP_BET");
+            case gb_gamestate_t::TURN_BET:
+                return std::string("TURN_BET");
+            case gb_gamestate_t::RIVER_BET:
+                return std::string("RIVER_BET");
+            case gb_gamestate_t::GAME_FIN:
+                return std::string("GAME_FIN");
+
+            default:
+                throw std::runtime_error("to_string(const gb_gamestate_t): invalid game state " +
+                                         std::to_string(static_cast<std::underlying_type_t<decltype(gs)>>(gs)));
+        }
+    }
+
+    [[nodiscard]] std::string to_string(const gb_playerstate_t ps)
+    {
+        switch (ps)
+        {
+            case gb_playerstate_t::INIT:
+                return std::string("INIT");
+            case gb_playerstate_t::OUT:
+                return std::string("OUT");
+            case gb_playerstate_t::ALIVE:
+                return std::string("ALIVE");
+            case gb_playerstate_t::ALLIN:
+                return std::string("ALLIN");
+
+            default:
+                throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
+                                         std::to_string(static_cast<std::underlying_type_t<decltype(ps)>>(ps)));
+        }
+    }
+
+    [[nodiscard]] std::string to_string(const gb_action_t a)
+    {
+        switch (a)
+        {
+            case gb_action_t::FOLD:
+                return std::string("FOLD");
+            case gb_action_t::CHECK:
+                return std::string("CHECK");
+            case gb_action_t::CALL:
+                return std::string("CALL");
+            case gb_action_t::RAISE:
+                return std::string("RAISE");
+            case gb_action_t::ALLIN:
+                return std::string("ALLIN");
+
+            default:
+                throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
+                                         std::to_string(static_cast<std::underlying_type_t<decltype(a)>>(a)));
+        }
+    }
 
     // struct for player actions
     struct player_action_t
