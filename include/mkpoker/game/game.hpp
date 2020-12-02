@@ -3,147 +3,24 @@
 #include <mkpoker/base/card.hpp>
 #include <mkpoker/base/cardset.hpp>
 #include <mkpoker/base/hand.hpp>
-#include <mkpoker/holdem/holdem_evaluation.hpp>
+#include <mkpoker/game/game_def.hpp>
 #include <mkpoker/util/mtp.hpp>
 
-#include <algorithm>
-#include <array>
-#include <cstdint>
-#include <numeric>
-#include <span>
-#include <stdexcept>
-#include <type_traits>
-#include <vector>
+#include <algorithm>      // std::find
+#include <array>          //
+#include <cstdint>        //
+#include <functional>     // std::identity
+#include <numeric>        // std::accumulate
+#include <span>           //
+#include <stdexcept>      //
+#include <type_traits>    // std::enable_if
+#include <vector>         //
 
 namespace mkp
 {
-    inline namespace constants
-    {
-        // positions
-        enum class gb_pos_t : uint8_t
-        {
-            SB = 0,
-            BB,
-            UTG,
-            MP,
-            CO,
-            BTN
-        };
-
-        // possible game states
-        enum class gb_gamestate_t : uint8_t
-        {
-            PREFLOP_BET = 0,
-            FLOP_BET,
-            TURN_BET,
-            RIVER_BET,
-            GAME_FIN
-        };
-
-        // possible player states
-        enum class gb_playerstate_t : uint8_t
-        {
-            INIT = 0,
-            OUT,
-            ALIVE,
-            ALLIN
-        };
-
-        // all possible actions (F/X/C/R/A)
-        enum class gb_action_t : uint8_t
-        {
-            FOLD = 0,
-            CHECK,
-            CALL,
-            RAISE,
-            ALLIN
-        };
-
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // string conversions
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-        [[nodiscard]] std::string to_string(const gb_gamestate_t gs)
-        {
-            switch (gs)
-            {
-                case gb_gamestate_t::PREFLOP_BET:
-                    return std::string("PREFLOP_BET");
-                case gb_gamestate_t::FLOP_BET:
-                    return std::string("FLOP_BET");
-                case gb_gamestate_t::TURN_BET:
-                    return std::string("TURN_BET");
-                case gb_gamestate_t::RIVER_BET:
-                    return std::string("RIVER_BET");
-                case gb_gamestate_t::GAME_FIN:
-                    return std::string("GAME_FIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_gamestate_t): invalid game state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(gs)>>(gs)));
-            }
-        }
-
-        [[nodiscard]] std::string to_string(const gb_playerstate_t ps)
-        {
-            switch (ps)
-            {
-                case gb_playerstate_t::INIT:
-                    return std::string("INIT");
-                case gb_playerstate_t::OUT:
-                    return std::string("OUT");
-                case gb_playerstate_t::ALIVE:
-                    return std::string("ALIVE");
-                case gb_playerstate_t::ALLIN:
-                    return std::string("ALLIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(ps)>>(ps)));
-            }
-        }
-
-        // string conversion
-        [[nodiscard]] std::string to_string(const gb_action_t a)
-        {
-            switch (a)
-            {
-                case gb_action_t::FOLD:
-                    return std::string("FOLD");
-                case gb_action_t::CHECK:
-                    return std::string("CHECK");
-                case gb_action_t::CALL:
-                    return std::string("CALL");
-                case gb_action_t::RAISE:
-                    return std::string("RAISE");
-                case gb_action_t::ALLIN:
-                    return std::string("ALLIN");
-
-                default:
-                    throw std::runtime_error("to_string(const gb_playerstate_t): invalid player state " +
-                                             std::to_string(static_cast<std::underlying_type_t<decltype(a)>>(a)));
-            }
-        }
-
-    }    // namespace constants
-
-    // player_action, struct for logging actions
-    struct player_action_t
-    {
-        int32_t m_amount;
-        gb_action_t m_action;
-        gb_pos_t m_pos;
-
-        [[nodiscard]] std::string str() const { return to_string(m_action).append("(" + std::to_string(m_amount) + ")"); }
-
-        constexpr auto operator<=>(const player_action_t&) const noexcept = delete;
-        constexpr bool operator==(const player_action_t&) const noexcept = default;
-    };
-
-    //
-    // base representing just the cards
+    // represents just the cards of a game
     template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
-    class gb_cards
+    class gamecards
     {
        public:
         const std::array<card, 5> m_board;
@@ -154,27 +31,27 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // we only allow valid objects
-        gb_cards() = delete;
+        gamecards() = delete;
 
         // create with matching arrays
-        constexpr explicit gb_cards(const std::array<card, 5>& board, const std::array<hand_2c, N>& hands) : m_board(board), m_hands(hands)
+        constexpr explicit gamecards(const std::array<card, 5>& board, const std::array<hand_2c, N>& hands) : m_board(board), m_hands(hands)
         {
             if (std::accumulate(m_hands.cbegin(), m_hands.cend(), cardset(board), [](cardset val, const hand_2c elem) {
                     return val.combine(elem.as_cardset());
                 }).size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
+                throw std::runtime_error("gamecards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
         // create with span of cards (works for any contiguous container)
-        explicit gb_cards(const std::span<const card> all_cards)
+        explicit gamecards(const std::span<const card> all_cards)
             : m_board(make_array<card, 5>([&](const uint8_t i) { return all_cards[i]; })),
               m_hands(make_array<hand_2c, N>([&](const uint8_t i) { return hand_2c(all_cards[2 * i + 5], all_cards[2 * i + 6]); }))
         {
             if (all_cards.size() != 2 * N + 5 || cardset(all_cards).size() != 2 * N + 5)
             {
-                throw std::runtime_error("gb_cards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
+                throw std::runtime_error("gamecards(array<card,N>): number of unique cards is not equal to " + std::to_string(2 * N + 5));
             }
         }
 
@@ -226,13 +103,13 @@ namespace mkp
 
         // provide operator for equality
 
-        constexpr auto operator<=>(const gb_cards&) const noexcept = delete;
-        constexpr bool operator==(const gb_cards&) const noexcept = default;
+        constexpr auto operator<=>(const gamecards&) const noexcept = delete;
+        constexpr bool operator==(const gamecards&) const noexcept = default;
     };
 
-    //
-    // class representing a game state without cards / just state
+    // class representing a game state without cards
     // chips / stack size are in milli BBs, meaning 1000 equals 1 big blind
+    // todo: remove pot
     template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
     class gamestate
     {
