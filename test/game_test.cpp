@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>    // test clang
 #include <span>
 #include <stdexcept>
+#include <utility>    // test clang
 #include <vector>
 
 #include <gtest/gtest.h>
