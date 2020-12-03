@@ -102,14 +102,17 @@ jobs:
           echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
           echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
           if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
-            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}" >> $GITHUB_ENV
-              if [[  ${{matrix.cfg.os}} == 'ubuntu-20.04' && ${{matrix.cfg.cxx}} == 'clang++-11' ]]; then
-                echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/llvm/include/c++/v1\"" >> $GITHUB_ENV
-                echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/llvm/lib -Wl,-rpath,$GITHUB_WORKSPACE/llvm/lib -lc++abi\"" >> $GITHUB_ENV
-              elif [[  ${{matrix.cfg.os}} == 'macos-latest' ]]; then
-                echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
-                echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
-              fi
+            if [[ ${{matrix.cfg.cxx}} == 'gcc-10' && ${{matrix.cfg.build_type}} == 'Debug' ]]; then
+              cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
+            fi
+            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
+            if [[  ${{matrix.cfg.os}} == 'ubuntu-20.04' && ${{matrix.cfg.cxx}} == 'clang++-11' ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/llvm/lib -Wl,-rpath,$GITHUB_WORKSPACE/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+            elif [[  ${{matrix.cfg.os}} == 'macos-latest' ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+            fi
           else
             echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
           fi
@@ -149,7 +152,7 @@ jobs:
           cmake \
           --build build \
           ${{ env.MKP_MULTI }} \
-          -j4 -v
+          -j1 -v
 
       # run tests with very verbose output
       - 

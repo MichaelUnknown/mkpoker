@@ -27,7 +27,7 @@ target_include_directories(mkpoker-mkp SYSTEM INTERFACE $<INSTALL_INTERFACE:$<IN
 target_compile_features(mkpoker-mkp INTERFACE cxx_std_20)
 target_compile_options(mkpoker-mkp INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive- /std:c++latest>)
 target_compile_options(mkpoker-mkp INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
-target_compile_options(mkpoker-mkp INTERFACE $<$<CXX_COMPILER_ID:GNU>:Wall -Wextra -Wpedantic>)
+target_compile_options(mkpoker-mkp INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
 
 
 # tests etc., execute only if this is the main project
