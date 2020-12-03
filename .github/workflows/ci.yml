@@ -51,45 +51,41 @@ jobs:
             cc: clang-11
             cxx: clang++-11
             libcxx: true
-          - 
-            name: "ubuntu clang 11 libcxx Release"
-            os: ubuntu-20.04
-            build_type: Release
-            cc: clang-11
-            cxx: clang++-11
-            libcxx: true
+          #- 
+          #  name: "ubuntu clang 11 libcxx Release"
+          #  os: ubuntu-20.04
+          #  build_type: Release
+          #  cc: clang-11
+          #  cxx: clang++-11
+          #  libcxx: true
 
           # clang 11 on macos
           - 
             name: "macos clang 11 Debug"
-            os: macos-latest
+            os: macos-11.0
             build_type: Debug
             cc: /usr/local/opt/llvm/bin/clang-11
             cxx: /usr/local/opt/llvm/bin/clang++
-            libcxx: true
-          - 
-            name: "macos clang 11 Release"
-            os: macos-latest
-            build_type: Release
-            cc: /usr/local/opt/llvm/bin/clang-11
-            cxx: /usr/local/opt/llvm/bin/clang++
-            libcxx: true
+          #- 
+          #  name: "macos clang 11 Release"
+          #  os: macos-11.0
+          #  build_type: Release
+          #  cc: /usr/local/opt/llvm/bin/clang-11
+          #  cxx: /usr/local/opt/llvm/bin/clang++
 
           # apple clang 12
           - 
             name: "macos apple clang 12 Debug"
-            os: macos-latest
+            os: macos-11.0
             build_type: Debug
             cc: clang
             cxx: clang++
-            libcxx: true
-          - 
-            name: "macos apple clang 12 Release"
-            os: macos-latest
-            build_type: Release
-            cc: clang
-            cxx: clang++
-            libcxx: true
+          #- 
+          #  name: "macos apple clang 12 Release"
+          #  os: macos-11.0
+          #  build_type: Release
+          #  cc: clang
+          #  cxx: clang++
 
           # msvc
           - 
@@ -126,9 +122,12 @@ jobs:
             fi
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
 
-            if [[ "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
+            if [[ ${{matrix.cfg.os}} == 'ubuntu-20.04' && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -I $GITHUB_WORKSPACE/local/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/local/lib -Wl,-rpath,$GITHUB_WORKSPACE/local/lib -lc++abi\"" >> $GITHUB_ENV
+            elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -I /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             fi
 
           else
@@ -151,8 +150,32 @@ jobs:
         working-directory: "${{ env.HOME }}"
         shell: bash
         run: |
-          chmod +x $GITHUB_WORKSPACE/script/build_libcxx.sh
-          $GITHUB_WORKSPACE/script/build_libcxx.sh
+          echo "building the latest libcxx from source..."
+          git clone https://github.com/llvm/llvm-project
+
+          INSTALL_TARGET=`pwd`/local
+          mkdir "${INSTALL_TARGET}"
+          cd llvm-project
+
+          cmake \
+            -S libcxx \
+            -B buildcxx \
+            -D CMAKE_C_COMPILER=${CC} \
+            -D CMAKE_CXX_COMPILER=${CXX} \
+            -D "CMAKE_INSTALL_PREFIX=${INSTALL_TARGET}" \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build buildcxx -j2 -v
+          cmake --build buildcxx --target install
+
+          cmake \
+            -S libcxxabi \
+            -B buildcxxabi \
+            -D CMAKE_C_COMPILER=${CC} \
+            -D CMAKE_CXX_COMPILER=${CXX} \
+            -D "CMAKE_INSTALL_PREFIX=${INSTALL_TARGET}" \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build buildcxxabi -j2 -v
+          cmake --build buildcxxabi --target install
 
       # at the moment, only msvc is multi config
       # other builds need the build_type set during config
