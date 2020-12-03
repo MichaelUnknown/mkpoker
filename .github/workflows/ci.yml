@@ -1,0 +1,166 @@
+name: CI
+
+on: 
+  - push
+  - pull_request
+
+jobs: 
+  build: 
+    name: "${{ matrix.cfg.name }}"
+    runs-on: "${{ matrix.cfg.os }}"
+    strategy: 
+      fail-fast: false
+      matrix: 
+        cfg:
+          # gcc 10
+          - 
+            name: "ubuntu gcc 10 Debug"
+            os: ubuntu-20.04
+            build_type: Debug
+            cc: gcc-10
+            cxx: g++-10
+            cov: abcasfdadsfasdfasdfasdfasdfsadfasdfassdfsadfdsaf
+          - 
+            name: "ubuntu gcc 10 Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: gcc-10
+            cxx: g++-10
+
+          # clang 11 on ubuntu
+          - 
+            name: "ubuntu clang 11 Debug"
+            os: ubuntu-20.04
+            build_type: Debug
+            cc: clang-11
+            cxx: clang++-11
+          - 
+            name: "ubuntu clang 11 Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: clang-11
+            cxx: clang++-11
+
+          # clang 11 on macos
+          - 
+            name: "macos clang 11 Debug"
+            os: macos-latest
+            build_type: Debug
+            cc: /usr/local/opt/llvm/bin/clang-11
+            cxx: /usr/local/opt/llvm/bin/clang++
+          - 
+            name: "macos clang 11 Release"
+            os: macos-latest
+            build_type: Release
+            cc: /usr/local/opt/llvm/bin/clang-11
+            cxx: /usr/local/opt/llvm/bin/clang++
+
+          # apple clang 12
+          - 
+            name: "macos apple clang 12 Debug"
+            os: macos-latest
+            build_type: Debug
+            cc: clang
+            cxx: clang++
+          - 
+            name: "macos apple clang 12 Release"
+            os: macos-latest
+            build_type: Release
+            cc: clang
+            cxx: clang++
+
+          # msvc
+          - 
+            name: "windows msvc 2019 Debug"
+            os: windows-latest
+            build_type: Debug
+            cc: cl
+            cxx: cl
+          - 
+            name: "windows msvc 2019 Release"
+            os: windows-latest
+            build_type: Release
+            cc: cl
+            cxx: cl
+
+    steps: 
+      - 
+        uses: actions/checkout@v2
+
+      # set env variables according to os/compiler/build etc.
+      -
+        name: "set environment variables"
+        shell: bash
+        run: |
+          echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
+          echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
+          if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
+            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}" >> $GITHUB_ENV
+              if [[  ${{matrix.cfg.os}} == 'ubuntu-20.04' && ${{matrix.cfg.cxx}} == 'clang++-11' ]]; then
+                echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/llvm/include/c++/v1\"" >> $GITHUB_ENV
+                echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/llvm/lib -Wl,-rpath,$GITHUB_WORKSPACE/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+              elif [[  ${{matrix.cfg.os}} == 'macos-latest' ]]; then
+                echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+                echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+              fi
+          else
+            echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
+          fi
+
+      # install clang 11 and libc++ if necessary
+      - 
+        name: "install clang 11"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-11')
+        working-directory: "${{ env.HOME }}"
+        shell: bash
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 11
+      - 
+        name: "install libc++"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-11')
+        working-directory: "${{ env.HOME }}"
+        shell: bash
+        run: |
+          chmod +x $GITHUB_WORKSPACE/script/build_libc++.sh
+          $GITHUB_WORKSPACE/script/build_libc++.sh
+
+      # at the moment, only msvc is multi config
+      # other builds need the build_type set during config
+      - 
+        name: configure
+        shell: bash
+        run: |
+          cmake \
+          -S . \
+          -B build \
+          ${{ env.CXX_ARGS }} \
+          ${{ env.LDD_ARGS }} \
+          ${{ env.MKP_MONO }}
+
+      # at the moment, only msvc is multi config
+      # pass --config $build_type als arg
+      - 
+        name: build
+        shell: bash
+        run: |
+          cmake \
+          --build build \
+          ${{ env.MKP_MULTI }} \
+          -j4 -v
+
+      # run tests with very verbose output
+      - 
+        name: run tests
+        shell: bash
+        run: |
+          cd build
+          ctest -VV
+
+      # code coverage is only available with gcc debug
+      - 
+        name: code coverage
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'gcc-10') && (matrix.cfg.build_type == 'Debug')
+        shell: bash
+        run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"

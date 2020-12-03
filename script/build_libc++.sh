@@ -1,8 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
-set -e
-
-echo "Fetching libc++/libc++abi version: 11.0.0..."
+echo "building libc++/libc++abi 11 from source"
 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz
 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/libcxx-11.0.0.src.tar.xz
 wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/libcxxabi-11.0.0.src.tar.xz
@@ -25,7 +23,8 @@ cmake -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="${TARGET}" \
         -DLIBCXX_ABI_UNSTABLE=ON \
         ../llvm-source
-make cxx -j2 VERBOSE=1
+make cxx -j4 VERBOSE=1
+# we install into a local dir, no sudo needed
 make install-cxxabi install-cxx
 
 
