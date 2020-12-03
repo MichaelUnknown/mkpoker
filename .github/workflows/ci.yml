@@ -107,10 +107,10 @@ jobs:
             fi
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
             if [[  ${{matrix.cfg.os}} == 'ubuntu-20.04' && ${{matrix.cfg.cxx}} == 'clang++-11' ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -cxx-isystem $GITHUB_WORKSPACE/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -I $GITHUB_WORKSPACE/llvm/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/llvm/lib -Wl,-rpath,$GITHUB_WORKSPACE/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == 'macos-latest' ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -stdlib++-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -I /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             fi
           else
