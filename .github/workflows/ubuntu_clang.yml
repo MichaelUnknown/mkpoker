@@ -61,7 +61,7 @@ jobs:
         CC: ${{matrix.cc}}
         CXX: ${{matrix.cxx}}
       shell: bash
-      run: cmake -S standalone -B build_${{ matrix.build_type }} -D CMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      run: cmake -B build_${{ matrix.build_type }} -D CMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: configure11
       if: matrix.cxx == 'clang++-11'
@@ -70,7 +70,7 @@ jobs:
         CXX: ${{matrix.cxx}}
       shell: bash
       run: |
-        cmake -S standalone -B build_${{ matrix.build_type }} \
+        cmake -B build_${{ matrix.build_type }} \
         -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
         -D "CMAKE_CXX_FLAGS:STRING=${{matrix.cxx_flags}}" \
         -D "CMAKE_EXE_LINKER_FLAGS:STRING=${{matrix.link_flags}}" \
