@@ -1,8 +1,12 @@
 name: CI
 
 on: 
-  - push
-  - pull_request
+  push: 
+    branches: 
+      - main
+  pull_request: 
+    branches: 
+      - main
 
 jobs: 
   build: 
@@ -83,6 +87,9 @@ jobs:
             cc: cl
             cxx: cl
 
+    ###################################################
+    ## building steps
+    ###################################################
     steps: 
       - 
         uses: actions/checkout@v2
@@ -117,14 +124,8 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 11
-      - 
-        name: "install libc++"
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-11')
-        working-directory: "${{ env.HOME }}"
-        shell: bash
-        run: |
-          chmod +x $GITHUB_WORKSPACE/script/build_libc++.sh
-          $GITHUB_WORKSPACE/script/build_libc++.sh
+          chmod +x $GITHUB_WORKSPACE/script/build_libcxx.sh
+          $GITHUB_WORKSPACE/script/build_libcxx.sh
 
       # at the moment, only msvc is multi config
       # other builds need the build_type set during config
