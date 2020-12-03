@@ -17,32 +17,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: test
+      shell: bash
+      run: ls -lh /usr/lib/l*
 
     - name: configure debug
       shell: bash
-      run: cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-
-    - name: build debug
-      shell: bash
-      run: cmake --build build/debug -j4 -v
-
-    - name: run tests debug
-      shell: bash
-      run: |
-        cd build/debug
-        ctest -VV
-
+      run: cmake -B build/debug -DCMAKE_BUILD_TYPE=Debug
 
     - name: configure release
       shell: bash
       run: cmake -B build/release -DCMAKE_BUILD_TYPE=Release
       
-    - name: build release
-      shell: bash
-      run: cmake --build build/release -j4 -v
-
-    - name: run tests release
-      shell: bash
-      run: |
-        cd build/release
-        ctest -VV
