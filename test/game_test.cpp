@@ -13,6 +13,29 @@
 
 using namespace mkp;
 
+TEST(tgame, game_to_string)
+{
+    EXPECT_EQ(to_string(gb_gamestate_t::PREFLOP_BET), "PREFLOP_BET");
+    EXPECT_EQ(to_string(gb_gamestate_t::FLOP_BET), "FLOP_BET");
+    EXPECT_EQ(to_string(gb_gamestate_t::TURN_BET), "TURN_BET");
+    EXPECT_EQ(to_string(gb_gamestate_t::RIVER_BET), "RIVER_BET");
+    EXPECT_EQ(to_string(gb_gamestate_t::GAME_FIN), "GAME_FIN");
+    EXPECT_THROW(static_cast<void>(to_string(static_cast<gb_gamestate_t>(5))), std::runtime_error);
+
+    EXPECT_EQ(to_string(gb_playerstate_t::ALIVE), "ALIVE");
+    EXPECT_EQ(to_string(gb_playerstate_t::OUT), "OUT");
+    EXPECT_EQ(to_string(gb_playerstate_t::ALIVE), "ALIVE");
+    EXPECT_EQ(to_string(gb_playerstate_t::ALLIN), "ALLIN");
+    EXPECT_THROW(static_cast<void>(to_string(static_cast<gb_playerstate_t>(4))), std::runtime_error);
+
+    EXPECT_EQ(to_string(gb_action_t::FOLD), "FOLD");
+    EXPECT_EQ(to_string(gb_action_t::CHECK), "CHECK");
+    EXPECT_EQ(to_string(gb_action_t::CALL), "CALL");
+    EXPECT_EQ(to_string(gb_action_t::RAISE), "RAISE");
+    EXPECT_EQ(to_string(gb_action_t::ALLIN), "ALLIN");
+    EXPECT_THROW(static_cast<void>(to_string(static_cast<gb_action_t>(5))), std::runtime_error);
+}
+
 TEST(tgame, game_gamecards_ctor_arr)
 {
     // ctor with two arrays
@@ -88,11 +111,11 @@ TEST(tgame, game_gamestate_ctor)
     EXPECT_EQ(g5.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
     EXPECT_EQ(g6.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
 
-    EXPECT_THROW(static_cast<void>(g2.effective_payouts()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g3.effective_payouts()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g4.effective_payouts()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g5.effective_payouts()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g6.effective_payouts()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g2.payouts_noshodown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g3.payouts_noshodown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g4.payouts_noshodown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g5.payouts_noshodown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g6.payouts_noshodown()), std::runtime_error);
 }
 
 TEST(tgame, game_gamestate_execute_action)
@@ -101,7 +124,7 @@ TEST(tgame, game_gamestate_execute_action)
     // test exceptions
     //
     auto game1 = gamestate<2>(3000);
-    EXPECT_GT(game1.get_possible_actions().size(), 0);
+    EXPECT_GT(game1.possible_actions().size(), 0);
 #if !defined(NDEBUG)
     EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
     EXPECT_THROW(game1.execute_action(player_action_t{1499, gb_action_t::RAISE, game1.active_player_v()}), std::runtime_error);
@@ -117,9 +140,9 @@ TEST(tgame, game_gamestate_execute_action)
     EXPECT_EQ(game1.in_terminal_state(), true);
     EXPECT_EQ(game1.is_showdown(), true);
 #if !defined(NDEBUG)
-    EXPECT_THROW(static_cast<void>(game1.effective_payouts()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(game1.payouts_noshodown()), std::runtime_error);
 #endif
-    EXPECT_EQ(game1.get_possible_actions().size(), 0);
+    EXPECT_EQ(game1.possible_actions().size(), 0);
 
     //
     // test different actions
@@ -161,8 +184,8 @@ TEST(tgame, game_gamestate_execute_action)
     game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
     // state should be game finished
     EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
-    // effective payouts should be {-500,+4500,-4000}
-    EXPECT_EQ(game2.effective_payouts(), (std::array<int, 3>{-500, 4500, -4000}));
+    // payouts should be {-500,+4500,-4000}
+    EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
 
     //
     // test showdown

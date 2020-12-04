@@ -118,7 +118,6 @@ namespace mkp
         std::array<int32_t, N> m_chips_behind;
         std::array<int32_t, N> m_chips_front;
         std::array<gb_playerstate_t, N> m_playerstate;
-        int32_t m_pot;
         int32_t m_minraise;
         gb_pos_t m_current;
         gb_gamestate_t m_gamestate;
@@ -143,6 +142,7 @@ namespace mkp
         }
 
         // amount chips for pot size calculations
+        // todo: delete
         [[nodiscard]] constexpr int32_t chips_committed() const noexcept
         {
             return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
@@ -152,7 +152,11 @@ namespace mkp
         [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
 
         // total pot size for
-        [[nodiscard]] constexpr int32_t total_pot_size() const noexcept { return m_pot + chips_committed(); }
+        // todo: rename
+        [[nodiscard]] constexpr int32_t total_pot_size() const noexcept
+        {
+            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+        }
 
         // players alive (i.e. not OUT)
         [[nodiscard]] constexpr int num_alive() const noexcept
@@ -206,13 +210,12 @@ namespace mkp
 
         // create a new game with starting stacksize
         template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
-        gamestate(const int32_t stacksize)
+        constexpr explicit gamestate(const int32_t stacksize)
             : m_chips_start(make_array<N>(stacksize)),
               m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
-              m_pot(0),
               m_minraise(1000),
               m_current(round0_first_player),
               m_gamestate(gb_gamestate_t::PREFLOP_BET)
@@ -225,13 +228,12 @@ namespace mkp
 
         // create a new game with starting stacksize, specialization for heads up
         template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
-        gamestate(const int32_t stacksize)
+        constexpr explicit gamestate(const int32_t stacksize)
             : m_chips_start(make_array<N>(stacksize)),
               m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 1000 : i == 1 ? 500 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
-              m_pot(0),
               m_minraise(1000),
               m_current(round0_first_player),
               m_gamestate(gb_gamestate_t::PREFLOP_BET)
@@ -243,14 +245,13 @@ namespace mkp
         }
 
         // create a specific game
-        gamestate(const std::array<int32_t, N>& chips_start, const std::array<int32_t, N>& chips_behind,
-                  const std::array<int32_t, N>& chips_front, const std::array<gb_playerstate_t, N>& state, const int32_t pot,
-                  const int32_t minraise, const gb_pos_t current, const gb_gamestate_t gamestate)
+        constexpr gamestate(const std::array<int32_t, N>& chips_start, const std::array<int32_t, N>& chips_behind,
+                            const std::array<int32_t, N>& chips_front, const std::array<gb_playerstate_t, N>& state, const int32_t minraise,
+                            const gb_pos_t current, const gb_gamestate_t gamestate)
             : m_chips_start(chips_start),
               m_chips_behind(chips_behind),
               m_chips_front(chips_front),
               m_playerstate(state),
-              m_pot(pot),
               m_minraise(minraise),
               m_current(current),
               m_gamestate(gamestate)
@@ -276,16 +277,19 @@ namespace mkp
         // return current player
         [[nodiscard]] constexpr gb_pos_t active_player_v() const noexcept { return m_current; }
 
+        // return player state
+        [[nodiscard]] constexpr gb_playerstate_t active_player_state_v() const noexcept { return m_playerstate[active_player()]; }
+
         // return payout on terminal state (only for states with no showdown required)
-        [[nodiscard]] constexpr std::array<int32_t, N> effective_payouts() const
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshodown() const
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("effective_payouts(): game not in terminal state");
+                throw std::runtime_error("payouts_noshodown(): game not in terminal state");
             }
             if (is_showdown())
             {
-                throw std::runtime_error("effective_payouts(): terminale state involves showdown but no cards are given");
+                throw std::runtime_error("payouts_noshodown(): terminale state involves showdown but no cards are given");
             }
 
             // winner collects all
@@ -297,9 +301,9 @@ namespace mkp
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const auto index) { return m_playerstate[index] != gb_playerstate_t::OUT; });
             return make_array<int32_t, N>([&](std::size_t i) {
-                return i == winner                                                               // invested: "- (chips_start - chips_now)"
-                           ? m_pot + chips_committed() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
-                           : m_chips_behind[i] - m_chips_start[i];                               // loser: -invested
+                return i == winner                                                      // invested: "- (chips_start - chips_now)"
+                           ? total_pot_size() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
+                           : m_chips_behind[i] - m_chips_start[i];                      // loser: -invested
             });
         }
 
@@ -310,7 +314,7 @@ namespace mkp
         }
 
         // get all possible actions
-        [[nodiscard]] std::vector<player_action_t> get_possible_actions() const noexcept
+        [[nodiscard]] std::vector<player_action_t> possible_actions() const noexcept
         {
             std::vector<player_action_t> ret;
             uint8_t pos = active_player();
@@ -384,7 +388,7 @@ namespace mkp
                 }
                 if (ui == (N / 2))
                 {
-                    ret.append(" [" + std::to_string(m_pot) + "]");
+                    ret.append(" [" + std::to_string(total_pot_size()) + "]");
                 }
                 if (ui >= (N / 2))
                 {
@@ -410,8 +414,6 @@ namespace mkp
 #endif
         )
         {
-            const uint8_t pos = static_cast<uint8_t>(pa.m_pos);
-
 #if !defined(NDEBUG)
             // check if active player is a match
             if (m_current != pa.m_pos)
@@ -420,7 +422,7 @@ namespace mkp
             }
 
             // check if action is valid (expensive)
-            if (const auto all_actions = this->get_possible_actions();
+            if (const auto all_actions = this->possible_actions();
                 std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
             {
                 throw std::runtime_error("execute_action(): tried to execute invalid action");
@@ -428,11 +430,10 @@ namespace mkp
 #endif
 
             // adjust chips and player state if necessary
+            const uint8_t pos = static_cast<uint8_t>(pa.m_pos);
             switch (pa.m_action)
             {
                 case gb_action_t::FOLD:
-                    m_pot += m_chips_front[pos];
-                    m_chips_front[pos] = 0;
                     m_playerstate[pos] = gb_playerstate_t::OUT;
                     break;
                 case gb_action_t::CHECK:
@@ -520,6 +521,62 @@ namespace mkp
 
         constexpr auto operator<=>(const gamestate&) const noexcept = delete;
         constexpr bool operator==(const gamestate&) const noexcept = default;
+    };
+
+    // combine gamestate and cards, so we can track all data to simulate a game of poker
+    template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
+    class game : public gamestate<N>, public gamecards<N>
+    {
+       public:
+        // create default game with span of cards
+        game(const std::span<const card> all_cards, const int32_t stacksize) : gamestate(stacksize), gamecards(all_cards) {}
+
+        // return payout on showdown
+        std::array<int32_t, N> payouts() const
+        {
+            if (!this->in_terminal_state())
+            {
+                throw std::runtime_error("payouts_after_shodown(): game not in terminal state");
+            }
+            return std::array<int32_t, N>();
+
+            // we need this in any case
+            const auto chips_invested = this->m_chips_start - this->m_chips_behind;
+
+            if (this->is_showdown())
+            {
+                // get winner
+                //auto h1 = mkp::evaluate_safe(cardset(this->m_board).combine(this->m_cards[0].to_cardset()));
+                //auto h2 = mkp::evaluate_safe(cardset(this->m_board).combine(this->m_cards[1].to_cardset()));
+                auto h1 = cardset(this->m_board).combine(this->m_cards[0].to_cardset());
+                auto h2 = cardset(this->m_board).combine(this->m_cards[1].to_cardset());
+
+                if (h1 == h2)
+                {
+                    //const auto chips_won = (this->m_chips_front[0] + this->m_chips_front[1] + this->m_pot) / 2;
+                    const auto chips_won = (this->m_chips_front[0] + this->m_chips_front[1]) / 2;
+                    return (-chips_invested) + chips_won;
+                }
+                else
+                {
+                    // chips of loser change ownership
+                    const auto pos_loser = h1 > h2 ? 1 : 0;
+                    std::array<int32_t, 2> ret_matrix{-1, 1};
+                    if (pos_loser == 1)
+                    {
+                        //ret_matrix *= -1;
+                    }
+                    ret_matrix *= chips_invested[pos_loser];
+                    // do not forget to add the pot
+                    //ret_matrix[1 - pos_loser] += this->m_pot;
+                    return ret_matrix;
+                }
+            }
+            else
+            {
+                return this->payouts_noshodown();
+            }
+        }
     };
 
 }    // namespace mkp

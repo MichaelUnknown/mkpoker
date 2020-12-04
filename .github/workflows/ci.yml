@@ -177,6 +177,15 @@ jobs:
           cmake --build buildcxxabi -j2 -v
           cmake --build buildcxxabi --target install
 
+          cmake \
+            -S libcxxinstall \
+            -B buildcxx \
+            -D CMAKE_C_COMPILER=${CC} \
+            -D CMAKE_CXX_COMPILER=${CXX} \
+            -D CMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build libcxxinstall -j2 -v
+          sudo cmake --build libcxxinstall --target install
+
       # at the moment, only msvc is multi config
       # other builds need the build_type set during config
       - 
