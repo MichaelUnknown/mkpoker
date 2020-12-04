@@ -542,11 +542,13 @@ namespace mkp
 
                 // get players that are alive / eligible for (part of) the pot
                 const std::vector<unsigned> eligible_players = [&] {
+                    std::vector<unsigned> result;
                     for (unsigned i = 0; i < N; ++i)
                     {
                         if (this->m_playerstate[i] != gb_playerstate_t::OUT)
-                            eligible_players.push_back(i);
+                            result.push_back(i);
                     }
+                    return result;
                 }();
 
                 // most common case: only 2 players for showdown
@@ -672,15 +674,15 @@ namespace mkp
                     pots.emplace_back(std::tuple(main_pot_players, upper, 0));
 
                     // return pot_distribution for each (side)pot, add everything up
-                    std::array<int32_t, N> ret{};
+                    std::array<int32_t, N> result{};
 
                     for (const auto& pot : pots)
                     {
                         const auto tmp = pot_distribution(std::get<0>(pot), std::get<1>(pot), std::get<2>(pot));
-                        //ret += tmp;
+                        //result += tmp;
                     }
 
-                    return ret;
+                    return result;
                 }
             }
             else
