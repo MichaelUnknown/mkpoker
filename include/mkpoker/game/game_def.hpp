@@ -8,6 +8,8 @@ namespace mkp
 {
     inline namespace constants
     {
+        constexpr uint8_t c_num_board_cards = 5;
+
         // positions
         enum class gb_pos_t : uint8_t
         {

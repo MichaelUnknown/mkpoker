@@ -178,8 +178,8 @@ jobs:
           cmake --build buildcxxabi --target install
 
           cmake \
-            -S libcxxinstall \
-            -B buildcxx \
+            -S libcxx \
+            -B libcxxinstall \
             -D CMAKE_C_COMPILER=${CC} \
             -D CMAKE_CXX_COMPILER=${CXX} \
             -D CMAKE_BUILD_TYPE=RelWithDebInfo

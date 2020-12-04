@@ -257,3 +257,30 @@ TEST(tgame, game_gamestate_comp)
     EXPECT_EQ(games6[0].str_state(), games6[1].str_state());
     EXPECT_NE(games6[0].str_state(), games6[2].str_state());
 }
+
+TEST(tgame, game_chip_math)
+{
+    // start| beh |  front
+    // 1000 | 200 | 0: 800 (alive)
+    // 1000 | 200 | 1: 800 (alive)
+    // 1000 | 700 | 2: 300 (out)
+    // 1000 | 550 | 3: 450 (out)
+    // 1000 | 400 | 4: 600 (allin)
+    // 1000 |1000 | 5: 0   (out)
+    std::vector<int32_t> chips1{800, 800, 300, 450, 600, 0};
+
+    auto f = [](const std::vector<int32_t>& chips, const int32_t upper_bound, const int32_t lower_bound = 0) {
+        const auto local_pot = std::accumulate(chips.cbegin(), chips.cend(), 0, [&](const int32_t val, const int32_t e) {
+            return val + (e <= lower_bound ? 0 : e > upper_bound ? upper_bound - lower_bound : e - lower_bound);
+        });
+        return local_pot;
+    };
+
+    EXPECT_EQ(f(chips1, 300), 1500);
+    EXPECT_EQ(f(chips1, 600, 300), 1050);
+    EXPECT_EQ(f(chips1, 800, 600), 400);
+    EXPECT_EQ(f(chips1, 800), 2950);
+
+    EXPECT_EQ(f(chips1, 800, 0), 2950);
+    EXPECT_EQ(f(chips1, 300, 0), 1500);
+}
