@@ -122,7 +122,7 @@ jobs:
             fi
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
 
-            if [[ ${{matrix.cfg.os}} == 'ubuntu-20.04' && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
+            if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -I $GITHUB_WORKSPACE/local/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/local/lib -Wl,-rpath,$GITHUB_WORKSPACE/local/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
