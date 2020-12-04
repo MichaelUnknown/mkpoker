@@ -8,15 +8,15 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
 # get GTest
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.10.0
-)
-FetchContent_MakeAvailable(googletest)
+#include(FetchContent)
+#FetchContent_Declare(
+#    googletest
+#    GIT_REPOSITORY https://github.com/google/googletest.git
+#    GIT_TAG        release-1.10.0
+#)
+#FetchContent_MakeAvailable(googletest)
 # for gtest_discover_tests
-include(GoogleTest)
+#include(GoogleTest)
 
 Include(FetchContent)
 FetchContent_Declare(
@@ -63,5 +63,6 @@ package_add_catch(bitset_catch bitset_catch.cpp mkpoker::mkp)
 #package_add_test(holdem_eval_test holdem_eval_test.cpp mkpoker::mkp)
 
 #package_add_test(game_test game_test.cpp mkpoker::mkp)
+package_add_catch(game_catch game_catch.cpp mkpoker::mkp)
 
 
