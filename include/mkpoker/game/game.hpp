@@ -13,7 +13,7 @@
 #include <numeric>        // std::accumulate
 #include <span>           //
 #include <stdexcept>      //
-#include <type_traits>    // std::enable_if, std::type_identity
+#include <type_traits>    // std::enable_if
 #include <vector>         //
 
 namespace mkp
@@ -179,7 +179,7 @@ namespace mkp
             }
             return ret;
 #else
-            constexpr auto indices = make_array<int, N>(std::type_identity{});
+            constexpr auto indices = make_array<int, N>(std::identity{});
             return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const auto index) -> int {
                 return (m_playerstate[index] == gb_playerstate_t::INIT ||
                         (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
@@ -291,9 +291,9 @@ namespace mkp
             // winner collects all
 
             // maybe check index_sequence_for...
-            // const auto indices = init_array<uint8_t, N>(std::type_identity{});
+            // const auto indices = init_array<uint8_t, N>(std::identity{});
 
-            const auto indices = make_array<int, N>(std::type_identity{});
+            const auto indices = make_array<int, N>(std::identity{});
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const auto index) { return m_playerstate[index] != gb_playerstate_t::OUT; });
             return make_array<int32_t, N>([&](std::size_t i) {
