@@ -604,9 +604,9 @@ namespace mkp
                             winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_cards[idx].to_cardset())), idx);
                         });
                         // sort by highest hand
-                        std::sort(winners.begin(), winners.end(), [](auto& lhs, auto& rhs) { return lhs.first > rhs.first; });
+                        std::sort(winners.begin(), winners.end(), [&](auto& lhs, auto& rhs) { return lhs.first > rhs.first; });
                         const auto first_non_winner = std::find_if(winners.cbegin() + 1, winners.cend(),
-                                                                   [](const holdem_evaluation_result& e) { return e < winners[0].first; });
+                                                                   [&](const holdem_evaluation_result& e) { return e < winners[0].first; });
                         const auto dist = std::distance(winners.begin(), first_non_winner);
                         // remove non_winners
                         winners.resize(dist);
@@ -622,7 +622,7 @@ namespace mkp
                             return this->m_chips_front[idx] <= lower_bound
                                        ? 0
                                        : (std::find(winners.cbegin(), winners.cend(),
-                                                    [](const auto& pair) { return pair.second == idx; }) != winners.cend())
+                                                    [&](const auto& pair) { return pair.second == idx; }) != winners.cend())
                                              ? -this->m_chips_front[idx] + lower_bound + sum_p_winner
                                              : -this->m_chips_front[idx] + lower_bound;
                         });
