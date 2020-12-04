@@ -23,7 +23,7 @@ jobs:
             build_type: Debug
             cc: gcc-10
             cxx: g++-10
-            cov: abcasfdadsfasdfasdfasdfasdfsadfasdfassdfsadfdsaf
+            codecov: true
           - 
             name: "ubuntu gcc 10 Release"
             os: ubuntu-20.04
@@ -117,7 +117,7 @@ jobs:
           echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
           if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
 
-            if [[ ${{matrix.cfg.cxx}} == 'g++-10' && ${{matrix.cfg.build_type}} == 'Debug' ]]; then
+            if [[ "x${{matrix.cfg.codecov}}" == "xtrue" ]]; then
               cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
             fi
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
@@ -151,7 +151,7 @@ jobs:
         shell: bash
         run: |
           echo "building the latest libcxx from source..."
-          git clone https://github.com/llvm/llvm-project
+          git clone --depth 1 https://github.com/llvm/llvm-project
 
           INSTALL_TARGET=`pwd`/local
           mkdir "${INSTALL_TARGET}"
@@ -212,7 +212,7 @@ jobs:
       # code coverage is only available with gcc debug
       - 
         name: code coverage
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'g++-10') && (matrix.cfg.build_type == 'Debug')
+        if: matrix.cfg.codecov
         shell: bash
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
