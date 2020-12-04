@@ -141,19 +141,12 @@ namespace mkp
             return *std::max_element(m_chips_front.cbegin(), m_chips_front.cend());
         }
 
-        // amount chips for pot size calculations
-        // todo: delete
-        [[nodiscard]] constexpr int32_t chips_committed() const noexcept
-        {
-            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
-        }
-
         // chips to call for current player
         [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
 
         // total pot size for
         // todo: rename
-        [[nodiscard]] constexpr int32_t total_pot_size() const noexcept
+        [[nodiscard]] constexpr int32_t pot_size() const noexcept
         {
             return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
         }
@@ -301,16 +294,16 @@ namespace mkp
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const auto index) { return m_playerstate[index] != gb_playerstate_t::OUT; });
             return make_array<int32_t, N>([&](std::size_t i) {
-                return i == winner                                                      // invested: "- (chips_start - chips_now)"
-                           ? total_pot_size() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
-                           : m_chips_behind[i] - m_chips_start[i];                      // loser: -invested
+                return i == winner                                                // invested: "- (chips_start - chips_now)"
+                           ? pot_size() + m_chips_behind[i] - m_chips_start[i]    // winner: complete pot - invested
+                           : m_chips_behind[i] - m_chips_start[i];                // loser: -invested
             });
         }
 
         // return values required for pot size calculations
         [[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const noexcept
         {
-            return std::make_pair(total_pot_size(), amount_to_call());
+            return std::make_pair(pot_size(), amount_to_call());
         }
 
         // get all possible actions
@@ -388,7 +381,7 @@ namespace mkp
                 }
                 if (ui == (N / 2))
                 {
-                    ret.append(" [" + std::to_string(total_pot_size()) + "]");
+                    ret.append(" [" + std::to_string(pot_size()) + "]");
                 }
                 if (ui >= (N / 2))
                 {
@@ -524,12 +517,13 @@ namespace mkp
     };
 
     // combine gamestate and cards, so we can track all data to simulate a game of poker
+    // todo: we should probably use composition instead
     template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
     class game : public gamestate<N>, public gamecards<N>
     {
        public:
         // create default game with span of cards
-        game(const std::span<const card> all_cards, const int32_t stacksize) : gamestate(stacksize), gamecards(all_cards) {}
+        game(const std::span<const card> all_cards, const int32_t stacksize) : gamestate<N>(stacksize), gamecards<N>(all_cards) {}
 
         // return payout on showdown
         std::array<int32_t, N> payouts() const
@@ -540,9 +534,6 @@ namespace mkp
             }
             return std::array<int32_t, N>();
 
-            // we need this in any case
-            const auto chips_invested = this->m_chips_start - this->m_chips_behind;
-
             if (this->is_showdown())
             {
                 // get winner
@@ -550,6 +541,8 @@ namespace mkp
                 //auto h2 = mkp::evaluate_safe(cardset(this->m_board).combine(this->m_cards[1].to_cardset()));
                 auto h1 = cardset(this->m_board).combine(this->m_cards[0].to_cardset());
                 auto h2 = cardset(this->m_board).combine(this->m_cards[1].to_cardset());
+
+                const auto chips_invested = this->m_chips_start - this->m_chips_behind;
 
                 if (h1 == h2)
                 {
