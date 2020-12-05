@@ -114,7 +114,6 @@ namespace mkp
 
     // class representing a game state without cards
     // chips / stack size are in milli BBs, meaning 1000 equals 1 big blind
-    // todo: remove pot
     template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
     class gamestate
     {
@@ -150,7 +149,6 @@ namespace mkp
         [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
 
         // total pot size for
-        // todo: rename
         [[nodiscard]] constexpr int32_t pot_size() const noexcept
         {
             return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
@@ -458,7 +456,24 @@ namespace mkp
                 // the entire hand ended
                 //
 
-                // todo: remove unnecessary chips from front if the last call/fold left a player with a bet/allin unmatched
+                // remove unnecessary chips from chips_front if the last call/fold left a player with an unmatched bet
+                // this can happen if the last caller does not have enough chips to match the bet and is all in instead
+                if (const auto highest_bet = current_highest_bet();
+                    std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
+                {
+                    for (unsigned i = 0; i < N; ++i)
+                    {
+                        if (m_chips_front[i] == highest_bet)
+                        {
+                            auto chips = m_chips_front;
+                            std::sort(chips.begin(), chips.end(), std::greater<>{});
+                            const int32_t difference = chips[1] - highest_bet;
+                            m_chips_front[i] -= difference;
+                            m_chips_behind[i] += difference;
+                            break;
+                        }
+                    }
+                }
 
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
