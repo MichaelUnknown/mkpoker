@@ -607,6 +607,7 @@ namespace mkp
                     // distribute the (side) pot with limits upper and lower
                     // if there is only one pot, the limits are current_highest_bet() and 0
                     // this could also be a private helper function
+
                     auto pot_distribution = [&](const std::vector<unsigned>& eligible_player_indices, const int32_t upper_bound,
                                                 const int32_t lower_bound) -> std::array<int32_t, N> {
                         // 1) sum everything between lower and upper
@@ -621,6 +622,7 @@ namespace mkp
                         std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
                             winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[idx].as_cardset())), idx);
                         });
+
                         // sort by highest hand
                         std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
                         const auto first_non_winner =
@@ -631,13 +633,14 @@ namespace mkp
                         winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
 
                         // 3) sum_per_winner = sum / (winners.size())
-                        const int32_t sum_p_winner = local_pot / winners.size();
+                        const int32_t sum_p_winner = local_pot / static_cast<int32_t>(winners.size());
 
                         // 4) return payouts for every position according to winners / losers, ignore amounts
                         //    chips <= lower ? ignore
                         //                   : player_is_a_winner ? add won chips
                         //                                        : subtract lost chips
-                        std::array<int32_t, N> result = make_array<int32_t, N>([&](const unsigned idx) {
+
+                        return make_array<int32_t, N>([&](const unsigned idx) {
                             return this->m_chips_front[idx] <= lower_bound
                                        ? 0
                                        : (std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) !=
@@ -645,7 +648,8 @@ namespace mkp
                                              ? -this->m_chips_front[idx] + lower_bound + sum_p_winner
                                              : -this->m_chips_front[idx] + lower_bound;
                         });
-                        return result;
+                        //std::array<int32_t, N> result = make_array<int32_t, N>([&](const unsigned idx) {
+                        //return result;
                     };
 
                     // start| beh |  front
@@ -660,20 +664,20 @@ namespace mkp
                     // 1000 |1000 | 5: 0   (out)
 
                     // get the number of pots as a list of eligible_players, upper, lower bound
-                    std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
 
-                    // get all chip counts and sort by amount
+                    // 1) get all chip counts and sort by amount
                     auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>(
                         [&](const unsigned idx) { return std::make_pair(this->m_chips_front[idx], idx); });
                     std::sort(chips_and_players.begin(), chips_and_players.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
-                    // we are at showdown, so there must be at least two highest chip counts (main pot)
+                    // 2) we are at showdown, so there must be at least two highest chip counts (main pot)
                     int32_t upper = chips_and_players[0].first;
                     std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
 
-                    // step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
+                    // 3) step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
                     // for every side pot, there must be one (or more) all in players with less chips
+                    std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
                     std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& e) {
                         if (const int32_t lower = this->m_chips_front[e.second]; lower == upper)
                         {
@@ -693,13 +697,18 @@ namespace mkp
                     pots.emplace_back(std::make_tuple(main_pot_players, upper, 0));
 
                     // return pot_distribution for each (side)pot, add everything up
-                    std::array<int32_t, N> result{};
-                    for (const auto& pot : pots)
-                    {
-                        const auto tmp = pot_distribution(std::get<0>(pot), std::get<1>(pot), std::get<2>(pot));
-                        result += tmp;
-                    }
-                    return result;
+                    return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
+                        return val + pot_distribution(std::get<0>(e), std::get<1>(e), std::get<2>(e));
+                    });
+
+                    // return pot_distribution for each (side)pot, add everything up
+                    //std::array<int32_t, N> result{};
+                    //for (const auto& pot : pots)
+                    //{
+                    //    const auto tmp = pot_distribution(std::get<0>(pot), std::get<1>(pot), std::get<2>(pot));
+                    //    result += tmp;
+                    //}
+                    //return result;
                 }
             }
             else
