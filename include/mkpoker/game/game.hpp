@@ -607,7 +607,6 @@ namespace mkp
                     // distribute the (side) pot with limits upper and lower
                     // if there is only one pot, the limits are current_highest_bet() and 0
                     // this could also be a private helper function
-
                     auto pot_distribution = [&](const std::vector<unsigned>& eligible_player_indices, const int32_t upper_bound,
                                                 const int32_t lower_bound) -> std::array<int32_t, N> {
                         // 1) sum everything between lower and upper
@@ -617,18 +616,19 @@ namespace mkp
                             });
 
                         // 2) get the winners
-                        // start with all possible winners
+                        // 2a) start with all possible winners
                         std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
+                        winners.reserve(N);
                         std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
                             winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[idx].as_cardset())), idx);
                         });
 
-                        // sort by highest hand
+                        // 2b) sort by highest hand
                         std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
                         const auto first_non_winner =
                             std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
                         const auto dist = std::distance(winners.cbegin(), first_non_winner);
-                        // remove non_winners
+                        // 2c) remove non_winners
                         // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
                         winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
 
@@ -648,8 +648,6 @@ namespace mkp
                                              ? -this->m_chips_front[idx] + lower_bound + sum_p_winner
                                              : -this->m_chips_front[idx] + lower_bound;
                         });
-                        //std::array<int32_t, N> result = make_array<int32_t, N>([&](const unsigned idx) {
-                        //return result;
                     };
 
                     // start| beh |  front

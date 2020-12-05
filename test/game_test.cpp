@@ -268,45 +268,43 @@ TEST(tgame, game_gamestate_comp)
 
 TEST(tgame, game_game_payouts)
 {
-    //
-    // test showdown
-    //
     std::array<card, 11> cards{// board
                                card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
-                               // p1
+                               // SB
                                card("Tc"), card("Td"),
-                               // p2
-                               card("Ah"), card("7c"),
-                               // p3
+                               // BB
+                               card("Qc"), card("Jc"),
+                               // UTG
                                card("Qs"), card("Js")};
 
-    auto g1 = game<3>(cards, 10000);
-    // everyone calls
-    g1.execute_action(player_action_t{1000, gb_action_t::CALL, g1.active_player_v()});
-    g1.execute_action(player_action_t{500, gb_action_t::CALL, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    // state should be flop bet
-    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::FLOP_BET);
-    // everyone calls
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    // state should be turn bet
-    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::TURN_BET);
-    // everyone calls
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    // state should be river bet
-    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::RIVER_BET);
-    // everyone calls
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
-    // state should be game finished
-    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::GAME_FIN);
-    const std::array<int32_t, 3> payouts{-1000, -1000, 2000};
-    EXPECT_EQ(g1.payouts(), payouts);
+    // showdown with 3 all in
+    {
+        auto g1 = game<3>(cards, 3000);
+        // everyone calls
+        g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
+        g1.execute_action(player_action_t{2500, gb_action_t::CALL, g1.active_player_v()});
+        g1.execute_action(player_action_t{2000, gb_action_t::CALL, g1.active_player_v()});
+        //// state should be fin
+        EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        const std::array<int32_t, 3> expected_payouts1{-3000, 1500, 1500};
+        EXPECT_EQ(g1.payouts(), expected_payouts1);
+    }
+
+    // showdown with 2
+    {
+        auto g2 = game<3>(cards, 3000);
+        // everyone calls
+        g2.execute_action(player_action_t{1000, gb_action_t::CALL, g2.active_player_v()});     // utg
+        g2.execute_action(player_action_t{500, gb_action_t::CALL, g2.active_player_v()});      // sb
+        g2.execute_action(player_action_t{1000, gb_action_t::RAISE, g2.active_player_v()});    // bb
+        g2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g2.active_player_v()});    // utg
+        g2.execute_action(player_action_t{2000, gb_action_t::CALL, g2.active_player_v()});     // sb
+        g2.execute_action(player_action_t{0, gb_action_t::FOLD, g2.active_player_v()});        // bb fold
+        // state should be fin
+        EXPECT_EQ(g2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        const std::array<int32_t, 3> expected_payouts2{-3000, -2000, 5000};
+        EXPECT_EQ(g2.payouts(), expected_payouts2);
+    }
 }
 TEST(tgame, game_chip_math)
 {
