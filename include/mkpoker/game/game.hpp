@@ -5,16 +5,19 @@
 #include <mkpoker/base/hand.hpp>
 #include <mkpoker/game/game_def.hpp>
 #include <mkpoker/holdem/holdem_evaluation.hpp>
+#include <mkpoker/util/array.hpp>
 #include <mkpoker/util/mtp.hpp>
 
-#include <algorithm>      // std::find
+#include <algorithm>      // std::find, std::sort
 #include <array>          //
 #include <cstdint>        //
 #include <functional>     // std::identity
 #include <numeric>        // std::accumulate
 #include <span>           //
 #include <stdexcept>      //
+#include <tuple>          //
 #include <type_traits>    // std::enable_if
+#include <utility>        // std::pair
 #include <vector>         //
 
 namespace mkp
@@ -466,7 +469,7 @@ namespace mkp
                         if (m_chips_front[i] == highest_bet)
                         {
                             auto chips = m_chips_front;
-                            std::sort(chips.begin(), chips.end(), std::greater<>{});
+                            std::sort(chips.begin(), chips.end(), std::greater{});
                             const int32_t difference = chips[1] - highest_bet;
                             m_chips_front[i] -= difference;
                             m_chips_behind[i] += difference;
@@ -574,8 +577,8 @@ namespace mkp
                 if (eligible_players.size() == 2)
                 {
                     // evaluate the hands
-                    const auto h1 = evaluate_unsafe(cardset(this->m_board).combine(this->m_cards[eligible_players[0]].to_cardset()));
-                    const auto h2 = evaluate_unsafe(cardset(this->m_board).combine(this->m_cards[eligible_players[1]].to_cardset()));
+                    const auto h1 = evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[eligible_players[0]].as_cardset()));
+                    const auto h2 = evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[eligible_players[1]].as_cardset()));
 
                     if (const auto cmp = h1 <=> h2; cmp != 0)
                     {
@@ -616,15 +619,16 @@ namespace mkp
                         // start with all possible winners
                         std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
                         std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
-                            winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_cards[idx].to_cardset())), idx);
+                            winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[idx].as_cardset())), idx);
                         });
                         // sort by highest hand
-                        std::sort(winners.begin(), winners.end(), [&](auto& lhs, auto& rhs) { return lhs.first > rhs.first; });
-                        const auto first_non_winner = std::find_if(winners.cbegin() + 1, winners.cend(),
-                                                                   [&](const holdem_evaluation_result& e) { return e < winners[0].first; });
-                        const auto dist = std::distance(winners.begin(), first_non_winner);
+                        std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+                        const auto first_non_winner =
+                            std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
+                        const auto dist = std::distance(winners.cbegin(), first_non_winner);
                         // remove non_winners
-                        winners.resize(dist);
+                        // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
+                        winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
 
                         // 3) sum_per_winner = sum / (winners.size())
                         const int32_t sum_p_winner = local_pot / winners.size();
@@ -636,8 +640,8 @@ namespace mkp
                         std::array<int32_t, N> result = make_array<int32_t, N>([&](const unsigned idx) {
                             return this->m_chips_front[idx] <= lower_bound
                                        ? 0
-                                       : (std::find(winners.cbegin(), winners.cend(),
-                                                    [&](const auto& pair) { return pair.second == idx; }) != winners.cend())
+                                       : (std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) !=
+                                          winners.cend())
                                              ? -this->m_chips_front[idx] + lower_bound + sum_p_winner
                                              : -this->m_chips_front[idx] + lower_bound;
                         });
@@ -659,7 +663,7 @@ namespace mkp
                     std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
 
                     // get all chip counts and sort by amount
-                    constexpr auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>(
+                    auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>(
                         [&](const unsigned idx) { return std::make_pair(this->m_chips_front[idx], idx); });
                     std::sort(chips_and_players.begin(), chips_and_players.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
@@ -668,35 +672,33 @@ namespace mkp
                     int32_t upper = chips_and_players[0].first;
                     std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
 
-                    // step through the chip counts and check if a player is eligible for the pot or if there is a side pot
+                    // step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
                     // for every side pot, there must be one (or more) all in players with less chips
-                    std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& pair) {
-                        if (const int32_t lower = this->m_chips_front[pair.second]; lower == upper)
+                    std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& e) {
+                        if (const int32_t lower = this->m_chips_front[e.second]; lower == upper)
                         {
                             // same as upper -> add player
-                            main_pot_players.push_back(pair.second);
+                            main_pot_players.push_back(e.second);
                         }
-                        else if (this->m_playerstate[pair.second] == gb_playerstate_t::ALLIN)
+                        else if (this->m_playerstate[e.second] == gb_playerstate_t::ALLIN)
                         {
                             // found new sidepot -> push the last pot with correct upper/lower
-                            pots.emplace_back(std::tuple(main_pot_players, upper, lower));
+                            pots.emplace_back(std::make_tuple(main_pot_players, upper, lower));
                             upper = lower;
                             // this player is eligible for the sidepot
-                            main_pot_players.push_back(pair.second);
+                            main_pot_players.push_back(e.second);
                         }
                     });
                     // after going over all players, push the last 'unfinished' pot
-                    pots.emplace_back(std::tuple(main_pot_players, upper, 0));
+                    pots.emplace_back(std::make_tuple(main_pot_players, upper, 0));
 
                     // return pot_distribution for each (side)pot, add everything up
                     std::array<int32_t, N> result{};
-
                     for (const auto& pot : pots)
                     {
                         const auto tmp = pot_distribution(std::get<0>(pot), std::get<1>(pot), std::get<2>(pot));
-                        //result += tmp;
+                        result += tmp;
                     }
-
                     return result;
                 }
             }

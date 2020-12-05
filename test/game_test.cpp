@@ -123,98 +123,104 @@ TEST(tgame, game_gamestate_execute_action)
     //
     // test exceptions
     //
-    auto game1 = gamestate<2>(3000);
-    EXPECT_GT(game1.possible_actions().size(), 0);
+    {
+        auto game1 = gamestate<2>(3000);
+        EXPECT_GT(game1.possible_actions().size(), 0);
 #if !defined(NDEBUG)
-    EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
-    EXPECT_THROW(game1.execute_action(player_action_t{1499, gb_action_t::RAISE, game1.active_player_v()}), std::runtime_error);
+        EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
+        EXPECT_THROW(game1.execute_action(player_action_t{1499, gb_action_t::RAISE, game1.active_player_v()}), std::runtime_error);
 #endif
 
-    game1.execute_action(player_action_t{1500, gb_action_t::RAISE, game1.active_player_v()});
-    EXPECT_EQ(game1.active_player(), 0);
-    EXPECT_EQ(game1.in_terminal_state(), false);
-    EXPECT_EQ(game1.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+        game1.execute_action(player_action_t{1500, gb_action_t::RAISE, game1.active_player_v()});
+        EXPECT_EQ(game1.active_player(), 0);
+        EXPECT_EQ(game1.in_terminal_state(), false);
+        EXPECT_EQ(game1.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
 
-    game1.execute_action(player_action_t{2000, gb_action_t::ALLIN, game1.active_player_v()});
-    game1.execute_action(player_action_t{1000, gb_action_t::CALL, game1.active_player_v()});
-    EXPECT_EQ(game1.in_terminal_state(), true);
-    EXPECT_EQ(game1.is_showdown(), true);
+        game1.execute_action(player_action_t{2000, gb_action_t::ALLIN, game1.active_player_v()});
+        game1.execute_action(player_action_t{1000, gb_action_t::CALL, game1.active_player_v()});
+        EXPECT_EQ(game1.in_terminal_state(), true);
+        EXPECT_EQ(game1.is_showdown(), true);
 #if !defined(NDEBUG)
-    EXPECT_THROW(static_cast<void>(game1.payouts_noshodown()), std::runtime_error);
+        EXPECT_THROW(static_cast<void>(game1.payouts_noshodown()), std::runtime_error);
 #endif
-    EXPECT_EQ(game1.possible_actions().size(), 0);
+        EXPECT_EQ(game1.possible_actions().size(), 0);
+    }
 
     //
     // test different actions
     //
-    auto game2 = gamestate<3>(10000);
-    // state should be preflop bet
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
-    // UTG bets 2BB (3000 total)
-    game2.execute_action(player_action_t{3000, gb_action_t::RAISE, game2.active_player_v()});
-    // SB folds
-    game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
-    // BB calls (2000 total)
-    game2.execute_action(player_action_t{2000, gb_action_t::CALL, game2.active_player_v()});
-    // state should be flop bet
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::FLOP_BET);
-    // active player should be BB
-    EXPECT_EQ(game2.active_player(), 1);
-    // BB checks
-    game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
-    // UTG bets 1BB (1000 total)
-    game2.execute_action(player_action_t{1000, gb_action_t::RAISE, game2.active_player_v()});
-    // BB calls (1000 total)
-    game2.execute_action(player_action_t{1000, gb_action_t::CALL, game2.active_player_v()});
-    // state should be turn bet
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::TURN_BET);
-    // active player should be BB
-    EXPECT_EQ(game2.active_player(), 1);
-    // BB checks
-    game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
-    // UTG checks
-    game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
-    // state should be river bet
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::RIVER_BET);
-    // active player should be BB
-    EXPECT_EQ(game2.active_player(), 1);
-    // BB goes all in (6000 total)
-    game2.execute_action(player_action_t{6000, gb_action_t::ALLIN, game2.active_player_v()});
-    // UTG folds
-    game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
-    // state should be game finished
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
-    // payouts should be {-500,+4500,-4000}
-    EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
+    {
+        auto game2 = gamestate<3>(10000);
+        // state should be preflop bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+        // UTG bets 2BB (3000 total)
+        game2.execute_action(player_action_t{3000, gb_action_t::RAISE, game2.active_player_v()});
+        // SB folds
+        game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
+        // BB calls (2000 total)
+        game2.execute_action(player_action_t{2000, gb_action_t::CALL, game2.active_player_v()});
+        // state should be flop bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::FLOP_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // UTG bets 1BB (1000 total)
+        game2.execute_action(player_action_t{1000, gb_action_t::RAISE, game2.active_player_v()});
+        // BB calls (1000 total)
+        game2.execute_action(player_action_t{1000, gb_action_t::CALL, game2.active_player_v()});
+        // state should be turn bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::TURN_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // UTG checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // state should be river bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::RIVER_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB goes all in (6000 total)
+        game2.execute_action(player_action_t{6000, gb_action_t::ALLIN, game2.active_player_v()});
+        // UTG folds
+        game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
+        // state should be game finished
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // payouts should be {-500,+4500,-4000}
+        EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
+    }
 
     //
     // test showdown
     //
-    auto game3 = gamestate<3>(10000);
-    // everyone calls
-    game3.execute_action(player_action_t{1000, gb_action_t::CALL, game3.active_player_v()});
-    game3.execute_action(player_action_t{500, gb_action_t::CALL, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    // state should be flop bet
-    EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::FLOP_BET);
-    // everyone calls
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    // state should be turn bet
-    EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::TURN_BET);
-    // everyone calls
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    // state should be river bet
-    EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::RIVER_BET);
-    // everyone calls
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
-    // state should be game finished
-    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+    {
+        auto game3 = gamestate<3>(10000);
+        // everyone calls
+        game3.execute_action(player_action_t{1000, gb_action_t::CALL, game3.active_player_v()});
+        game3.execute_action(player_action_t{500, gb_action_t::CALL, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be flop bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::FLOP_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be turn bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::TURN_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be river bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::RIVER_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be game finished
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::GAME_FIN);
+    }
 }
 
 template <std::size_t N>
@@ -225,6 +231,8 @@ constexpr auto make_games_array() -> typename std::array<gamestate<N>, 3>
 
 TEST(tgame, game_gamestate_comp)
 {
+    // todo: rework
+
     auto games2 = make_games_array<2>();
     auto games3 = make_games_array<3>();
     auto games4 = make_games_array<4>();
@@ -258,6 +266,48 @@ TEST(tgame, game_gamestate_comp)
     EXPECT_NE(games6[0].str_state(), games6[2].str_state());
 }
 
+TEST(tgame, game_game_payouts)
+{
+    //
+    // test showdown
+    //
+    std::array<card, 11> cards{// board
+                               card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
+                               // p1
+                               card("Tc"), card("Td"),
+                               // p2
+                               card("Ah"), card("7c"),
+                               // p3
+                               card("Qs"), card("Js")};
+
+    auto g1 = game<3>(cards, 10000);
+    // everyone calls
+    g1.execute_action(player_action_t{1000, gb_action_t::CALL, g1.active_player_v()});
+    g1.execute_action(player_action_t{500, gb_action_t::CALL, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    // state should be flop bet
+    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::FLOP_BET);
+    // everyone calls
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    // state should be turn bet
+    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::TURN_BET);
+    // everyone calls
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    // state should be river bet
+    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::RIVER_BET);
+    // everyone calls
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    g1.execute_action(player_action_t{0, gb_action_t::CHECK, g1.active_player_v()});
+    // state should be game finished
+    EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::GAME_FIN);
+    const std::array<int32_t, 3> payouts{-1000, -1000, 2000};
+    EXPECT_EQ(g1.payouts(), payouts);
+}
 TEST(tgame, game_chip_math)
 {
     // start| beh |  front
