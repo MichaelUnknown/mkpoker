@@ -268,14 +268,14 @@ TEST(tgame, game_gamestate_comp)
 
 TEST(tgame, game_game_payouts)
 {
-    std::array<card, 11> cards{// board
-                               card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
-                               // SB
-                               card("Tc"), card("Td"),
-                               // BB
-                               card("Qc"), card("Jc"),
-                               // UTG
-                               card("Qs"), card("Js")};
+    const std::array<card, 11> cards{// board
+                                     card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
+                                     // SB
+                                     card("Tc"), card("Td"),
+                                     // BB
+                                     card("Qc"), card("Jc"),
+                                     // UTG
+                                     card("Qs"), card("Js")};
 
     // showdown with 3 all in
     {
@@ -305,30 +305,34 @@ TEST(tgame, game_game_payouts)
         const std::array<int32_t, 3> expected_payouts2{-3000, -2000, 5000};
         EXPECT_EQ(g2.payouts(), expected_payouts2);
     }
-}
-TEST(tgame, game_chip_math)
-{
-    // start| beh |  front
-    // 1000 | 200 | 0: 800 (alive)
-    // 1000 | 200 | 1: 800 (alive)
-    // 1000 | 700 | 2: 300 (out)
-    // 1000 | 550 | 3: 450 (out)
-    // 1000 | 400 | 4: 600 (allin)
-    // 1000 |1000 | 5: 0   (out)
-    std::vector<int32_t> chips1{800, 800, 300, 450, 600, 0};
 
-    auto f = [](const std::vector<int32_t>& chips, const int32_t upper_bound, const int32_t lower_bound = 0) {
-        const auto local_pot = std::accumulate(chips.cbegin(), chips.cend(), 0, [&](const int32_t val, const int32_t e) {
-            return val + (e <= lower_bound ? 0 : e > upper_bound ? upper_bound - lower_bound : e - lower_bound);
-        });
-        return local_pot;
-    };
+    // showdown with 4, side pot
+    {
+        const std::array<card, 13> cards_4{// board
+                                           card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
+                                           // SB 2000
+                                           card("Ac"), card("Ad"),
+                                           // BB 2000
+                                           card("Ah"), card("As"),
+                                           // UTG 5000
+                                           card("Ks"), card("Qh"),
+                                           // MP  5000
+                                           card("Qs"), card("Js")};
 
-    EXPECT_EQ(f(chips1, 300), 1500);
-    EXPECT_EQ(f(chips1, 600, 300), 1050);
-    EXPECT_EQ(f(chips1, 800, 600), 400);
-    EXPECT_EQ(f(chips1, 800), 2950);
-
-    EXPECT_EQ(f(chips1, 800, 0), 2950);
-    EXPECT_EQ(f(chips1, 300, 0), 1500);
+        const std::array<int32_t, 4> chips_start4{2000, 2000, 5000, 5000};
+        auto g4 = game<4>(cards_4, chips_start4);
+        const std::array<int32_t, 4> chips_front_expected4{500, 1000, 0, 0};
+        const std::array<int32_t, 4> chips_behind_expected4{1500, 1000, 5000, 5000};
+        // everyone calls
+        EXPECT_EQ(g4.chips_front(), chips_front_expected4);
+        EXPECT_EQ(g4.chips_behind(), chips_behind_expected4);
+        g4.execute_action(player_action_t{5000, gb_action_t::ALLIN, g4.active_player_v()});    // utg
+        g4.execute_action(player_action_t{5000, gb_action_t::CALL, g4.active_player_v()});     // mp
+        g4.execute_action(player_action_t{1500, gb_action_t::ALLIN, g4.active_player_v()});    // sb
+        g4.execute_action(player_action_t{1000, gb_action_t::ALLIN, g4.active_player_v()});    // bb
+        // state should be fin
+        EXPECT_EQ(g4.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        const std::array<int32_t, 4> expected_payouts4{2000, 2000, -5000, 1000};
+        EXPECT_EQ(g4.payouts(), expected_payouts4);
+    }
 }

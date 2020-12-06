@@ -43,6 +43,13 @@ namespace mkp
     {
         // encoding
         uint32_t m_result;
+#if !defined(NDEBUG)
+        uint8_t m_debug_type = type();
+        uint8_t m_debug_major = major_rank().m_rank;
+        uint8_t m_debug_minor = minor_rank().m_rank;
+        //std::string m_debug_str = str().c_str();
+        //std::string m_debug_bitfield = bitstr();
+#endif
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // private helper functions

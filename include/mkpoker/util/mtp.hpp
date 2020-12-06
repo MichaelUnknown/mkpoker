@@ -1,9 +1,9 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
-#include <type_traits>
-#include <utility>
+#include <cstddef>       // std::size_t
+#include <functional>    // std::identity
+#include <utility>       // std::integer_sequence, std::make_index_sequence, std::forward
 
 namespace mkp
 {
@@ -25,6 +25,20 @@ namespace mkp
         }
 
     }    // namespace detail
+
+    // identity fix for libc++
+#if defined(_LIBCPP_VERSION) && (_LIBCPP_VERSION <= 12000)
+    struct identity
+    {
+        template <typename T>
+        [[nodiscard]] constexpr T&& operator()(T&& t) const noexcept
+        {
+            return std::forward<T>(t);
+        }
+    };
+#else
+    using identity = std::identity;
+#endif
 
     // make an array of size N, initialize with val
     template <std::size_t N, typename T>

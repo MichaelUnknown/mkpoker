@@ -1,9 +1,7 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
-#include <functional>
 
 namespace mkp
 {
