@@ -50,7 +50,7 @@ namespace mkp
         }
 
         // create with span of cards (works for any contiguous container)
-        explicit gamecards(const std::span<const card> all_cards)
+        constexpr explicit gamecards(const std::span<const card> all_cards)
             : m_board(make_array<card, c_num_board_cards>([&](const uint8_t i) { return all_cards[i]; })),
               m_hands(make_array<hand_2c, N>(
                   [&](const uint8_t i) { return hand_2c(all_cards[2 * i + c_num_board_cards], all_cards[2 * i + c_num_board_cards + 1]); }))
@@ -69,31 +69,30 @@ namespace mkp
         // getter for n board cards
         [[nodiscard]] auto board_n(unsigned int n) const
         {
-            if (n > 4)
+            if (n > 5)
             {
-                throw std::runtime_error("board_n(unsingned n): index greater than board size");
+                throw std::runtime_error("board_n(unsingned n): index greater than five, i.e. the board size");
             }
             return std::span<const card>(m_board.data(), n);
         }
 
         // get board as cardset
-        [[nodiscard]] auto board_n_as_cs(unsigned int n) const
-        {
-            if (n > 4)
-            {
-                throw std::runtime_error("board_n_as_cs(unsingned n): index greater than board size");
-            }
-            return cardset(std::span<const card>(m_board.data(), n));
-        }
+        [[nodiscard]] auto board_n_as_cs(unsigned int n) const { return cardset(board_n(n)); }
 
         // debug info
-        // todo: N
         [[nodiscard]] auto str_cards() const noexcept
         {
             std::string ret{"("};
             for (auto&& e : m_board)
                 ret.append(e.str());
-            ret.append(") " + m_hands[0].str() + " <> " + m_hands[1].str());
+            ret.append(") [");
+            for (unsigned i = 0; i < N; ++i)
+            {
+                ret.append("(" + m_hands[i].str() + ")");
+                if (i % 2 == 0 && i < N - 1)
+                    ret.append(", ");
+            }
+            ret.append("]");
 
             return ret;
         }

@@ -57,6 +57,63 @@ TEST(tgame, game_gamecards_ctor_arr)
     EXPECT_EQ(c6a, c6a);
     EXPECT_EQ(c6b, c6b);
     EXPECT_NE(c6a, c6b);
+
+    const std::array<card, 9> cards1{// board
+                                     card("2c"), card("3c"), card("4c"), card("5c"), card("6c"),
+                                     // sb
+                                     card("2d"), card("3d"),
+                                     // bb
+                                     card("2h"), card("3h")};
+    const std::array<card, 9> cards2{// board
+                                     card("2c"), card("3c"), card("4c"), card("5c"), card("6c"),
+                                     // sb same cards, different order -> gc should be identical
+                                     card("3d"), card("2d"),
+                                     // bb
+                                     card("2h"), card("3h")};
+    const std::array<card, 9> cards3{// board
+                                     card("2c"), card("3c"), card("4c"), card("5c"), card("6c"),
+                                     // sb and bb exchanged -> gc should be different
+                                     card("2h"), card("3h"),
+                                     // bb
+                                     card("2d"), card("3d")};
+    const auto g1 = gamecards<2>(cards1);
+    const auto g2 = gamecards<2>(cards2);
+    const auto g3 = gamecards<2>(cards3);
+
+    EXPECT_EQ(g1, g2);
+    EXPECT_EQ(g2, g1);
+    EXPECT_NE(g1, g3);
+    EXPECT_NE(g2, g3);
+}
+
+TEST(tgame, game_gamecards_board_n)
+{
+    const std::array<card, 9> cards{// board
+                                    card("2c"), card("3c"), card("4c"), card("5c"), card("6c"),
+                                    // sb
+                                    card("2d"), card("3d"),
+                                    // bb
+                                    card("2h"), card("3h")};
+    const auto gc = gamecards<2>{cards};
+    const auto board3 = gc.board_n(3);
+    const auto board4 = gc.board_n(4);
+    const auto board5 = gc.board_n(5);
+    const auto sub3 = std::span<const card>(cards.data(), 3);
+    const auto sub4 = std::span<const card>(cards.data(), 4);
+    const auto sub5 = std::span<const card>(cards.data(), 5);
+    EXPECT_EQ(board3.size(), 3);
+    EXPECT_EQ(std::equal(board3.begin(), board3.end(), sub3.begin(), sub3.end()), true);
+    EXPECT_EQ(board4.size(), 4);
+    EXPECT_EQ(std::equal(board4.begin(), board4.end(), sub4.begin(), sub4.end()), true);
+    EXPECT_EQ(board5.size(), 5);
+    EXPECT_EQ(std::equal(board5.begin(), board5.end(), sub5.begin(), sub5.end()), true);
+    EXPECT_THROW(static_cast<void>(gc.board_n(6)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gc.board_n(7)), std::runtime_error);
+
+    EXPECT_EQ(gc.board_n_as_cs(3), cardset{"2c3c4c"});
+    EXPECT_EQ(gc.board_n_as_cs(4), cardset{"2c3c4c5c"});
+    EXPECT_EQ(gc.board_n_as_cs(5), cardset{"2c3c4c5c6c"});
+    EXPECT_THROW(static_cast<void>(gc.board_n_as_cs(6)), std::runtime_error);
 }
 
 TEST(tgame, game_gamecards_ctor_span)
