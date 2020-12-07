@@ -185,7 +185,7 @@ jobs:
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
 
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument -isystem /usr/lib/gcc/x86_64-linux-gnu/10/include\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV # -isystem /usr/lib/gcc/x86_64-linux-gnu/10/include\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
