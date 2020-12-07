@@ -211,28 +211,28 @@ jobs:
 
       # at the moment, only msvc is multi config
       # pass --config $build_type als arg
-      - 
-        name: build
-        shell: bash
-        run: |
-          cmake \
-          --build build \
-          ${{ env.MKP_MULTI }} \
-          -j1 -v
+      #- 
+        #name: build
+        #shell: bash
+        #run: |
+        #  cmake \
+        #  --build build \
+        #  ${{ env.MKP_MULTI }} \
+        #  -j1 -v
 
       # run tests with very verbose output
-      - 
-        name: run tests
-        shell: bash
-        run: |
-          cd build
-          ctest -VV
+      #- 
+      #  name: run tests
+      #  shell: bash
+      #  run: |
+      #    cd build
+      #    ctest -VV
 
       # code coverage is only available with gcc debug
-      - 
-        name: code coverage
-        if: matrix.cfg.codecov
-        shell: bash
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"
+      #- 
+      #  name: code coverage
+      #  if: matrix.cfg.codecov
+      #  shell: bash
+      #  env:
+      #    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #  run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"
