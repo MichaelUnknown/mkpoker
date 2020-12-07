@@ -162,10 +162,8 @@ jobs:
           cmake \
             -S llvm \
             -B build \
-            -G Ninja \
             -D CMAKE_C_COMPILER:STRING=gcc-10 \
             -D CMAKE_CXX_COMPILER:STRING=g++-10 \
-            -D CMAKE_MAKE_PROGRAM:STRING=${{ env.NINJA_INSTALL_PATH }}/bin/ninja \
             -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
             -D CMAKE_BUILD_TYPE=Release
