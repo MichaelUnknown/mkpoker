@@ -110,30 +110,15 @@ jobs:
 
       # set env variables according to os/compiler/build etc.
       -
-        name: "set environment variables"
+        name: "init some environment variables"
+        if: matrix.cfg.libcxx
+        id: init
         shell: bash
         run: |
-          echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
-          echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
-          if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
-
-            if [[ "x${{matrix.cfg.codecov}}" == "xtrue" ]]; then
-              cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
-            fi
-            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
-            echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
-
-            if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/local/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/local/lib -Wl,-rpath,$GITHUB_WORKSPACE/local/lib -lc++abi\"" >> $GITHUB_ENV
-            elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
-            fi
-
-          else
-            echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
-          fi
+          llvm_tag=llvmorg-11.0.1-rc1
+          echo ::set-output name=llmv-version::$llvm_tag
+          echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
+          echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
       # install clang 11 and libc++ if necessary
       - 
@@ -145,58 +130,73 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 11
-      # cach the libcxx installation
-      #-
-      #  name: "cache libcxx"
-      #  uses: actions/cache@v2
-      #  id: cache-libcxx  # give it a name for checking the cache hit-or-not
-      #  with:
-      #    path: "${{ env.LIBCXX_INSTALL_PATH }}"
-      #    #path: ./packages/  # what we cache: the folder
-      #    key: ${{ runner.os }}-cache-libcxx-${{ hashFiles('??') }}
-      #    restore-keys: |
-      #      ${{ runner.os }}-cache-libcxx-
-      - 
-        name: "install libcxx latest"
+
+      # cache the llvm installation
+      -
+        name: "cache llvm"
         if: matrix.cfg.libcxx
-        #if: matrix.cfg.libcxx && steps.cache-packages.outputs.cache-hit != 'true'
-        working-directory: "${{ env.HOME }}"
+        uses: actions/cache@v2
+        id: cache-llvm
+        with:
+          path: "${{env.LIBCXX_INSTALL_PATH}}"
+          key: ${{runner.os}}-llvm000-${{ steps.init.outputs.llmv-version }}
+      # if not cached, actually build stuff
+      -
+        name: "checkout llvm"
+        if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          ref: ${{ env.LIBCXX_INSTALL_TAG }}
+          path: llvm-project
+      - 
+        name: "install libcxx"
+        if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          echo "building the latest libcxx from source..."
-          git clone --depth 1 https://github.com/llvm/llvm-project
-
-          mkdir "${{ env.LIBCXX_INSTALL_PATH }}"
+          echo source from checkout action should be here...
+          ls -lh
           cd llvm-project
 
+          echo building libcxx from source...
           cmake \
-            -S libcxx \
-            -B buildcxx \
-            -D CMAKE_C_COMPILER=${CC} \
-            -D CMAKE_CXX_COMPILER=${CXX} \
+            -S llvm \
+            -B build \
+            -G Ninja \
+            -D CMAKE_C_COMPILER:STRING=gcc-10 \
+            -D CMAKE_CXX_COMPILER:STRING=g++-10 \
+            -D CMAKE_MAKE_PROGRAM:STRING=${{ env.NINJA_INSTALL_PATH }}/bin/ninja \
+            -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
-            -D CMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build buildcxx -j2 -v
-          cmake --build buildcxx --target install
+            -D CMAKE_BUILD_TYPE=Release
+          cmake --build build --target install-cxx
+          cmake --build build --target install-cxxabi
 
-          cmake \
-            -S libcxxabi \
-            -B buildcxxabi \
-            -D CMAKE_C_COMPILER=${CC} \
-            -D CMAKE_CXX_COMPILER=${CXX} \
-            -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
-            -D CMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build buildcxxabi -j2 -v
-          cmake --build buildcxxabi --target install
+      # setup compiler for the main build steps
+      -
+        name: "setup compiler"
+        shell: bash
+        run: |
+          echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
+          echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
+          if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
 
-          #cmake \
-          #  -S libcxx \
-          #  -B libcxxinstall \
-          #  -D CMAKE_C_COMPILER=${CC} \
-          #  -D CMAKE_CXX_COMPILER=${CXX} \
-          #  -D CMAKE_BUILD_TYPE=RelWithDebInfo
-          #cmake --build libcxxinstall -j2 -v
-          #sudo cmake --build libcxxinstall --target install
+            if [[ "x${{matrix.cfg.codecov}}" == "xtrue" ]]; then
+              cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
+            fi
+            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
+
+            if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument -isystem /usr/lib/gcc/x86_64-linux-gnu/10/include\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/local/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/local/lib -lc++abi\"" >> $GITHUB_ENV
+            elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+            fi
+
+          else
+            echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
+          fi
 
       # at the moment, only msvc is multi config
       # other builds need the build_type set during config
