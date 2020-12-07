@@ -51,13 +51,13 @@ jobs:
             cc: clang-11
             cxx: clang++-11
             libcxx: true
-          #- 
-          #  name: "ubuntu clang 11 libcxx Release"
-          #  os: ubuntu-20.04
-          #  build_type: Release
-          #  cc: clang-11
-          #  cxx: clang++-11
-          #  libcxx: true
+          - 
+            name: "ubuntu clang 11 libcxx Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: clang-11
+            cxx: clang++-11
+            libcxx: true
 
           # clang 11 on macos
           - 
@@ -66,12 +66,12 @@ jobs:
             build_type: Debug
             cc: /usr/local/opt/llvm/bin/clang-11
             cxx: /usr/local/opt/llvm/bin/clang++
-          #- 
-          #  name: "macos clang 11 Release"
-          #  os: macos-11.0
-          #  build_type: Release
-          #  cc: /usr/local/opt/llvm/bin/clang-11
-          #  cxx: /usr/local/opt/llvm/bin/clang++
+          - 
+            name: "macos clang 11 Release"
+            os: macos-11.0
+            build_type: Release
+            cc: /usr/local/opt/llvm/bin/clang-11
+            cxx: /usr/local/opt/llvm/bin/clang++
 
           # apple clang 12
           - 
@@ -80,12 +80,12 @@ jobs:
             build_type: Debug
             cc: clang
             cxx: clang++
-          #- 
-          #  name: "macos apple clang 12 Release"
-          #  os: macos-11.0
-          #  build_type: Release
-          #  cc: clang
-          #  cxx: clang++
+          - 
+            name: "macos apple clang 12 Release"
+            os: macos-11.0
+            build_type: Release
+            cc: clang
+            cxx: clang++
 
           # msvc
           - 
@@ -123,10 +123,10 @@ jobs:
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
 
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -I $GITHUB_WORKSPACE/local/include/c++/v1\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/local/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/local/lib -Wl,-rpath,$GITHUB_WORKSPACE/local/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -I /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             fi
 
