@@ -121,9 +121,10 @@ jobs:
               cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
             fi
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
+            echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/local/include/c++/v1\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem $GITHUB_WORKSPACE/local/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L $GITHUB_WORKSPACE/local/lib -Wl,-rpath,$GITHUB_WORKSPACE/local/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
@@ -144,17 +145,28 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 11
+      # cach the libcxx installation
+      #-
+      #  name: "cache libcxx"
+      #  uses: actions/cache@v2
+      #  id: cache-libcxx  # give it a name for checking the cache hit-or-not
+      #  with:
+      #    path: "${{ env.LIBCXX_INSTALL_PATH }}"
+      #    #path: ./packages/  # what we cache: the folder
+      #    key: ${{ runner.os }}-cache-libcxx-${{ hashFiles('??') }}
+      #    restore-keys: |
+      #      ${{ runner.os }}-cache-libcxx-
       - 
         name: "install libcxx latest"
         if: matrix.cfg.libcxx
+        #if: matrix.cfg.libcxx && steps.cache-packages.outputs.cache-hit != 'true'
         working-directory: "${{ env.HOME }}"
         shell: bash
         run: |
           echo "building the latest libcxx from source..."
           git clone --depth 1 https://github.com/llvm/llvm-project
 
-          INSTALL_TARGET=`pwd`/local
-          mkdir "${INSTALL_TARGET}"
+          mkdir "${{ env.LIBCXX_INSTALL_PATH }}"
           cd llvm-project
 
           cmake \
@@ -162,7 +174,7 @@ jobs:
             -B buildcxx \
             -D CMAKE_C_COMPILER=${CC} \
             -D CMAKE_CXX_COMPILER=${CXX} \
-            -D "CMAKE_INSTALL_PREFIX=${INSTALL_TARGET}" \
+            -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
             -D CMAKE_BUILD_TYPE=RelWithDebInfo
           cmake --build buildcxx -j2 -v
           cmake --build buildcxx --target install
@@ -172,19 +184,19 @@ jobs:
             -B buildcxxabi \
             -D CMAKE_C_COMPILER=${CC} \
             -D CMAKE_CXX_COMPILER=${CXX} \
-            -D "CMAKE_INSTALL_PREFIX=${INSTALL_TARGET}" \
+            -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
             -D CMAKE_BUILD_TYPE=RelWithDebInfo
           cmake --build buildcxxabi -j2 -v
           cmake --build buildcxxabi --target install
 
-          cmake \
-            -S libcxx \
-            -B libcxxinstall \
-            -D CMAKE_C_COMPILER=${CC} \
-            -D CMAKE_CXX_COMPILER=${CXX} \
-            -D CMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build libcxxinstall -j2 -v
-          sudo cmake --build libcxxinstall --target install
+          #cmake \
+          #  -S libcxx \
+          #  -B libcxxinstall \
+          #  -D CMAKE_C_COMPILER=${CC} \
+          #  -D CMAKE_CXX_COMPILER=${CXX} \
+          #  -D CMAKE_BUILD_TYPE=RelWithDebInfo
+          #cmake --build libcxxinstall -j2 -v
+          #sudo cmake --build libcxxinstall --target install
 
       # at the moment, only msvc is multi config
       # other builds need the build_type set during config
