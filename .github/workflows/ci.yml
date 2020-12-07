@@ -186,7 +186,7 @@ jobs:
 
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument -isystem /usr/lib/gcc/x86_64-linux-gnu/10/include\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/local/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/local/lib -lc++abi\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
@@ -211,28 +211,28 @@ jobs:
 
       # at the moment, only msvc is multi config
       # pass --config $build_type als arg
-      #- 
-        #name: build
-        #shell: bash
-        #run: |
-        #  cmake \
-        #  --build build \
-        #  ${{ env.MKP_MULTI }} \
-        #  -j1 -v
+      - 
+        name: build
+        shell: bash
+        run: |
+          cmake \
+          --build build \
+          ${{ env.MKP_MULTI }} \
+          -j1 -v
 
       # run tests with very verbose output
-      #- 
-      #  name: run tests
-      #  shell: bash
-      #  run: |
-      #    cd build
-      #    ctest -VV
+      - 
+        name: run tests
+        shell: bash
+        run: |
+          cd build
+          ctest -VV
 
       # code coverage is only available with gcc debug
-      #- 
-      #  name: code coverage
-      #  if: matrix.cfg.codecov
-      #  shell: bash
-      #  env:
-      #    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      #  run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"
+      - 
+        name: code coverage
+        if: matrix.cfg.codecov
+        shell: bash
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"
