@@ -136,68 +136,6 @@ namespace mkp
         // which player starts betting in the first round? heads up: BB(==BTN), otherweise: UTG
         static constexpr auto round0_first_player = N > 2 ? gb_pos_t::UTG : gb_pos_t::BB;
 
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // internal helpers
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-        // highest bet
-        [[nodiscard]] constexpr int32_t current_highest_bet() const noexcept
-        {
-            return *std::max_element(m_chips_front.cbegin(), m_chips_front.cend());
-        }
-
-        // chips to call for current player
-        [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
-
-        // total pot size for
-        [[nodiscard]] constexpr int32_t pot_size() const noexcept
-        {
-            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
-        }
-
-        // players alive (i.e. not OUT)
-        [[nodiscard]] constexpr int num_alive() const noexcept
-        {
-            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
-                return elem != gb_playerstate_t::OUT ? val + 1 : val;
-            });
-        }
-
-        // players who can act (i.e. INIT or ALIVE && able to call/bet)
-        [[nodiscard]] constexpr int num_actionable() const noexcept
-        {
-#if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
-            // clang 11 does not support c++20 constexpr accumualte yet
-            // also exclude other compilers, only gcc and msvc currently support it
-            uint8_t ret = 0;
-            for (uint8_t index = 0; index < N; index++)
-            {
-                if (m_playerstate[index] == gb_playerstate_t::INIT ||
-                    (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
-                {
-                    ++ret;
-                }
-            }
-            return ret;
-#else
-            constexpr auto indices = make_array<unsigned, N>(identity{});
-            return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
-                return (m_playerstate[idx] == gb_playerstate_t::INIT ||
-                        (m_playerstate[idx] == gb_playerstate_t::ALIVE && m_chips_front[idx] < current_highest_bet()))
-                           ? val + 1
-                           : val;
-            });
-#endif
-        }
-
-        // players who can act in the next betting round (i.e. not OUT or ALLIN)
-        [[nodiscard]] constexpr int num_future_actionable() const noexcept
-        {
-            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
-                return elem != gb_playerstate_t::OUT && elem != gb_playerstate_t::ALLIN ? val + 1 : val;
-            });
-        }
-
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
@@ -242,9 +180,9 @@ namespace mkp
         }
 
         // create a specific game
-        constexpr gamestate(    //const std::array<int32_t, N>& chips_start,
-            const std::array<int32_t, N>& chips_behind, const std::array<int32_t, N>& chips_front,
-            const std::array<gb_playerstate_t, N>& state, const int32_t minraise, const gb_pos_t current, const gb_gamestate_t gamestate)
+        constexpr gamestate(const std::array<int32_t, N>& chips_behind, const std::array<int32_t, N>& chips_front,
+                            const std::array<gb_playerstate_t, N>& state, const int32_t minraise, const gb_pos_t current,
+                            const gb_gamestate_t gamestate)
             :    //m_chips_start(chips_start),
               m_chips_behind(chips_behind),
               m_chips_front(chips_front),
@@ -253,6 +191,18 @@ namespace mkp
               m_current(current),
               m_gamestate(gamestate)
         {
+        }
+
+        // create (default) game but with specific starting chip counts
+        constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N>(1000)
+        {
+            if (chips_start[0] < 500 || chips_start[1] < 1000)
+            {
+                throw std::runtime_error("game1(span<card>, array<int32_t, N>): not enough chips available to post blinds");
+            }
+            m_chips_behind = chips_start;
+            m_chips_behind[0] -= m_chips_front[0];
+            m_chips_behind[1] -= m_chips_front[1];
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -284,7 +234,7 @@ namespace mkp
         [[nodiscard]] constexpr std::array<int32_t, N> chips_behind() const noexcept { return m_chips_behind; }
 
         // get alls pots (main pot + every side pot), the vector has the eligible player IDs
-        [[nodiscard]] auto pots() const -> std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>>
+        [[nodiscard]] auto all_pots() const -> std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>>
         {
             if (!in_terminal_state())
             {
@@ -364,6 +314,25 @@ namespace mkp
             });
         }
 
+        // return payout on terminal state (only for states with showdown)
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
+        {
+            if (!in_terminal_state())
+            {
+                throw std::runtime_error("payouts_shodown(): game not in terminal state");
+            }
+            if (!is_showdown())
+            {
+                throw std::runtime_error("payouts_shodown(): terminale state involves no showdown, but cards are given");
+            }
+
+            const auto pots = all_pots();
+            // return pot_distribution for each (side)pot, add everything up
+            return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
+                return val + pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+            });
+        }
+
         // return payout on terminal state (only for states with no showdown required)
         [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshodown() const
         {
@@ -388,10 +357,10 @@ namespace mkp
         }
 
         // return values required for pot size calculations
-        [[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const noexcept
-        {
-            return std::make_pair(pot_size(), amount_to_call());
-        }
+        //[[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const noexcept
+        //{
+        //    return std::make_pair(pot_size(), amount_to_call());
+        //}
 
         // get all possible actions
         [[nodiscard]] std::vector<player_action_t> possible_actions() const noexcept
@@ -446,22 +415,6 @@ namespace mkp
                     }
                 }
             }
-            //if ((player_local_pot + player_total_chips) > highest_bet)
-            //{
-            //    // not highest bidder and either last bet was at least a full raise OR player in INIT state (otherwise no reraise is allowed)
-            //    if (m_playerstate[pos] == gb_playerstate_t::INIT ||
-            //        (player_local_pot < highest_bet && (highest_bet - player_local_pot >= m_minraise)))
-            //    {
-            //        const int32_t min_raise_size = highest_bet + m_minraise - player_local_pot;
-            //        const int32_t max_raise_size = player_total_chips;
-            //
-            //        // add all possible raise sizes, stepsize 500mBB
-            //        for (int32_t current_raise_size = min_raise_size; current_raise_size < max_raise_size; current_raise_size += 500)
-            //        {
-            //            ret.emplace_back(current_raise_size, gb_action_t::RAISE, m_current);
-            //        }
-            //    }
-            //}
 
             // add all in if any chips are behind
             if (chips_remaining > 0)
@@ -638,24 +591,89 @@ namespace mkp
 
         constexpr auto operator<=>(const gamestate&) const noexcept = delete;
         constexpr bool operator==(const gamestate&) const noexcept = default;
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // internal helpers
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+       protected:
+        // highest bet
+        [[nodiscard]] constexpr int32_t current_highest_bet() const noexcept
+        {
+            return *std::max_element(m_chips_front.cbegin(), m_chips_front.cend());
+        }
+
+        // chips to call for current player
+        [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
+
+        // total pot size for
+        [[nodiscard]] constexpr int32_t pot_size() const noexcept
+        {
+            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+        }
+
+        // players alive (i.e. not OUT)
+        [[nodiscard]] constexpr int num_alive() const noexcept
+        {
+            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
+                return elem != gb_playerstate_t::OUT ? val + 1 : val;
+            });
+        }
+
+        // players who can act (i.e. INIT or ALIVE && able to call/bet)
+        [[nodiscard]] constexpr int num_actionable() const noexcept
+        {
+#if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
+            // clang 11 does not support c++20 constexpr accumualte yet
+            // also exclude other compilers, only gcc and msvc currently support it
+            uint8_t ret = 0;
+            for (uint8_t index = 0; index < N; index++)
+            {
+                if (m_playerstate[index] == gb_playerstate_t::INIT ||
+                    (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
+                {
+                    ++ret;
+                }
+            }
+            return ret;
+#else
+            constexpr auto indices = make_array<unsigned, N>(identity{});
+            return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
+                return (m_playerstate[idx] == gb_playerstate_t::INIT ||
+                        (m_playerstate[idx] == gb_playerstate_t::ALIVE && m_chips_front[idx] < current_highest_bet()))
+                           ? val + 1
+                           : val;
+            });
+#endif
+        }
+
+        // players who can act in the next betting round (i.e. not OUT or ALLIN)
+        [[nodiscard]] constexpr int num_future_actionable() const noexcept
+        {
+            return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
+                return elem != gb_playerstate_t::OUT && elem != gb_playerstate_t::ALLIN ? val + 1 : val;
+            });
+        }
     };
 
     // combine gamestate and cards, so we can track all data to simulate a game of poker
     // todo: we should probably use composition instead
     template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
-    class game : public gamestate<N>, public gamecards<N>
+    class game1 : public gamestate<N>, public gamecards<N>
     {
        public:
         // create default game with span of cards
-        constexpr game(const std::span<const card> all_cards, const int32_t stacksize) : gamestate<N>(stacksize), gamecards<N>(all_cards) {}
+        constexpr game1(const std::span<const card> all_cards, const int32_t stacksize) : gamestate<N>(stacksize), gamecards<N>(all_cards)
+        {
+        }
 
         // create (default) game but with specific starting chip counts
-        constexpr game(const std::span<const card> all_cards, const std::array<int32_t, N>& chips_start)
+        constexpr game1(const std::span<const card> all_cards, const std::array<int32_t, N>& chips_start)
             : gamestate<N>(1000), gamecards<N>(all_cards)
         {
             if (chips_start[0] < 500 || chips_start[1] < 1000)
             {
-                throw std::runtime_error("game(span<card>, array<int32_t, N>): not enough chips available to post blinds");
+                throw std::runtime_error("game1(span<card>, array<int32_t, N>): not enough chips available to post blinds");
             }
             this->m_chips_behind = chips_start;
             this->m_chips_behind[0] -= this->m_chips_front[0];
@@ -667,7 +685,7 @@ namespace mkp
         {
             if (!this->in_terminal_state())
             {
-                throw std::runtime_error("payouts(): game not in terminal state");
+                throw std::runtime_error("payouts(): game1 not in terminal state");
             }
 
             if (this->is_showdown())
