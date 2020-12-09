@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <initializer_list>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -50,34 +51,21 @@ namespace mkp
             }
         }
 
-        //
-        // todo: make this niceer with concepts, once all the major compiler support them
-
-        // create with a container of cards
-        template <std::size_t N>
-        constexpr explicit cardset(const std::array<card, N>& ct) noexcept
+        // create with span (works for any contiguous container)
+        constexpr explicit cardset(const std::span<const card> sp) noexcept
         {
-            for (auto&& c : ct)
+            for (auto&& c : sp)
             {
-                m_cards |= static_cast<card>(c).as_bitset();
+                m_cards |= c.as_bitset();
             }
         }
 
-        // create with initializer list
-        constexpr explicit cardset(std::initializer_list<card> l) noexcept
+        // create with init list
+        constexpr explicit cardset(const std::initializer_list<const card> li) noexcept
         {
-            for (auto&& c : l)
+            for (auto&& c : li)
             {
-                m_cards |= static_cast<card>(c).as_bitset();
-            }
-        }
-
-        // create with a container of cards
-        explicit cardset(const std::vector<card>& ct) noexcept
-        {
-            for (auto&& c : ct)
-            {
-                m_cards |= static_cast<card>(c).as_bitset();
+                m_cards |= c.as_bitset();
             }
         }
 
@@ -127,19 +115,22 @@ namespace mkp
         [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
-        [[nodiscard]] constexpr bool contains(const cardset cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
+        [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
 
         // check if cs is exclusive to this
-        [[nodiscard]] constexpr bool disjoint(const cardset cs) const noexcept { return (m_cards & cs.m_cards) == 0; }
+        [[nodiscard]] constexpr bool disjoint(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) == 0; }
 
         // check if cs hs joined cards to this
-        [[nodiscard]] constexpr bool intersects(const cardset cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
+        [[nodiscard]] constexpr bool intersects(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
 
         // returns a new cs, combine with card
         [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
 
         // returns a new cs, combine with cardset
-        [[nodiscard]] constexpr cardset combine(const cardset cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
+        [[nodiscard]] constexpr cardset combine(const cardset& cs) const& noexcept { return cardset{}.set(m_cards | cs.m_cards); }
+
+        // rvalue overload
+        [[nodiscard]] constexpr cardset combine(const cardset& cs) && noexcept { return std::move(*this).set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
 #if defined(__clang__)

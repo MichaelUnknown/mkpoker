@@ -15,10 +15,6 @@ FetchContent_Declare(
     GIT_TAG        release-1.10.0
 )
 FetchContent_MakeAvailable(googletest)
-# force shared crt
-# todo: check if this is only needed on windows
-#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
 # for gtest_discover_tests
 include(GoogleTest)
 
@@ -32,20 +28,18 @@ macro(package_add_test TESTNAME TESTFILE)
     gtest_discover_tests(${TESTNAME})
 endmacro()
 
-# check the status of compiler flags
-message(STATUS "test compiler flags (debug): ${CMAKE_CXX_FLAGS_DEBUG}")
-message(STATUS "test compiler flags (release): ${CMAKE_CXX_FLAGS_RELEASE}")
+# actual tests #
+package_add_test(bitset_test bitset_test.cpp mkpoker::mkp)
 
-# mkpoker::base #
-package_add_test(suit_test suit_test.cpp mkpoker::base)
-package_add_test(rank_test rank_test.cpp mkpoker::base)
-package_add_test(card_test card_test.cpp mkpoker::base)
+package_add_test(suit_test suit_test.cpp mkpoker::mkp)
+package_add_test(rank_test rank_test.cpp mkpoker::mkp)
+package_add_test(card_test card_test.cpp mkpoker::mkp)
 
-package_add_test(cardset_test cardset_test.cpp mkpoker::base)
-package_add_test(hand_test hand_test.cpp mkpoker::base)
-package_add_test(range_test range_test.cpp mkpoker::base)
+package_add_test(cardset_test cardset_test.cpp mkpoker::mkp)
+package_add_test(hand_test hand_test.cpp mkpoker::mkp)
+package_add_test(range_test range_test.cpp mkpoker::mkp)
 
-package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp mkpoker::base)
-package_add_test(holdem_eval_test holdem_eval_test.cpp mkpoker::base)
+package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp mkpoker::mkp)
+package_add_test(holdem_eval_test holdem_eval_test.cpp mkpoker::mkp)
 
-package_add_test(bitset_test bitset_test.cpp mkpoker::base)
+package_add_test(game_test game_test.cpp mkpoker::mkp)

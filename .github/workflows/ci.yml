@@ -1,0 +1,238 @@
+name: CI
+
+on: 
+  push: 
+    branches: 
+      - main
+  pull_request: 
+    branches: 
+      - main
+
+jobs: 
+  build: 
+    name: "${{ matrix.cfg.name }}"
+    runs-on: "${{ matrix.cfg.os }}"
+    strategy: 
+      fail-fast: false
+      matrix: 
+        cfg:
+          # gcc 10
+          - 
+            name: "ubuntu gcc 10 Debug"
+            os: ubuntu-20.04
+            build_type: Debug
+            cc: gcc-10
+            cxx: g++-10
+            codecov: true
+          - 
+            name: "ubuntu gcc 10 Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: gcc-10
+            cxx: g++-10
+
+          # clang 11 on ubuntu
+          - 
+            name: "ubuntu clang 11 Debug"
+            os: ubuntu-20.04
+            build_type: Debug
+            cc: clang-11
+            cxx: clang++-11
+          - 
+            name: "ubuntu clang 11 Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: clang-11
+            cxx: clang++-11
+          - 
+            name: "ubuntu clang 11 libcxx Debug"
+            os: ubuntu-20.04
+            build_type: Debug
+            cc: clang-11
+            cxx: clang++-11
+            libcxx: true
+          - 
+            name: "ubuntu clang 11 libcxx Release"
+            os: ubuntu-20.04
+            build_type: Release
+            cc: clang-11
+            cxx: clang++-11
+            libcxx: true
+
+          # clang 11 on macos
+          - 
+            name: "macos clang 11 Debug"
+            os: macos-11.0
+            build_type: Debug
+            cc: /usr/local/opt/llvm/bin/clang-11
+            cxx: /usr/local/opt/llvm/bin/clang++
+          - 
+            name: "macos clang 11 Release"
+            os: macos-11.0
+            build_type: Release
+            cc: /usr/local/opt/llvm/bin/clang-11
+            cxx: /usr/local/opt/llvm/bin/clang++
+
+          # apple clang 12
+          - 
+            name: "macos apple clang 12 Debug"
+            os: macos-11.0
+            build_type: Debug
+            cc: clang
+            cxx: clang++
+          - 
+            name: "macos apple clang 12 Release"
+            os: macos-11.0
+            build_type: Release
+            cc: clang
+            cxx: clang++
+
+          # msvc
+          - 
+            name: "windows msvc 2019 Debug"
+            os: windows-latest
+            build_type: Debug
+            cc: cl
+            cxx: cl
+          - 
+            name: "windows msvc 2019 Release"
+            os: windows-latest
+            build_type: Release
+            cc: cl
+            cxx: cl
+
+    ###################################################
+    ## building steps
+    ###################################################
+    steps: 
+      - 
+        uses: actions/checkout@v2
+
+      # init install path and llvm version tag
+      -
+        name: "init libcxx env variables"
+        if: matrix.cfg.libcxx
+        id: init
+        shell: bash
+        run: |
+          llvm_tag=llvmorg-11.0.1-rc1
+          echo ::set-output name=llmv-version::$llvm_tag
+          echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
+          echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
+
+      # install clang 11 and libc++ if necessary
+      - 
+        name: "install clang 11"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-11')
+        working-directory: "${{ env.HOME }}"
+        shell: bash
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 11
+
+      # cache the llvm installation
+      -
+        name: "cache llvm"
+        if: matrix.cfg.libcxx
+        uses: actions/cache@v2
+        id: cache-llvm
+        with:
+          path: "${{env.LIBCXX_INSTALL_PATH}}"
+          key: ${{runner.os}}-llvm000-${{ steps.init.outputs.llmv-version }}
+      # if not cached, actually build stuff
+      -
+        name: "checkout llvm"
+        if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          ref: ${{ env.LIBCXX_INSTALL_TAG }}
+          path: llvm-project
+      - 
+        name: "install libcxx"
+        if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo source from checkout action should be here...
+          ls -lh
+          cd llvm-project
+
+          echo building libcxx from source...
+          cmake \
+            -S llvm \
+            -B build \
+            -D CMAKE_C_COMPILER:STRING=gcc-10 \
+            -D CMAKE_CXX_COMPILER:STRING=g++-10 \
+            -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
+            -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
+            -D CMAKE_BUILD_TYPE=Release
+          cmake --build build --target install-cxx
+          cmake --build build --target install-cxxabi
+
+      # setup compiler for the main build steps
+      -
+        name: "setup compiler"
+        shell: bash
+        run: |
+          echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
+          echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
+          if [[  ${{matrix.cfg.os}} != 'windows-latest' ]]; then
+
+            if [[ "x${{matrix.cfg.codecov}}" == "xtrue" ]]; then
+              cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
+            fi
+            echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
+
+            if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
+            elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+            fi
+
+          else
+            echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
+          fi
+
+      # at the moment, only msvc is multi config
+      # other builds need the build_type set during config
+      - 
+        name: configure
+        shell: bash
+        run: |
+          cmake \
+          -S . \
+          -B build \
+          ${{ env.CXX_ARGS }} \
+          ${{ env.LDD_ARGS }} \
+          ${{ env.MKP_MONO }}
+
+      # at the moment, only msvc is multi config
+      # pass --config $build_type als arg
+      - 
+        name: build
+        shell: bash
+        run: |
+          cmake \
+          --build build \
+          ${{ env.MKP_MULTI }} \
+          -j1 -v
+
+      # run tests with very verbose output
+      - 
+        name: run tests
+        shell: bash
+        run: |
+          cd build
+          ctest -VV
+
+      # code coverage is only available with gcc debug
+      - 
+        name: code coverage
+        if: matrix.cfg.codecov
+        shell: bash
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"

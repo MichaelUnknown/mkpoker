@@ -1,4 +1,5 @@
 #include <mkpoker/holdem/holdem_evaluation_result.hpp>
+#include <mkpoker/util/mtp.hpp>
 
 #include <array>
 #include <stdexcept>
@@ -21,7 +22,7 @@ TEST(tholdem_eval_result, ctor)
     EXPECT_EQ(res.major_rank(), rank(rank_t{c_rank_eight}));
     EXPECT_EQ(res.minor_rank(), rank(rank_t{c_rank_six}));
     EXPECT_EQ(res.kickers(), 0);
-    EXPECT_EQ(res.m_result, uint32_t(0b0000'0000'1100'1100'1000'0000'0000'0000));
+    EXPECT_EQ(res.as_bitset(), uint32_t(0b0000'0000'1100'1100'1000'0000'0000'0000));
 }
 
 TEST(tholdem_eval_result, hevr_type)

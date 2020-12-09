@@ -41,6 +41,16 @@ namespace mkp
     //       T TTTMMMMm mmmkkkkk kkkkkkkk
     class holdem_evaluation_result
     {
+        // encoding
+        uint32_t m_result;
+#if !defined(NDEBUG)
+        uint8_t m_debug_type = type();
+        uint8_t m_debug_major = major_rank().m_rank;
+        uint8_t m_debug_minor = minor_rank().m_rank;
+        //std::string m_debug_str = str().c_str();
+        //std::string m_debug_bitfield = bitstr();
+#endif
+
         ///////////////////////////////////////////////////////////////////////////////////////
         // private helper functions
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -64,9 +74,6 @@ namespace mkp
         }
 
        public:
-        // encoding
-        const uint32_t m_result;
-
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +83,9 @@ namespace mkp
 
         // we do not check if the input is valid, use with caution!
         // instead, utilize the make_he_result(...) free function to create a checked, valid result
+        // todo:
+        // ranks major and minor have to be given with 1 above the actual value, because otherwise we
+        // could not distinguish between well-formed and invalid objects
         constexpr holdem_evaluation_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers) noexcept
             : m_result((type << c_offset_type) | (major << c_offset_major) | (minor << c_offset_minor) | (kickers & c_mask_ranks))
         {
@@ -91,17 +101,22 @@ namespace mkp
         // major rank, used for pair(s), full house and straight (flush)
         [[nodiscard]] constexpr rank major_rank() const noexcept
         {
-            return rank(rank_t(c_mask_ranks_numbers & (m_result >> c_offset_major)));
+            // todo: change encoding to ensure valid types
+            return rank(rank_t(c_mask_ranks_numbers & ((m_result >> c_offset_major) - 0)));
         };
 
         // minor rank, used for full house and two pair
         [[nodiscard]] constexpr rank minor_rank() const noexcept
         {
-            return rank(rank_t(c_mask_ranks_numbers & (m_result >> c_offset_minor)));
+            // todo: change encoding to ensure valid types
+            return rank(rank_t(c_mask_ranks_numbers & ((m_result >> c_offset_minor) - 0)));
         };
 
         // up to 5 cards that are not paired, also used for all flush cards
         [[nodiscard]] constexpr uint16_t kickers() const noexcept { return (c_mask_ranks & m_result); };
+
+        // bit representation
+        [[nodiscard]] constexpr uint32_t as_bitset() const noexcept { return m_result; };
 
         // string representation, e.g. "flush: Ace high"
         [[nodiscard]] std::string str() const

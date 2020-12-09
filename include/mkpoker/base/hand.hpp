@@ -322,4 +322,34 @@ namespace mkp
     using hand_2r = hand_helper<rank, true, false>;
     //using hand_2r = v1::hand_helper<rank, true, false, 2>;
 
+#if !defined(__clang__)
+    // clang 11 seems to differ with msvc and gcc about these asserts :(
+
+    // checks for hand_2c
+    static_assert(std::is_standard_layout_v<hand_2c>, "hand_2c should have standard layout");
+    static_assert(std::has_unique_object_representations_v<hand_2c>, "hand_2c should have a unique representation / be hashable");
+
+    static_assert(!std::is_default_constructible_v<hand_2c>, "hand_2c should NOT be default constructible");
+
+    static_assert(std::is_trivially_copyable_v<hand_2c>, "hand_2c should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_copy_constructible_v<hand_2c>, "hand_2c should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_move_constructible_v<hand_2c>, "hand_2c should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_copy_constructible_v<hand_2c>, "hand_2c should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_move_constructible_v<hand_2c>, "hand_2c should be trivially & nothrow copy/move constructible");
+
+    // checks for hand_2r
+    static_assert(std::is_standard_layout_v<hand_2r>, "hand_2r should have standard layout");
+    static_assert(std::has_unique_object_representations_v<hand_2r>, "hand_2r should have a unique representation / be hashable");
+
+    static_assert(!std::is_default_constructible_v<hand_2r>, "hand_2r should NOT be default constructible");
+
+    static_assert(std::is_nothrow_constructible_v<hand_2r, rank, rank>, "hand_2r should be nothrow constructible from two ranks");
+
+    static_assert(std::is_trivially_copyable_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_copy_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_trivially_move_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_copy_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
+    static_assert(std::is_nothrow_move_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
+#endif
+
 }    // namespace mkp

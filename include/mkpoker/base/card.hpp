@@ -88,7 +88,7 @@ namespace mkp
 
         constexpr std::strong_ordering operator<=>(const card& other) const noexcept
         {
-            if (auto cmp = m_card % c_num_ranks <=> other.m_card % c_num_ranks; cmp != 0)
+            if (const auto cmp = m_card % c_num_ranks <=> other.m_card % c_num_ranks; cmp != 0)
             {
                 return cmp;
             }
