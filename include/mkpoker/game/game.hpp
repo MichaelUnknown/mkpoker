@@ -356,12 +356,6 @@ namespace mkp
             });
         }
 
-        // return values required for pot size calculations
-        //[[nodiscard]] constexpr std::pair<int32_t, int32_t> pot_values() const noexcept
-        //{
-        //    return std::make_pair(pot_size(), amount_to_call());
-        //}
-
         // get all possible actions
         [[nodiscard]] std::vector<player_action_t> possible_actions() const noexcept
         {
@@ -776,27 +770,13 @@ namespace mkp
                         //    chips <= lower ? ignore
                         //                   : player_is_a_winner ? add won chips
                         //                                        : subtract lost chips
-
-                        //return make_array<int32_t, N>([&](const unsigned idx) {
-                        auto res = make_array<int32_t, N>([&](const unsigned idx) {
+                        return make_array<int32_t, N>([&](const unsigned idx) {
                             return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) !=
                                            winners.cend()
                                        ? -chips_front_adjusted[idx] + sum_p_winner
                                        : -chips_front_adjusted[idx];    // will return 0 for players who are not involved
                         });
-                        return res;
                     };
-
-                    // start| beh |  front
-                    // 1000 | 200 | 0: 800 (alive)
-                    // 1000 | 200 | 1: 800 (alive)
-                    // 1000 | 200 | 6: 800 (alive)
-                    // 1000 | 200 | 8: 700 (out)
-                    // 1000 | 400 | 4: 600 (allin)
-                    // 1000 | 400 | 7: 600 (allin)
-                    // 1000 | 550 | 3: 450 (out)
-                    // 1000 | 700 | 2: 300 (out)
-                    // 1000 |1000 | 5: 0   (out)
 
                     // get the number of pots as a list of eligible_players, upper, lower bound
 
@@ -835,15 +815,6 @@ namespace mkp
                     return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
                         return val + pot_distribution(std::get<0>(e), std::get<1>(e), std::get<2>(e));
                     });
-
-                    // return pot_distribution for each (side)pot, add everything up
-                    //std::array<int32_t, N> result{};
-                    //for (const auto& pot : pots)
-                    //{
-                    //    const auto tmp = pot_distribution(std::get<0>(pot), std::get<1>(pot), std::get<2>(pot));
-                    //    result += tmp;
-                    //}
-                    //return result;
                 }
             }
             else
