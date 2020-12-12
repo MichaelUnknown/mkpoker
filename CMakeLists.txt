@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(mkpoker
     VERSION 0.1.0
     LANGUAGES CXX
-    DESCRIPTION "mkpoker")
+    DESCRIPTION "A Texas Holdem poker framework written in C++ 20.")
 
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
