@@ -1,7 +1,25 @@
+/*
+Copyright (C) 2020 Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #pragma once
 
 #include <mkpoker/base/cardset.hpp>
-#include <mkpoker/holdem/holdem_evaluation_result.hpp>
+#include <mkpoker/holdem/holdem_result.hpp>
 #include <mkpoker/holdem/holdem_lookup_tables.hpp>
 #include <mkpoker/util/bit.hpp>
 
@@ -32,11 +50,11 @@ namespace mkp
                 const auto x = mkpoker_table_straight[mask_flush];
                 if (x > 0)
                 {
-                    return holdem_evaluation_result(c_straight_flush, x, 0, 0);
+                    return holdem_result(c_straight_flush, x, 0, 0);
                 }
                 else
                 {
-                    return holdem_evaluation_result(c_flush, 0, 0, mkpoker_table_top5[mask_flush]);
+                    return holdem_result(c_flush, 0, 0, mkpoker_table_top5[mask_flush]);
                 }
             };
 
@@ -67,7 +85,7 @@ namespace mkp
         // check quads
         if (const uint16_t mask_quads = (mask_c & mask_d & mask_h & mask_s); mask_quads)
         {
-            return holdem_evaluation_result(c_four_of_a_kind, cross_idx_high16(mask_quads), 0,
+            return holdem_result(c_four_of_a_kind, cross_idx_high16(mask_quads), 0,
                                             (uint16_t(1) << cross_idx_high16(mask_all_cards & ~mask_quads)));
         }
 
@@ -81,13 +99,13 @@ namespace mkp
             // since we only evaluate 7 cards at max, there can be no other pairs in case of double trips
             if (std::popcount(mask_trips) > 1)
             {
-                return holdem_evaluation_result(c_full_house, cross_idx_high16(mask_trips), cross_idx_low16(mask_trips), 0);
+                return holdem_result(c_full_house, cross_idx_high16(mask_trips), cross_idx_low16(mask_trips), 0);
             }
 
             // this finds all the duplicated cards, but no trips/quads
             if (const uint16_t mask_pair_fh = (mask_all_cards ^ (mask_c ^ mask_d ^ mask_h ^ mask_s)); mask_pair_fh)
             {
-                return holdem_evaluation_result(c_full_house, cross_idx_high16(mask_trips), cross_idx_high16(mask_pair_fh), 0);
+                return holdem_result(c_full_house, cross_idx_high16(mask_trips), cross_idx_high16(mask_pair_fh), 0);
             }
         }
 
@@ -96,7 +114,7 @@ namespace mkp
         const auto rank_straight = mkpoker_table_straight[mask_all_cards];
         if (rank_straight > 0)
         {
-            return holdem_evaluation_result(c_straight, rank_straight, 0, 0);
+            return holdem_result(c_straight, rank_straight, 0, 0);
         }
 
         // 4)
@@ -104,7 +122,7 @@ namespace mkp
         if (mask_trips)
         {
             const uint16_t mask_kickers = mask_all_cards & ~(mask_trips);
-            return holdem_evaluation_result(c_three_of_a_kind, cross_idx_high16(mask_trips), 0, mkpoker_table_top3[mask_kickers]);
+            return holdem_result(c_three_of_a_kind, cross_idx_high16(mask_trips), 0, mkpoker_table_top3[mask_kickers]);
         }
 
         // 5)
@@ -117,17 +135,17 @@ namespace mkp
             const auto low_rank = cross_idx_high16(mask_pair & ~(uint16_t(1) << high_rank));
             // from the remaining cards, get the highest rank
             const auto kicker_rank = cross_idx_high16(mask_all_cards & ~(uint16_t(1) << high_rank | uint16_t(1) << low_rank));
-            return holdem_evaluation_result(c_two_pair, high_rank, low_rank, uint16_t(1) << kicker_rank);
+            return holdem_result(c_two_pair, high_rank, low_rank, uint16_t(1) << kicker_rank);
         }
         else if (num_pairs > 0)
         {
             const uint16_t mask_kickers = mask_all_cards & ~(mask_pair);
-            return holdem_evaluation_result(c_one_pair, cross_idx_high16(mask_pair), 0, mkpoker_table_top3[mask_kickers]);
+            return holdem_result(c_one_pair, cross_idx_high16(mask_pair), 0, mkpoker_table_top3[mask_kickers]);
         }
 
         // 6)
         // no pair
-        return holdem_evaluation_result(c_no_pair, 0, 0, mkpoker_table_top5[mask_all_cards]);
+        return holdem_result(c_no_pair, 0, 0, mkpoker_table_top5[mask_all_cards]);
     }
 
     // safe call, will check if the cardset provides a suitable cardset

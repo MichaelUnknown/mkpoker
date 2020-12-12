@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2020 Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #pragma once
 
 #include <mkpoker/base/card.hpp>
@@ -280,7 +298,7 @@ namespace mkp
         {
             // 1) get the winners
             // 1a) start with all possible winners
-            std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
+            std::vector<std::pair<holdem_result, unsigned>> winners;
             std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
                 winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
             });
@@ -291,7 +309,7 @@ namespace mkp
             const auto dist = std::distance(winners.cbegin(), first_non_winner);
             // 1c) remove non_winners
             // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-            winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
+            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
 
             // 2) adjust the committed chips, compute winning sum
             // 2a) adjust the committed chips according to lower and upper bound
@@ -385,8 +403,10 @@ namespace mkp
             }
 
             // is calling legal?
-            // player must not be the highest bidder and have enough chips
-            if (chips_committed < highest_bet && chips_total >= highest_bet)
+            // player must not be the highest bidder and have enough chips, keep in mind... calling is not possible,
+            // if the players total chips are exactly the highest bet size => all in
+            //if (chips_committed < highest_bet && chips_total >= highest_bet)
+            if (chips_committed < highest_bet && chips_total > highest_bet)
             {
                 ret.emplace_back(highest_bet - chips_committed, gb_action_t::CALL, pos_t);
             }
@@ -410,8 +430,8 @@ namespace mkp
                 }
             }
 
-            // add all in if any chips are behind
-            if (chips_remaining > 0)
+            // add all in if player has any chips behind
+            if (chips_remaining > 0)    // && highest_bet != chips_total)
             {
                 // add all in
                 ret.emplace_back(chips_remaining, gb_action_t::ALLIN, pos_t);
@@ -422,28 +442,22 @@ namespace mkp
         // print debug info
         [[nodiscard]] std::string str_state() const noexcept
         {
-            std::string ret{to_string(m_gamestate) + ":"};
-
-            for (uint8_t ui = 0; ui < N; ++ui)
+            std::string ret{"Status: " + to_string(m_gamestate) + ", Pot: " + std::to_string(pot_size()) + "\n"};
+            for (uint8_t i = 0; i < N; ++i)
             {
-                if (ui < (N / 2))
+                if (i % 2 == 0)
                 {
-                    ret.append(" P" + std::to_string(ui) + (ui == static_cast<uint8_t>(m_current) ? "*" : "") + " (" +
-                               to_string(m_playerstate[ui]) + ", " + std::to_string(m_chips_behind[ui]) + ") " +
-                               std::to_string(m_chips_front[ui]));
+                    ret.append(" P" + std::to_string(i) + (i == static_cast<uint8_t>(m_current) ? "*" : " ") + " (" +
+                               to_string(m_playerstate[i]) + ", " + std::to_string(m_chips_behind[i]) + ") " +
+                               std::to_string(m_chips_front[i]));
                 }
-                if (ui == (N / 2))
+                else
                 {
-                    ret.append(" [" + std::to_string(pot_size()) + "]");
-                }
-                if (ui >= (N / 2))
-                {
-                    ret.append(" " + std::to_string(m_chips_front[ui]) + " (" + std::to_string(m_chips_behind[ui]) + ", " +
-                               to_string(m_playerstate[ui]) + ") P" + std::to_string(ui) +
-                               (ui == static_cast<uint8_t>(m_current) ? "*" : ""));
+                    ret.append(" | " + std::to_string(m_chips_front[i]) + " (" + std::to_string(m_chips_behind[i]) + ", " +
+                               to_string(m_playerstate[i]) + ") P" + std::to_string(i) +
+                               (i == static_cast<uint8_t>(m_current) ? "*\n" : " \n"));
                 }
             }
-
             return ret;
         }
 
@@ -739,7 +753,7 @@ namespace mkp
                                                 const int32_t lower_bound) -> std::array<int32_t, N> {
                         // 1) get the winners
                         // 1a) start with all possible winners
-                        std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
+                        std::vector<std::pair<holdem_result, unsigned>> winners;
                         std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
                             winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[idx].as_cardset())), idx);
                         });
@@ -750,7 +764,7 @@ namespace mkp
                         const auto dist = std::distance(winners.cbegin(), first_non_winner);
                         // 1c) remove non_winners
                         // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-                        winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
+                        winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
 
                         // 2) adjust the committed chips, compute winning sum
                         // 2a) adjust the committed chips according to lower and upper bound

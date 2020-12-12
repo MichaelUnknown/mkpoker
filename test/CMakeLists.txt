@@ -3,20 +3,20 @@
 ##########################################
 
 # cmake 3.14 for FetchContent
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+# /W3 warning in msvc fixed with 3.15, also supports FetchContent
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
-# get GTest
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.10.0
+# add gtest
+CPMAddPackage(
+    NAME googletest
+    GITHUB_REPOSITORY google/googletest
+    VERSION 1.10.x
 )
-FetchContent_MakeAvailable(googletest)
 # for gtest_discover_tests
 include(GoogleTest)
+
 
 macro(package_add_test TESTNAME TESTFILE)
     add_executable(${TESTNAME} ${TESTFILE})

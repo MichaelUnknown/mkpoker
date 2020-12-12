@@ -194,7 +194,7 @@ TEST(tgame, game_gamestate_execute_action)
         EXPECT_EQ(game1.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
 
         game1.execute_action(player_action_t{2000, gb_action_t::ALLIN, game1.active_player_v()});
-        game1.execute_action(player_action_t{1000, gb_action_t::CALL, game1.active_player_v()});
+        game1.execute_action(player_action_t{1000, gb_action_t::ALLIN, game1.active_player_v()});
         EXPECT_EQ(game1.in_terminal_state(), true);
         EXPECT_EQ(game1.is_showdown(), true);
 #if !defined(NDEBUG)
@@ -340,8 +340,8 @@ TEST(tgame, game_gamestate_payouts)
         auto g1 = gamestate<3>(3000);
         // everyone calls
         g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
-        g1.execute_action(player_action_t{2500, gb_action_t::CALL, g1.active_player_v()});
-        g1.execute_action(player_action_t{2000, gb_action_t::CALL, g1.active_player_v()});
+        g1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g1.active_player_v()});
+        g1.execute_action(player_action_t{2000, gb_action_t::ALLIN, g1.active_player_v()});
         //// state should be fin
         EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::GAME_FIN);
         const std::array<int32_t, 3> expected_payouts1{-3000, 1500, 1500};
@@ -356,7 +356,7 @@ TEST(tgame, game_gamestate_payouts)
         g2.execute_action(player_action_t{500, gb_action_t::CALL, g2.active_player_v()});      // sb
         g2.execute_action(player_action_t{1000, gb_action_t::RAISE, g2.active_player_v()});    // bb
         g2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g2.active_player_v()});    // utg
-        g2.execute_action(player_action_t{2000, gb_action_t::CALL, g2.active_player_v()});     // sb
+        g2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g2.active_player_v()});    // sb
         g2.execute_action(player_action_t{0, gb_action_t::FOLD, g2.active_player_v()});        // bb fold
         // state should be fin
         EXPECT_EQ(g2.gamestate_v(), gb_gamestate_t::GAME_FIN);
@@ -386,7 +386,7 @@ TEST(tgame, game_gamestate_payouts)
         EXPECT_EQ(g4.chips_front(), chips_front_expected4);
         EXPECT_EQ(g4.chips_behind(), chips_behind_expected4);
         g4.execute_action(player_action_t{5000, gb_action_t::ALLIN, g4.active_player_v()});    // utg
-        g4.execute_action(player_action_t{5000, gb_action_t::CALL, g4.active_player_v()});     // mp
+        g4.execute_action(player_action_t{5000, gb_action_t::ALLIN, g4.active_player_v()});    // mp
         g4.execute_action(player_action_t{1500, gb_action_t::ALLIN, g4.active_player_v()});    // sb
         g4.execute_action(player_action_t{1000, gb_action_t::ALLIN, g4.active_player_v()});    // bb
         // state should be fin
@@ -412,8 +412,8 @@ TEST(tgame, game_game1_payouts)
         auto g1 = game1<3>(cards, 3000);
         // everyone calls
         g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
-        g1.execute_action(player_action_t{2500, gb_action_t::CALL, g1.active_player_v()});
-        g1.execute_action(player_action_t{2000, gb_action_t::CALL, g1.active_player_v()});
+        g1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g1.active_player_v()});
+        g1.execute_action(player_action_t{2000, gb_action_t::ALLIN, g1.active_player_v()});
         //// state should be fin
         EXPECT_EQ(g1.gamestate_v(), gb_gamestate_t::GAME_FIN);
         const std::array<int32_t, 3> expected_payouts1{-3000, 1500, 1500};
@@ -428,7 +428,7 @@ TEST(tgame, game_game1_payouts)
         g2.execute_action(player_action_t{500, gb_action_t::CALL, g2.active_player_v()});      // sb
         g2.execute_action(player_action_t{1000, gb_action_t::RAISE, g2.active_player_v()});    // bb
         g2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g2.active_player_v()});    // utg
-        g2.execute_action(player_action_t{2000, gb_action_t::CALL, g2.active_player_v()});     // sb
+        g2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g2.active_player_v()});    // sb
         g2.execute_action(player_action_t{0, gb_action_t::FOLD, g2.active_player_v()});        // bb fold
         // state should be fin
         EXPECT_EQ(g2.gamestate_v(), gb_gamestate_t::GAME_FIN);
@@ -457,7 +457,7 @@ TEST(tgame, game_game1_payouts)
         EXPECT_EQ(g4.chips_front(), chips_front_expected4);
         EXPECT_EQ(g4.chips_behind(), chips_behind_expected4);
         g4.execute_action(player_action_t{5000, gb_action_t::ALLIN, g4.active_player_v()});    // utg
-        g4.execute_action(player_action_t{5000, gb_action_t::CALL, g4.active_player_v()});     // mp
+        g4.execute_action(player_action_t{5000, gb_action_t::ALLIN, g4.active_player_v()});    // mp
         g4.execute_action(player_action_t{1500, gb_action_t::ALLIN, g4.active_player_v()});    // sb
         g4.execute_action(player_action_t{1000, gb_action_t::ALLIN, g4.active_player_v()});    // bb
         // state should be fin
