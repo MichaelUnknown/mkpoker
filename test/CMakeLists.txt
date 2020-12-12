@@ -6,7 +6,6 @@
 # /W3 warning in msvc fixed with 3.15, also supports FetchContent
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
 # add gtest
 CPMAddPackage(

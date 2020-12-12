@@ -103,7 +103,7 @@ int main()
                         if (input == ":q")
                         {
                             // do not continue
-                            false;
+                            return false;
                         }
 
                         const unsigned num_action = std::atoi(input.c_str());

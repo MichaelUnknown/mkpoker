@@ -10,6 +10,13 @@ project(
 )
 
 
+# project options, tests are off by default to not install gtest
+option(MKPOKER_BUILD_EXAMPLES "Enable building the examples" ON)
+option(MKPOKER_BUILD_TESTS "Enable building the tests" OFF)
+option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
+
+
+# do not allow building in-source
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
     message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there.")
 endif()
@@ -23,6 +30,7 @@ CPMAddPackage(
     GITHUB_REPOSITORY TheLartians/PackageProject.cmake
     VERSION 1.3
 )
+
 
 # base library, header only
 add_library(mkpoker INTERFACE)
@@ -39,20 +47,15 @@ target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextr
 target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
 
 
-# tests etc., execute only if this is the main project
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-
-    # support folders
-    #set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-    # build examples
+# build examples, tests
+if(MKPOKER_BUILD_EXAMPLES)
+    message(STATUS "Building samples enabled")
     add_subdirectory(example)
-
-    # build tests
+endif()
+if(MKPOKER_BUILD_TESTS)
     message(STATUS "Testing enabled")
     enable_testing()
     add_subdirectory(test)
-
 endif()
 
 
