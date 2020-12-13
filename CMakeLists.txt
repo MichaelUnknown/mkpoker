@@ -10,9 +10,10 @@ project(
 )
 
 
-# project options, tests are off by default to not install gtest
-option(MKPOKER_BUILD_EXAMPLES "Enable building the examples" ON)
+# project options, these are off by default to not install gtest, propagate -Wpedantic etc.
+option(MKPOKER_BUILD_EXAMPLES "Enable building the examples" OFF)
 option(MKPOKER_BUILD_TESTS "Enable building the tests" OFF)
+option(MKPOKER_BUILD_FOR_DEV "Use strict compiler warnings" OFF)
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
 
 
@@ -34,7 +35,8 @@ CPMAddPackage(
 
 # base library, header only
 add_library(mkpoker INTERFACE)
-add_library(mkpoker::mkp ALIAS mkpoker)
+set(PROJECT_LIBRARY_NAMESPACE "mkpoker")
+add_library(${PROJECT_LIBRARY_NAMESPACE}::mkp ALIAS mkpoker)
 target_include_directories(
     mkpoker
     INTERFACE
@@ -42,12 +44,15 @@ target_include_directories(
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 target_compile_features(mkpoker INTERFACE cxx_std_20)
-target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive- /std:c++latest>)
-target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
-target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 
 
-# build examples, tests
+# according to options, build examples, tests etc.
+if(MKPOKER_BUILD_FOR_DEV)
+    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+endif()
 if(MKPOKER_BUILD_EXAMPLES)
     message(STATUS "Building samples enabled")
     add_subdirectory(example)

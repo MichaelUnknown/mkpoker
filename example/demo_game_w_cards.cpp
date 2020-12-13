@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <mkpoker/game/game.hpp>
+#include <mkpoker/util/card_generator.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -32,9 +33,32 @@ int main()
     std::size_t num_players{};
     std::string input{};
 
+    auto game = mkp::gamestate<6>(100000);
+
     for (;;)
     {
-        auto game = mkp::gamestate<6>(10000);
+        mkp::card_generator<mkp::c_rank_seven, mkp::c_suit_diamonds> cgen{};
+        //mkp::card_generator cgen{};
+
+        std::vector<mkp::card> cards{};
+        for (int i = 0; i < 12; ++i)
+        {
+            cards.push_back(cgen.generate());
+        }
+        for (auto&& c : cards)
+        {
+            std::cout << c.str() << " ";
+        }
+        std::cout << "\n";
+
+        const auto five_cards = cgen.generate_v(5);
+        for (auto&& c : five_cards)
+        {
+            std::cout << c.str() << " ";
+        }
+        std::cout << "\n";
+
+        return 0;
 
         for (;;)
         {
