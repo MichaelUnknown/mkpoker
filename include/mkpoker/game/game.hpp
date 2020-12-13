@@ -164,8 +164,7 @@ namespace mkp
         // create a new game with starting stacksize
         template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            :    //m_chips_start(make_array<N>(stacksize)),
-              m_chips_behind(
+            : m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
@@ -182,8 +181,7 @@ namespace mkp
         // create a new game with starting stacksize, specialization for heads up
         template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            :    //m_chips_start(make_array<N>(stacksize)),
-              m_chips_behind(
+            : m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 1000 : i == 1 ? 500 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
@@ -197,26 +195,12 @@ namespace mkp
             }
         }
 
-        // create a specific game
-        constexpr gamestate(const std::array<int32_t, N>& chips_behind, const std::array<int32_t, N>& chips_front,
-                            const std::array<gb_playerstate_t, N>& state, const int32_t minraise, const gb_pos_t current,
-                            const gb_gamestate_t gamestate)
-            :    //m_chips_start(chips_start),
-              m_chips_behind(chips_behind),
-              m_chips_front(chips_front),
-              m_playerstate(state),
-              m_minraise(minraise),
-              m_current(current),
-              m_gamestate(gamestate)
-        {
-        }
-
         // create (default) game but with specific starting chip counts
         constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N>(1000)
         {
             if (chips_start[0] < 500 || chips_start[1] < 1000)
             {
-                throw std::runtime_error("game1(span<card>, array<int32_t, N>): not enough chips available to post blinds");
+                throw std::runtime_error("gamestate(array<int32_t, N>): not enough chips available to post blinds");
             }
             m_chips_behind = chips_start;
             m_chips_behind[0] -= m_chips_front[0];

@@ -2,11 +2,11 @@
 
 #include <array>
 #include <cstdint>
-#include <functional>    // test clang
+#include <functional>
 #include <span>
 #include <stdexcept>
-#include <type_traits>    // test clang
-#include <utility>        // test clang
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -175,6 +175,21 @@ TEST(tgame, game_gamestate_ctor)
     EXPECT_THROW(static_cast<void>(g6.payouts_noshodown()), std::runtime_error);
 }
 
+TEST(tgame, game_gamestate_ctor_chips)
+{
+    std::array<int, 2> chips2{1000, 500};
+    std::array<int, 3> chips3{1000, 500, 1000};
+    std::array<int, 4> chips4{1000, 500, 1000, 1000};
+    std::array<int, 5> chips5{1000, 500, 1000, 1000, 1000};
+    std::array<int, 6> chips6{1000, 500, 1000, 1000, 1000, 1000};
+
+    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<4>(chips4)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<5>(chips5)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<6>(chips6)), std::runtime_error);
+}
+
 TEST(tgame, game_gamestate_execute_action)
 {
     //
@@ -197,9 +212,9 @@ TEST(tgame, game_gamestate_execute_action)
         game1.execute_action(player_action_t{1000, gb_action_t::ALLIN, game1.active_player_v()});
         EXPECT_EQ(game1.in_terminal_state(), true);
         EXPECT_EQ(game1.is_showdown(), true);
-#if !defined(NDEBUG)
+        //#if !defined(NDEBUG)
         EXPECT_THROW(static_cast<void>(game1.payouts_noshodown()), std::runtime_error);
-#endif
+        //#endif
         EXPECT_EQ(game1.possible_actions().size(), 0);
     }
 
@@ -245,6 +260,9 @@ TEST(tgame, game_gamestate_execute_action)
         // state should be game finished
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
         // payouts should be {-500,+4500,-4000}
+        const auto cards2 = make_array<card, 11>([](const uint8_t i) { return card(i); });
+        const auto gcards2 = gamecards<3>(cards2);
+        EXPECT_THROW(static_cast<void>(game2.payouts_showdown(gcards2)), std::runtime_error);
         EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
     }
 
@@ -338,6 +356,11 @@ TEST(tgame, game_gamestate_payouts)
     // showdown with 3 all in
     {
         auto g1 = gamestate<3>(3000);
+        EXPECT_THROW(static_cast<void>(g1.all_pots()), std::runtime_error);
+        // todo:
+        //EXPECT_THROW(static_cast<void>(g1.payouts_showdown()), std::runtime_error);
+        //const auto cards2 = make_array<card, 11>([](const uint8_t i) { return card(i); });
+        //const auto gcards2 = gamecards<3>(cards2);
         // everyone calls
         g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
         g1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g1.active_player_v()});
