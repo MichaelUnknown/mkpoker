@@ -1,5 +1,6 @@
 /*
-mkpoker - demo cli app that starts with a new game state and lets
+
+mkpoker - demo command line app that starts with a new game state and lets
 the user choose between the different legal actions for each player
 and step through a game
 
@@ -128,7 +129,7 @@ int main()
                 std::uniform_int_distribution<> dist_actions(0, static_cast<int>(vec_actions.size() - 1));
                 const auto action = vec_actions[dist_actions(rng)];
                 std::cout << "Opponents action: " << action.str() << "\n";
-                std::this_thread::sleep_for(std::chrono::milliseconds(300));
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500));
                 game.execute_action(action);
             }
 
@@ -150,6 +151,7 @@ int main()
                         std::cout << c.str() << " ";
                     }
                     std::cout << "\nlower: " << std::get<2>(e) << ", upper: " << std::get<1>(e) << "\n";
+                    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
                     ++i;
                 }
 
@@ -159,6 +161,7 @@ int main()
                 {
                     std::cout << i << ": " << results[i] << " (started with: " << chips[i] << " => " << chips[i] + results[i] << ")\n";
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
                 {
                     using namespace mkp;

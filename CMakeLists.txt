@@ -1,3 +1,7 @@
+##########################################
+## main library ##
+##########################################
+
 # /W3 warning in msvc fixed with 3.15
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
@@ -47,7 +51,7 @@ target_compile_features(mkpoker INTERFACE cxx_std_20)
 target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 
 
-# according to options, build examples, tests etc.
+# configure according to options, build examples, tests etc.
 if(MKPOKER_BUILD_FOR_DEV)
     target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
     target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
