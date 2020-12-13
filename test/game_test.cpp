@@ -260,9 +260,6 @@ TEST(tgame, game_gamestate_execute_action)
         // state should be game finished
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
         // payouts should be {-500,+4500,-4000}
-        const auto cards2 = make_array<card, 11>([](const uint8_t i) { return card(i); });
-        const auto gcards2 = gamecards<3>(cards2);
-        EXPECT_THROW(static_cast<void>(game2.payouts_showdown(gcards2)), std::runtime_error);
         EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
     }
 
@@ -353,14 +350,23 @@ TEST(tgame, game_gamestate_payouts)
                                      card("Qs"), card("Js")};
     const gamecards<3> gc{cards};
 
+    // no showdown
+    {
+        auto g0 = gamestate<3>(3000);
+        // should not be in terminal state
+        EXPECT_THROW(static_cast<void>(g0.payouts_showdown(gc)), std::runtime_error);
+        EXPECT_THROW(static_cast<void>(g0.all_pots()), std::runtime_error);
+
+        g0.execute_action(player_action_t{3000, gb_action_t::ALLIN, g0.active_player_v()});
+        g0.execute_action(player_action_t{0, gb_action_t::FOLD, g0.active_player_v()});
+        g0.execute_action(player_action_t{0, gb_action_t::FOLD, g0.active_player_v()});
+        EXPECT_EQ(g0.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        EXPECT_THROW(static_cast<void>(g0.payouts_showdown(gc)), std::runtime_error);
+    }
+
     // showdown with 3 all in
     {
         auto g1 = gamestate<3>(3000);
-        EXPECT_THROW(static_cast<void>(g1.all_pots()), std::runtime_error);
-        // todo:
-        //EXPECT_THROW(static_cast<void>(g1.payouts_showdown()), std::runtime_error);
-        //const auto cards2 = make_array<card, 11>([](const uint8_t i) { return card(i); });
-        //const auto gcards2 = gamecards<3>(cards2);
         // everyone calls
         g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
         g1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g1.active_player_v()});
