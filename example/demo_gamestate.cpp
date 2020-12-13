@@ -34,7 +34,7 @@ using g6 = mkp::gamestate<6>;
 
 int main()
 {
-    std::cout << "mkpoker game demo\nTo exit the program, type ':q' at any time\n\n";
+    std::cout << "mkpoker gamestate demo\nTo exit the program, type ':q' at any time\n\n";
 
     std::size_t num_players{};
     std::string input{};

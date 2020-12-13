@@ -107,8 +107,8 @@ namespace mkp
             for (unsigned i = 0; i < N; ++i)
             {
                 ret.append("(" + m_hands[i].str() + ")");
-                if (i % 2 == 0 && i < N - 1)
-                    ret.append(", ");
+                if (i < N - 1)
+                    ret.append(",");
             }
             ret.append("]");
 
@@ -256,7 +256,7 @@ namespace mkp
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("payouts_noshodown(): game not in terminal state");
+                throw std::runtime_error("all_pots(): game not in terminal state");
             }
 
             // 1) get all chip counts and sort by amount
@@ -267,13 +267,18 @@ namespace mkp
 
             // 2) we are at showdown, so there must be at least two highest chip counts (main pot)
             int32_t upper = chips_and_players[0].first;
-            std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
+            //std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
+            std::vector<unsigned> main_pot_players;
 
             // 3) step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
             // for every side pot, there must be one (or more) all in players with less chips
             std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
-            std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& e) {
-                if (const int32_t lower = m_chips_front[e.second]; lower == upper)
+            std::for_each(chips_and_players.cbegin(), chips_and_players.cend(), [&](const auto& e) {
+                if (m_playerstate[e.second] == gb_playerstate_t::OUT)
+                {
+                    // skip players that can not win the pot
+                }
+                else if (const int32_t lower = m_chips_front[e.second]; lower == upper)
                 {
                     // same as upper -> add player
                     main_pot_players.push_back(e.second);
@@ -442,7 +447,8 @@ namespace mkp
         // print debug info
         [[nodiscard]] std::string str_state() const noexcept
         {
-            std::string ret{"Status: " + to_string(m_gamestate) + ", Pot: " + std::to_string(pot_size()) + "\n"};
+            std::string ret{"Status: " + to_string(m_gamestate) + ", Pot: " + std::to_string(pot_size()) +
+                            ", Minraise: " + std::to_string(m_minraise) + "\n"};
             for (uint8_t i = 0; i < N; ++i)
             {
                 if (i % 2 == 0)
@@ -534,7 +540,7 @@ namespace mkp
                         {
                             auto chips = m_chips_front;
                             std::sort(chips.begin(), chips.end(), std::greater{});
-                            const int32_t difference = chips[1] - highest_bet;
+                            const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
                             m_chips_front[i] -= difference;
                             m_chips_behind[i] += difference;
                             break;
