@@ -112,7 +112,7 @@ int main()
                         return EXIT_SUCCESS;
                     }
                     const unsigned num_action = std::atoi(input.c_str());
-                    if (num_action >= 0 && num_action < vec_actions.size())
+                    if (num_action < vec_actions.size())
                     {
                         game.execute_action(vec_actions[num_action]);
                         break;
@@ -138,7 +138,7 @@ int main()
             {
                 std::cout << "\nThe hand ended.\n" << game.str_state() << "\n";
                 const auto pots = game.all_pots();
-                for (int i = 1; auto&& e : pots)
+                for (unsigned int i = 1; auto&& e : pots)
                 {
                     std::cout << "Pot " << i << ":\nEligible players: ";
                     for (auto&& p : std::get<0>(e))
@@ -157,7 +157,7 @@ int main()
 
                 std::cout << "\nResults:\n";
                 const auto results = game.is_showdown() ? game.payouts_showdown(gamecards) : game.payouts_noshodown();
-                for (int i = 0; i < results.size(); ++i)
+                for (unsigned int i = 0; i < results.size(); ++i)
                 {
                     std::cout << i << ": " << results[i] << " (started with: " << chips[i] << " => " << chips[i] + results[i] << ")\n";
                 }
@@ -172,7 +172,7 @@ int main()
                 if (const auto found = std::find_if(chips.cbegin(), chips.cend(), [](const int p_chips) { return p_chips < 1000; });
                     found != chips.cend())
                 {
-                    for (int i = 0; i < chips.size(); ++i)
+                    for (unsigned int i = 0; i < chips.size(); ++i)
                     {
                         chips[i] += c_starting_chips;
                     }

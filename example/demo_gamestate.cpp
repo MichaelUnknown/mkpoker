@@ -108,7 +108,7 @@ int main()
                         }
 
                         const unsigned num_action = std::atoi(input.c_str());
-                        if (num_action >= 0 && num_action < vec_actions.size())
+                        if (num_action < vec_actions.size())
                         {
                             game.execute_action(vec_actions[num_action]);
                             if (game.in_terminal_state())
