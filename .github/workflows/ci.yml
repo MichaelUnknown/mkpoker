@@ -205,6 +205,7 @@ jobs:
           cmake \
           -S . \
           -B build \
+          -D MKPOKER_BUILD_TESTS:BOOL=ON -D MKPOKER_BUILD_EXAMPLES:BOOL=ON -D MKPOKER_BUILD_FOR_DEV:BOOL=ON \
           ${{ env.CXX_ARGS }} \
           ${{ env.LDD_ARGS }} \
           ${{ env.MKP_MONO }}
