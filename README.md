@@ -9,5 +9,5 @@ A Texas Holdem poker framework written in C++ 20.
 todo:
 - update badges / CI
 
-![CI](https://github.com/MichaelUnknown/mkpoker/workflows/CI/badge.svg)(https://github.com/MichaelUnknown/mkpoker/actions)
-![Test](https://github.com/MichaelUnknown/mkpoker/workflows/CI/badge.svg)(https://www.test.de/)
+[![CI](https://github.com/MichaelUnknown/mkpoker/workflows/CI/badge.svg)](https://github.com/MichaelUnknown/mkpoker/actions)
+[![TEST](https://github.com/MichaelUnknown/mkpoker/workflows/CI/badge.svg)](https://www.test.de)
