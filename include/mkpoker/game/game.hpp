@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2020 Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #pragma once
 
 #include <mkpoker/base/card.hpp>
@@ -89,8 +107,8 @@ namespace mkp
             for (unsigned i = 0; i < N; ++i)
             {
                 ret.append("(" + m_hands[i].str() + ")");
-                if (i % 2 == 0 && i < N - 1)
-                    ret.append(", ");
+                if (i < N - 1)
+                    ret.append(",");
             }
             ret.append("]");
 
@@ -146,8 +164,7 @@ namespace mkp
         // create a new game with starting stacksize
         template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            :    //m_chips_start(make_array<N>(stacksize)),
-              m_chips_behind(
+            : m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
@@ -164,8 +181,7 @@ namespace mkp
         // create a new game with starting stacksize, specialization for heads up
         template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            :    //m_chips_start(make_array<N>(stacksize)),
-              m_chips_behind(
+            : m_chips_behind(
                   make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize; })),
               m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 1000 : i == 1 ? 500 : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
@@ -179,26 +195,12 @@ namespace mkp
             }
         }
 
-        // create a specific game
-        constexpr gamestate(const std::array<int32_t, N>& chips_behind, const std::array<int32_t, N>& chips_front,
-                            const std::array<gb_playerstate_t, N>& state, const int32_t minraise, const gb_pos_t current,
-                            const gb_gamestate_t gamestate)
-            :    //m_chips_start(chips_start),
-              m_chips_behind(chips_behind),
-              m_chips_front(chips_front),
-              m_playerstate(state),
-              m_minraise(minraise),
-              m_current(current),
-              m_gamestate(gamestate)
-        {
-        }
-
         // create (default) game but with specific starting chip counts
         constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N>(1000)
         {
             if (chips_start[0] < 500 || chips_start[1] < 1000)
             {
-                throw std::runtime_error("game1(span<card>, array<int32_t, N>): not enough chips available to post blinds");
+                throw std::runtime_error("gamestate(array<int32_t, N>): not enough chips available to post blinds");
             }
             m_chips_behind = chips_start;
             m_chips_behind[0] -= m_chips_front[0];
@@ -238,7 +240,7 @@ namespace mkp
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("payouts_noshodown(): game not in terminal state");
+                throw std::runtime_error("all_pots(): game not in terminal state");
             }
 
             // 1) get all chip counts and sort by amount
@@ -249,13 +251,18 @@ namespace mkp
 
             // 2) we are at showdown, so there must be at least two highest chip counts (main pot)
             int32_t upper = chips_and_players[0].first;
-            std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
+            //std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
+            std::vector<unsigned> main_pot_players;
 
             // 3) step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
             // for every side pot, there must be one (or more) all in players with less chips
             std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
-            std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& e) {
-                if (const int32_t lower = m_chips_front[e.second]; lower == upper)
+            std::for_each(chips_and_players.cbegin(), chips_and_players.cend(), [&](const auto& e) {
+                if (m_playerstate[e.second] == gb_playerstate_t::OUT)
+                {
+                    // skip players that can not win the pot
+                }
+                else if (const int32_t lower = m_chips_front[e.second]; lower == upper)
                 {
                     // same as upper -> add player
                     main_pot_players.push_back(e.second);
@@ -280,7 +287,7 @@ namespace mkp
         {
             // 1) get the winners
             // 1a) start with all possible winners
-            std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
+            std::vector<std::pair<holdem_result, unsigned>> winners;
             std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
                 winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
             });
@@ -291,7 +298,7 @@ namespace mkp
             const auto dist = std::distance(winners.cbegin(), first_non_winner);
             // 1c) remove non_winners
             // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-            winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
+            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
 
             // 2) adjust the committed chips, compute winning sum
             // 2a) adjust the committed chips according to lower and upper bound
@@ -385,8 +392,10 @@ namespace mkp
             }
 
             // is calling legal?
-            // player must not be the highest bidder and have enough chips
-            if (chips_committed < highest_bet && chips_total >= highest_bet)
+            // player must not be the highest bidder and have enough chips, keep in mind... calling is not possible,
+            // if the players total chips are exactly the highest bet size => all in
+            //if (chips_committed < highest_bet && chips_total >= highest_bet)
+            if (chips_committed < highest_bet && chips_total > highest_bet)
             {
                 ret.emplace_back(highest_bet - chips_committed, gb_action_t::CALL, pos_t);
             }
@@ -410,8 +419,8 @@ namespace mkp
                 }
             }
 
-            // add all in if any chips are behind
-            if (chips_remaining > 0)
+            // add all in if player has any chips behind
+            if (chips_remaining > 0)    // && highest_bet != chips_total)
             {
                 // add all in
                 ret.emplace_back(chips_remaining, gb_action_t::ALLIN, pos_t);
@@ -422,28 +431,23 @@ namespace mkp
         // print debug info
         [[nodiscard]] std::string str_state() const noexcept
         {
-            std::string ret{to_string(m_gamestate) + ":"};
-
-            for (uint8_t ui = 0; ui < N; ++ui)
+            std::string ret{"Status: " + to_string(m_gamestate) + ", Pot: " + std::to_string(pot_size()) +
+                            ", Minraise: " + std::to_string(m_minraise) + "\n"};
+            for (uint8_t i = 0; i < N; ++i)
             {
-                if (ui < (N / 2))
+                if (i % 2 == 0)
                 {
-                    ret.append(" P" + std::to_string(ui) + (ui == static_cast<uint8_t>(m_current) ? "*" : "") + " (" +
-                               to_string(m_playerstate[ui]) + ", " + std::to_string(m_chips_behind[ui]) + ") " +
-                               std::to_string(m_chips_front[ui]));
+                    ret.append(" P" + std::to_string(i) + (i == static_cast<uint8_t>(m_current) ? "*" : " ") + " (" +
+                               to_string(m_playerstate[i]) + ", " + std::to_string(m_chips_behind[i]) + ") " +
+                               std::to_string(m_chips_front[i]));
                 }
-                if (ui == (N / 2))
+                else
                 {
-                    ret.append(" [" + std::to_string(pot_size()) + "]");
-                }
-                if (ui >= (N / 2))
-                {
-                    ret.append(" " + std::to_string(m_chips_front[ui]) + " (" + std::to_string(m_chips_behind[ui]) + ", " +
-                               to_string(m_playerstate[ui]) + ") P" + std::to_string(ui) +
-                               (ui == static_cast<uint8_t>(m_current) ? "*" : ""));
+                    ret.append(" | " + std::to_string(m_chips_front[i]) + " (" + std::to_string(m_chips_behind[i]) + ", " +
+                               to_string(m_playerstate[i]) + ") P" + std::to_string(i) +
+                               (i == static_cast<uint8_t>(m_current) ? "*\n" : " \n"));
                 }
             }
-
             return ret;
         }
 
@@ -520,7 +524,7 @@ namespace mkp
                         {
                             auto chips = m_chips_front;
                             std::sort(chips.begin(), chips.end(), std::greater{});
-                            const int32_t difference = chips[1] - highest_bet;
+                            const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
                             m_chips_front[i] -= difference;
                             m_chips_behind[i] += difference;
                             break;
@@ -647,180 +651,6 @@ namespace mkp
             return std::accumulate(m_playerstate.cbegin(), m_playerstate.cend(), 0, [](const int val, const gb_playerstate_t elem) -> int {
                 return elem != gb_playerstate_t::OUT && elem != gb_playerstate_t::ALLIN ? val + 1 : val;
             });
-        }
-    };
-
-    // combine gamestate and cards, so we can track all data to simulate a game of poker
-    // todo: we should probably use composition instead
-    template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
-    class game1 : public gamestate<N>, public gamecards<N>
-    {
-       public:
-        // create default game with span of cards
-        constexpr game1(const std::span<const card> all_cards, const int32_t stacksize) : gamestate<N>(stacksize), gamecards<N>(all_cards)
-        {
-        }
-
-        // create (default) game but with specific starting chip counts
-        constexpr game1(const std::span<const card> all_cards, const std::array<int32_t, N>& chips_start)
-            : gamestate<N>(1000), gamecards<N>(all_cards)
-        {
-            if (chips_start[0] < 500 || chips_start[1] < 1000)
-            {
-                throw std::runtime_error("game1(span<card>, array<int32_t, N>): not enough chips available to post blinds");
-            }
-            this->m_chips_behind = chips_start;
-            this->m_chips_behind[0] -= this->m_chips_front[0];
-            this->m_chips_behind[1] -= this->m_chips_front[1];
-        }
-
-        // return payout on showdown
-        std::array<int32_t, N> payouts() const
-        {
-            if (!this->in_terminal_state())
-            {
-                throw std::runtime_error("payouts(): game1 not in terminal state");
-            }
-
-            if (this->is_showdown())
-            {
-                // todo: use constexpr if to write optimized versions for 2/3 players
-
-                // get players that are alive / eligible for (part of) the pot
-                const std::vector<unsigned> eligible_players = [&] {
-                    std::vector<unsigned> result;
-                    for (unsigned i = 0; i < N; ++i)
-                    {
-                        if (this->m_playerstate[i] != gb_playerstate_t::OUT)
-                            result.push_back(i);
-                    }
-                    return result;
-                }();
-
-                // most common case: only 2 players for showdown
-                // this is just a specialization for two players and could also be handled by the more generic version below
-                // however those (3+) cases are actually rather rare and generic algo needs to scan all chip counts for side
-                // pots or it would need extra checks to see if there are no side pots
-                // also it must use more complex logic, because two, three or more players could share a pot
-                if (eligible_players.size() == 2)
-                {
-                    // evaluate the hands
-                    const auto h1 = evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[eligible_players[0]].as_cardset()));
-                    const auto h2 = evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[eligible_players[1]].as_cardset()));
-
-                    if (const auto cmp = h1 <=> h2; cmp != 0)
-                    {
-                        // we have a winner
-                        const unsigned pos_winner = cmp > 0 ? eligible_players[0] : eligible_players[1];
-
-                        return make_array<int32_t, N>([&](const unsigned idx) {
-                            return idx == pos_winner ? this->pot_size() - this->m_chips_front[idx] : -this->m_chips_front[idx];
-                        });
-                    }
-                    else
-                    {
-                        // tie
-                        const int32_t chips_won = this->pot_size() / 2;
-
-                        return make_array<int32_t, N>([&](const unsigned idx) {
-                            return idx == eligible_players[0] || idx == eligible_players[1] ? -this->m_chips_front[idx] + chips_won
-                                                                                            : -this->m_chips_front[idx];
-                        });
-                    }
-                }
-                else
-                {
-                    // side pots are possible with > 2
-
-                    // distribute the (side) pot with limits upper and lower
-                    // if there is only one pot, the limits are current_highest_bet() and 0
-                    // this could also be a private helper function
-                    auto pot_distribution = [&](const std::vector<unsigned>& eligible_player_indices, const int32_t upper_bound,
-                                                const int32_t lower_bound) -> std::array<int32_t, N> {
-                        // 1) get the winners
-                        // 1a) start with all possible winners
-                        std::vector<std::pair<holdem_evaluation_result, unsigned>> winners;
-                        std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
-                            winners.emplace_back(evaluate_unsafe(cardset(this->m_board).combine(this->m_hands[idx].as_cardset())), idx);
-                        });
-                        // 1b) sort by highest hand
-                        std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
-                        const auto first_non_winner =
-                            std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
-                        const auto dist = std::distance(winners.cbegin(), first_non_winner);
-                        // 1c) remove non_winners
-                        // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-                        winners.resize(dist, std::make_pair(holdem_evaluation_result(0, 0, 0, 0), 0));
-
-                        // 2) adjust the committed chips, compute winning sum
-                        // 2a) adjust the committed chips according to lower and upper bound
-                        const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
-                            const int32_t chips = this->m_chips_front[idx];
-                            return (chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound);
-                        });
-                        //const auto chips_front_adjusted = std::accumulate(
-                        //    this->m_chips_front.cbegin(), this->m_chips_front.cend(), 0, [&](const int32_t val, const int32_t e) {
-                        //        return val + (e <= lower_bound ? 0 : e > upper_bound ? upper_bound - lower_bound : e - lower_bound);
-                        //    });
-                        // 2b) sum_per_winner = sum / (winners.size())
-                        const int32_t sum_p_winner = std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) /
-                                                     static_cast<int32_t>(winners.size());
-
-                        // 3) return payouts for every position according to winners / losers, ignore amounts
-                        //    chips <= lower ? ignore
-                        //                   : player_is_a_winner ? add won chips
-                        //                                        : subtract lost chips
-                        return make_array<int32_t, N>([&](const unsigned idx) {
-                            return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) !=
-                                           winners.cend()
-                                       ? -chips_front_adjusted[idx] + sum_p_winner
-                                       : -chips_front_adjusted[idx];    // will return 0 for players who are not involved
-                        });
-                    };
-
-                    // get the number of pots as a list of eligible_players, upper, lower bound
-
-                    // 1) get all chip counts and sort by amount
-                    auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>(
-                        [&](const unsigned idx) { return std::make_pair(this->m_chips_front[idx], idx); });
-                    std::sort(chips_and_players.begin(), chips_and_players.end(),
-                              [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
-
-                    // 2) we are at showdown, so there must be at least two highest chip counts (main pot)
-                    int32_t upper = chips_and_players[0].first;
-                    std::vector<unsigned> main_pot_players{chips_and_players[0].second, chips_and_players[1].second};
-
-                    // 3) step through the chip counts and check if a player is eligible for the pot or if there is a side pot;
-                    // for every side pot, there must be one (or more) all in players with less chips
-                    std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>> pots;
-                    std::for_each(chips_and_players.cbegin() + 2, chips_and_players.cend(), [&](const auto& e) {
-                        if (const int32_t lower = this->m_chips_front[e.second]; lower == upper)
-                        {
-                            // same as upper -> add player
-                            main_pot_players.push_back(e.second);
-                        }
-                        else if (this->m_playerstate[e.second] == gb_playerstate_t::ALLIN)
-                        {
-                            // found new sidepot -> push the last pot with correct upper/lower
-                            pots.emplace_back(std::make_tuple(main_pot_players, upper, lower));
-                            upper = lower;
-                            // this player is eligible for the sidepot
-                            main_pot_players.push_back(e.second);
-                        }
-                    });
-                    // after going over all players, push the last 'unfinished' pot
-                    pots.emplace_back(std::make_tuple(main_pot_players, upper, 0));
-
-                    // return pot_distribution for each (side)pot, add everything up
-                    return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
-                        return val + pot_distribution(std::get<0>(e), std::get<1>(e), std::get<2>(e));
-                    });
-                }
-            }
-            else
-            {
-                return this->payouts_noshodown();
-            }
         }
     };
 

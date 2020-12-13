@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2020 Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #pragma once
 
 #include <mkpoker/base/rank.hpp>
@@ -39,7 +57,7 @@ namespace mkp
     //
     // 0987654 32109876 54321098 76543210
     //       T TTTMMMMm mmmkkkkk kkkkkkkk
-    class holdem_evaluation_result
+    class holdem_result
     {
         // encoding
         uint32_t m_result;
@@ -47,8 +65,6 @@ namespace mkp
         uint8_t m_debug_type = type();
         uint8_t m_debug_major = major_rank().m_rank;
         uint8_t m_debug_minor = minor_rank().m_rank;
-        //std::string m_debug_str = str().c_str();
-        //std::string m_debug_bitfield = bitstr();
 #endif
 
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -79,14 +95,14 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // we only allow valid objects
-        holdem_evaluation_result() = delete;
+        holdem_result() = delete;
 
         // we do not check if the input is valid, use with caution!
         // instead, utilize the make_he_result(...) free function to create a checked, valid result
         // todo:
         // ranks major and minor have to be given with 1 above the actual value, because otherwise we
         // could not distinguish between well-formed and invalid objects
-        constexpr holdem_evaluation_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers) noexcept
+        constexpr holdem_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers) noexcept
             : m_result((type << c_offset_type) | (major << c_offset_major) | (minor << c_offset_minor) | (kickers & c_mask_ranks))
         {
         }
@@ -160,7 +176,7 @@ namespace mkp
         // helper functions
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        constexpr auto operator<=>(const holdem_evaluation_result&) const = default;
+        constexpr auto operator<=>(const holdem_result&) const = default;
     };
 
     [[nodiscard]] constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
@@ -301,7 +317,7 @@ namespace mkp
                 break;
         }
 
-        return holdem_evaluation_result(type, major, minor, kickers);
+        return holdem_result(type, major, minor, kickers);
     }
 
 }    // namespace mkp

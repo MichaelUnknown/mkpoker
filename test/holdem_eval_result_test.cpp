@@ -1,4 +1,4 @@
-#include <mkpoker/holdem/holdem_evaluation_result.hpp>
+#include <mkpoker/holdem/holdem_result.hpp>
 #include <mkpoker/util/mtp.hpp>
 
 #include <array>
@@ -17,7 +17,7 @@ constexpr std::array<uint8_t, 13> ranks = {c_rank_two,  c_rank_three, c_rank_fou
 TEST(tholdem_eval_result, ctor)
 {
     // ctor does not check the input, so not much to be tested here...
-    const auto res = holdem_evaluation_result(c_full_house, c_rank_eight, c_rank_six, 0);
+    const auto res = holdem_result(c_full_house, c_rank_eight, c_rank_six, 0);
     EXPECT_EQ(res.type(), c_full_house);
     EXPECT_EQ(res.major_rank(), rank(rank_t{c_rank_eight}));
     EXPECT_EQ(res.minor_rank(), rank(rank_t{c_rank_six}));
@@ -29,7 +29,7 @@ TEST(tholdem_eval_result, hevr_type)
 {
     for (auto&& e : types)
     {
-        EXPECT_EQ(holdem_evaluation_result(e, 0, 0, 0).type(), e);
+        EXPECT_EQ(holdem_result(e, 0, 0, 0).type(), e);
     }
 }
 
@@ -37,7 +37,7 @@ TEST(tholdem_eval_result, hevr_major)
 {
     for (auto&& e : ranks)
     {
-        EXPECT_EQ(holdem_evaluation_result(c_full_house, e, 0, 0).major_rank(), rank(rank_t{e}));
+        EXPECT_EQ(holdem_result(c_full_house, e, 0, 0).major_rank(), rank(rank_t{e}));
     }
 }
 
@@ -45,7 +45,7 @@ TEST(tholdem_eval_result, hevr_minor)
 {
     for (auto&& e : ranks)
     {
-        EXPECT_EQ(holdem_evaluation_result(c_full_house, 0, e, 0).minor_rank(), rank(rank_t{e}));
+        EXPECT_EQ(holdem_result(c_full_house, 0, e, 0).minor_rank(), rank(rank_t{e}));
     }
 }
 
@@ -65,7 +65,7 @@ TEST(tholdem_eval_result, hevr_kickers)
                     {
                         const uint16_t kickers = uint16_t(1 << ranks[i1]) | uint16_t(1 << ranks[i2]) | uint16_t(1 << ranks[i3]) |
                                                  uint16_t(1 << ranks[i4]) | uint16_t(1 << ranks[i5]);
-                        EXPECT_EQ(holdem_evaluation_result(c_no_pair, 0, 0, kickers).kickers(), kickers);
+                        EXPECT_EQ(holdem_result(c_no_pair, 0, 0, kickers).kickers(), kickers);
                     }
                 }
             }
@@ -144,7 +144,7 @@ TEST(tholdem_eval_result, hevr_make_he_result)
                     try
                     {
                         const auto res = make_he_result(ty, ma, mi, ki);
-                        EXPECT_EQ(res, holdem_evaluation_result(ty, ma, mi, ki));
+                        EXPECT_EQ(res, holdem_result(ty, ma, mi, ki));
                     }
                     catch (...)
                     {
