@@ -30,10 +30,12 @@ endif()
 # dependencies
 include(cmake/CPM.cmake)
 # PackageProject.cmake will be used to make our target installable
+#    GITHUB_REPOSITORY TheLartians/PackageProject.cmake
+#    VERSION 1.3
 CPMAddPackage(
     NAME PackageProject.cmake
-    GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-    VERSION 1.3
+    GITHUB_REPOSITORY MichaelUnknown/PackageProject.cmake
+    VERSION 1.4
 )
 
 
@@ -73,6 +75,7 @@ string(TOLOWER ${PROJECT_NAME}/version.h VERSION_HEADER_LOCATION)
 packageProject(
     NAME ${PROJECT_NAME}
     VERSION ${PROJECT_VERSION}
+    LIBRARY_NAMESPACE ${PROJECT_LIBRARY_NAMESPACE}
     BINARY_DIR ${PROJECT_BINARY_DIR}
     INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
     INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
