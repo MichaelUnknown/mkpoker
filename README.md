@@ -47,9 +47,12 @@ CPMAddPackage(
 target_link_libraries(MyPokerApp mkpoker::mkpoker)
 ```
 
+### Dependencies
+
+Google test is used for unit tests, [CPM.cmake](https://github.com/TheLartians/CPM.cmake) for adding dependendcies and [PackageProject.cmake](https://github.com/TheLartians/PackageProject.cmake) to create an installable object.
 
 
-### Goals for this library / project that I had in mind when I started:
+## Goals for this library / project that I had in mind when I started:
 
 * cross platform library, support all the major compilers
 * header only
@@ -66,19 +69,16 @@ target_link_libraries(MyPokerApp mkpoker::mkpoker)
 - [ ] Simple implementation of CFR to play around with
 - [ ] More documentation
 
-### Dependencies
-
-Google test is used for unit tests, [CPM.cmake](https://github.com/TheLartians/CPM.cmake) for adding dependendcies and [PackageProject.cmake](https://github.com/TheLartians/PackageProject.cmake) to create an installable object.
 
 
 ## Misc
 
 ### C++ 20 features used
 
-* bit operations (<bit> header)
-* three-way-comparison <=>
-* std::span
-* constexpr <algorithm>
-* using enum (planned, unsupported by some compilers)
-* constexpr std::string (planned)
-* constexpr std::vector (planned, with constexpr string + vector, the whole library could be constexpr)
+* bit operations (`<bit>` header)
+* three-way-comparison `<=>`
+* `std::span`
+* constexpr `<algorithm>`
+* `using enum` (planned, unsupported by some compilers)
+* constexpr `std::string` (planned)
+* constexpr `std::vector` (planned, with constexpr string + vector, the whole library could be constexpr)
