@@ -1,3 +1,7 @@
+##########################################
+## main library ##
+##########################################
+
 # /W3 warning in msvc fixed with 3.15
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
@@ -25,33 +29,32 @@ endif()
 
 # dependencies
 include(cmake/CPM.cmake)
-# PackageProject.cmake will be used to make our target installable
+# PackageProject.cmake will be used to make our project installable
 CPMAddPackage(
     NAME PackageProject.cmake
     GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-    VERSION 1.3
+    VERSION 1.4
 )
 
 
 # base library, header only
-add_library(mkpoker INTERFACE)
-set(PROJECT_LIBRARY_NAMESPACE "mkpoker")
-add_library(${PROJECT_LIBRARY_NAMESPACE}::mkp ALIAS mkpoker)
+set(PROJECT_NAMESPACE ${PROJECT_NAME})
+add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(
-    mkpoker
+    ${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
-target_compile_features(mkpoker INTERFACE cxx_std_20)
-target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 
 
-# according to options, build examples, tests etc.
+# configure according to options, build examples, tests etc.
 if(MKPOKER_BUILD_FOR_DEV)
-    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
-    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
-    target_compile_options(mkpoker INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
 endif()
 if(MKPOKER_BUILD_EXAMPLES)
     message(STATUS "Building samples enabled")
@@ -69,6 +72,7 @@ string(TOLOWER ${PROJECT_NAME}/version.h VERSION_HEADER_LOCATION)
 packageProject(
     NAME ${PROJECT_NAME}
     VERSION ${PROJECT_VERSION}
+    NAMESPACE ${PROJECT_NAMESPACE}
     BINARY_DIR ${PROJECT_BINARY_DIR}
     INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
     INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}

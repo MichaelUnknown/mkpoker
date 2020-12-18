@@ -1,5 +1,6 @@
 /*
-mkpoker - demo cli app that starts with a new game state and lets
+
+mkpoker - demo command line app that starts with a new game state and lets
 the user choose between the different legal actions for each player
 and step through a game
 
@@ -111,7 +112,7 @@ int main()
                         return EXIT_SUCCESS;
                     }
                     const unsigned num_action = std::atoi(input.c_str());
-                    if (num_action >= 0 && num_action < vec_actions.size())
+                    if (num_action < vec_actions.size())
                     {
                         game.execute_action(vec_actions[num_action]);
                         break;
@@ -128,7 +129,7 @@ int main()
                 std::uniform_int_distribution<> dist_actions(0, static_cast<int>(vec_actions.size() - 1));
                 const auto action = vec_actions[dist_actions(rng)];
                 std::cout << "Opponents action: " << action.str() << "\n";
-                std::this_thread::sleep_for(std::chrono::milliseconds(300));
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500));
                 game.execute_action(action);
             }
 
@@ -137,7 +138,7 @@ int main()
             {
                 std::cout << "\nThe hand ended.\n" << game.str_state() << "\n";
                 const auto pots = game.all_pots();
-                for (int i = 1; auto&& e : pots)
+                for (unsigned int i = 1; auto&& e : pots)
                 {
                     std::cout << "Pot " << i << ":\nEligible players: ";
                     for (auto&& p : std::get<0>(e))
@@ -150,15 +151,17 @@ int main()
                         std::cout << c.str() << " ";
                     }
                     std::cout << "\nlower: " << std::get<2>(e) << ", upper: " << std::get<1>(e) << "\n";
+                    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
                     ++i;
                 }
 
                 std::cout << "\nResults:\n";
                 const auto results = game.is_showdown() ? game.payouts_showdown(gamecards) : game.payouts_noshodown();
-                for (int i = 0; i < results.size(); ++i)
+                for (unsigned int i = 0; i < results.size(); ++i)
                 {
                     std::cout << i << ": " << results[i] << " (started with: " << chips[i] << " => " << chips[i] + results[i] << ")\n";
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
                 {
                     using namespace mkp;
@@ -169,7 +172,7 @@ int main()
                 if (const auto found = std::find_if(chips.cbegin(), chips.cend(), [](const int p_chips) { return p_chips < 1000; });
                     found != chips.cend())
                 {
-                    for (int i = 0; i < chips.size(); ++i)
+                    for (unsigned int i = 0; i < chips.size(); ++i)
                     {
                         chips[i] += c_starting_chips;
                     }

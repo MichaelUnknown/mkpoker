@@ -1,7 +1,8 @@
 /*
-mkpoker - demo cli app that starts with a new game state and lets
-the user choose between the different legal actions for each player
-and step through a game
+
+mkpoker - demo command line app that starts with a new game state and
+lets the user choose between the different legal actions for each
+player and step through a game
 
 Copyright (C) 2020 Michael Knörzer
 
@@ -107,7 +108,7 @@ int main()
                         }
 
                         const unsigned num_action = std::atoi(input.c_str());
-                        if (num_action >= 0 && num_action < vec_actions.size())
+                        if (num_action < vec_actions.size())
                         {
                             game.execute_action(vec_actions[num_action]);
                             if (game.in_terminal_state())
