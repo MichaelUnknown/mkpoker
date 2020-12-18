@@ -28,17 +28,17 @@ macro(package_add_test TESTNAME TESTFILE)
 endmacro()
 
 # actual tests #
-package_add_test(bitset_test bitset_test.cpp mkpoker::mkp)
+package_add_test(bitset_test bitset_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
 
-package_add_test(suit_test suit_test.cpp mkpoker::mkp)
-package_add_test(rank_test rank_test.cpp mkpoker::mkp)
-package_add_test(card_test card_test.cpp mkpoker::mkp)
+package_add_test(suit_test suit_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+package_add_test(rank_test rank_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+package_add_test(card_test card_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
 
-package_add_test(cardset_test cardset_test.cpp mkpoker::mkp)
-package_add_test(hand_test hand_test.cpp mkpoker::mkp)
-package_add_test(range_test range_test.cpp mkpoker::mkp)
+package_add_test(cardset_test cardset_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+package_add_test(hand_test hand_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+package_add_test(range_test range_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
 
-package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp mkpoker::mkp)
-package_add_test(holdem_eval_test holdem_eval_test.cpp mkpoker::mkp)
+package_add_test(holdem_eval_result_test holdem_eval_result_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+package_add_test(holdem_eval_test holdem_eval_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
 
-package_add_test(game_test game_test.cpp mkpoker::mkp)
+package_add_test(game_test game_test.cpp ${PROJECT_NAMESPACE}::${PROJECT_NAME})
