@@ -4,11 +4,12 @@
 # mkpoker
 A Texas Holdem poker framework written in C++ 20.
 
+
 This is my personal take on a poker library that provides
 * rank, suit and card representation
 * hands and ranges
-* a hand strength evaluator
-* a game/table representation and implementation of poker rules (cash game)
+* a hand strength calculator / evaluator
+* a game / table representation and implementation of poker rules (cash game)
 * an implementation of the counterfactual regret algorithm (to be done)
 
 ### Goals for this library / project that I had in mind when I started:
@@ -22,20 +23,31 @@ This is my personal take on a poker library that provides
 * optimize for speed & size
 
 ### Roadmap:
-* small equity calculator example
-* simple implementation of cfr to play around with
-* add more documentation
+- [ ] Equity calculator example
+- [ ] Simple implementation of CFR to play around with
+- [ ] More documentation
 
-## Building tests & examples
+## Building, tests & examples
 
-This library comes with full cmake integrated dependency management and thus can be built easily. To build/run the tests, use
-```git clone https://github.com/MichaelUnknown/mkpoker.git
+This library comes with full cmake integrated dependency management and thus can be built easily on most platforms.
+On Windows you need to install Git (or downlaod the source) and CMake, Unix based platforms should be ready to go from the get-go.
+To build/run the tests, use
+```
+git clone https://github.com/MichaelUnknown/mkpoker.git
 cd mkpoker
-cmake -S . -B build \
+cmake
+ -S . \
+ -B build \
  -D MKPOKER_BUILD_EXAMPLES=1 \
  -D MKPOKER_BUILD_TESTS=1
  ```
- CMake should download and configure everything necessary. Then just `cmake --build build`, you can find the executables in the build/test and build/example directories.
+ CMake will download and configure the necessary dependencies.
+ Then just build with `cmake --build build`, you can find the executables in the build/test and build/example directories.
+
+ To install the library (headers) on your system, use `cmake --build build --target install`.
+ However, it is just as easy to add the library as a dependency in your CMake Project (see integration).
+
+ You can also take a look at the CI (YAML file in `.github/workflows`) to see how to build for different OSes / compilers.
 
 ### Dependencies
 
