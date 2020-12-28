@@ -40,7 +40,6 @@ CPMAddPackage(
     GITHUB_REPOSITORY MichaelUnknown/mkpoker
     VERSION 0.x
 )
-```
 
 # define your executable
 add_executable(MyPokerApp MyPokerApp.cpp MoreSources.cpp ...)
