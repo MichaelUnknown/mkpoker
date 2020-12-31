@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mkpoker/game/game.hpp>
+#include <mkpoker/util/mtp.hpp>
 
 #include <array>
 #include <cstdint>
@@ -53,7 +54,7 @@ namespace mkp
         virtual bool is_terminal() const = 0;
 
         // utility function for that node
-        virtual std::array<int32_t, N> utility(const gamecards& cards) const = 0;
+        virtual std::array<int32_t, N> utility(const gamecards<N>& cards) const = 0;
 
         // for debug
         virtual void print_node() const = 0;
@@ -81,7 +82,7 @@ namespace mkp
         virtual bool is_terminal() const override { return false; }
 
         // infoset nodes do not have a (fix) utility function
-        virtual std::array<int32_t, N> utility([[maybe_unused]] const gamecards& cards) const override
+        virtual std::array<int32_t, N> utility([[maybe_unused]] const gamecards<N>& cards) const override
         {
             throw std::runtime_error("node_infoset: utility(...) not available for info set node");
         }
@@ -89,14 +90,14 @@ namespace mkp
         // print for logging / debug
         virtual void print_node() const override
         {
-            for (uint8_t i = 0; i < m_level; ++i)
+            for (uint8_t i = 0; i < this->m_level; ++i)
             {
                 std::cout << "  ";
             }
-            std::cout << "I-Node(" << m_id << "), " << m_children.size() << " children: ";
-            std::cout << m_gamestate.str_state() << "\n";
+            std::cout << "I-Node(" << this->m_id << "), " << this->m_children.size() << " children: ";
+            std::cout << this->m_gamestate.str_state() << "\n";
 
-            for (const auto& child : m_children)
+            for (const auto& child : this->m_children)
             {
                 child->print_node();
             }
@@ -131,25 +132,83 @@ namespace mkp
 
         virtual bool is_terminal() const override { return true; }
 
-        virtual std::array<int32_t, N> utility(const gamecards& cards) const override
+        virtual std::array<int32_t, N> utility(const gamecards<N>& cards) const override
         {
             if (!m_showdown)
             {
                 return m_payouts;
             }
 
-            return magic(m_id).payouts_showdown(cards);
+            return magic(this->m_id).payouts_showdown(cards);
         }
 
         virtual void print_node() const override
         {
-            for (uint8_t i = 0; i < m_level; ++i)
+            for (uint8_t i = 0; i < this->m_level; ++i)
             {
                 std::cout << "  ";
             }
-            std::cout << "Terminal(" << m_id << "): ";
-            std::cout << m_gamestate.str_state() << "\n";
+            std::cout << "Terminal(" << this->m_id << "): ";
+            std::cout << this->m_gamestate.str_state() << "\n";
         }
     };
+
+    // recursively init game tree
+    template <std::size_t N, typename T = uint32_t, typename A = mkp::identity>
+    std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, const uint8_t level = 0, A action_abstraction = A{})
+    {
+        if (gamestate.in_terminal_state())
+        {
+            // if there is no showdown, we know the outcome & payouts in advance
+            if (gamestate.is_showdown())
+            {
+                std::array<int32_t, N> payouts_unknown{};
+                return std::make_unique<node_terminal<N, T>>(123,                          // id
+                                                             gamestate,                    // the gamestate
+                                                             gamestate.active_player(),    // active player
+                                                             level,                        // depth
+                                                             payouts_unknown,              // payouts unknown w/o cards
+                                                             true);                        // showdown: yes
+            }
+            else
+            {
+                return std::make_unique<node_terminal<N, T>>(123,                               // id
+                                                             gamestate,                         // the gamestate
+                                                             gamestate.active_player(),         // active player
+                                                             level,                             // depth
+                                                             gamestate.payouts_noshowdown(),    // payouts
+                                                             false);                            // showdown: no
+            }
+        }
+        else
+        {
+            auto print_actions = [](const std::vector<player_action_t>& actions) {
+                for (auto&& a : actions)
+                {
+                    std::cout << "P:" << to_string(a.m_pos) << " -> ";
+                    std::cout << to_string(a.m_action) << " (";
+                    std::cout << a.m_amount << ")\n";
+                }
+                std::cout << "\n";
+            };
+
+            auto info = std::make_unique<node_infoset<N, T>>(123,                          // id
+                                                             gamestate,                    // the gamestate
+                                                             gamestate.active_player(),    // active player
+                                                             level);                       // depth
+
+            const auto all_actions = action_abstraction(gamestate.possible_actions());
+            print_actions(all_actions);
+
+            for (const auto pa : all_actions)
+            {
+                auto new_gamestate = gamestate;
+                new_gamestate.execute_action(pa);
+
+                info->m_children.push_back(init_tree(new_gamestate, level + 1, action_abstraction));
+            }
+            return info;
+        }
+    }
 
 }    // namespace mkp
