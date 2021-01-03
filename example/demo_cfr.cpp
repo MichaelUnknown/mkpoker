@@ -19,38 +19,46 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <mkpoker/cfr/action_abstraction.hpp>
+#include <mkpoker/cfr/gamestate_encoder.hpp>
 #include <mkpoker/cfr/node.hpp>
 #include <mkpoker/game/game.hpp>
 
+#include <chrono>    // sleep 1s
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <thread>    // sleep 1s
 #include <vector>
 
-// enumerate gamestates
-template <std::size_t N = 2>
-struct gamestate_enumerator
+template <std::size_t N, typename T = uint32_t>
+std::size_t tree_size(mkp::node_base<N, T>* game)
 {
-    uint32_t counter = 0;
-    std::vector<mkp::gamestate<N>> storage = {};
-
-    uint32_t encode(const mkp::gamestate<N>& gamestate)
+    std::size_t res{};
+    for (auto&& child : game->m_children)
     {
-        storage.push_back(gamestate);
-        return counter++;
+        res += tree_size(child.get());
     }
-
-    mkp::gamestate<N> decode(const uint32_t i) const { return storage.at(i); }
-};
+    return res + game->m_children.size();
+}
 
 int main()
 {
     mkp::gamestate<2> game_2p{4000};    // 4BB, i.e., very shallow game
-    gamestate_enumerator enc_2p{};
-    auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p);
+    mkp::gamestate_enumerator<2, uint32_t> enc_2p{};
+    mkp::action_abstraction_noop<2> aa_2p{};
+    auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
     gametree_base_2p->print_node();    // ~2000 nodes
+    std::cout << "\ngame with 2 players, stack size 4BB, no action filter\n"
+              << "number of nodes: " << tree_size(gametree_base_2p.get()) << "\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
     mkp::gamestate<3> game_3p{4000};
-    gamestate_enumerator<3> enc_3p{};
-    auto gametree_base_3p = mkp::init_tree(game_3p, &enc_3p);
-    gametree_base_3p->print_node();    // ~40k nodes
+    mkp::gamestate_enumerator<3, uint32_t> enc_3p{};
+    mkp::action_abstraction_noop<3> aa_3p{};
+    auto gametree_base_3p = mkp::init_tree(game_3p, &enc_3p, &aa_3p);
+    //gametree_base_3p->print_node();    // ~40k nodes
+    std::cout << "\ngame with 3 players, stack size 4BB, no action filter\n"
+              << "number of nodes: " << tree_size(gametree_base_3p.get()) << "\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 }

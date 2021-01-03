@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mkpoker/cfr/action_abstraction.hpp>
+#include <mkpoker/cfr/gamestate_encoder.hpp>
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/mtp.hpp>
 
@@ -12,34 +14,17 @@
 
 namespace mkp
 {
-    // encode gamestate template
-    //
-    // this is just a blueprint, you can inherit from it but you don't have to
-    // the relevant functions are templated and just expect an object with the
-    // same api, so you can instead create and use your own type
-    template <std::size_t N, typename T = uint32_t>
-    struct gamestate_encoder_base
-    {
-        using uint_type = T;
-
-        virtual ~gamestate_encoder_base() = default;
-
-        virtual uint_type encode(const gamestate<N>& gamestate) = 0;
-        virtual gamestate<N> decode(const uint_type i) const = 0;
-    };
-
     // With lots of nodes, the goal is to minimize the memory footprint, i.e., keep the node struct
     // as small as possible. So we keep just the id in the node struct + the active player & game
     // state [preflop, flop etc.], which one might need to compute a card abstraction)
     //
     // N = number of players 2..6
     // T = unsigned integer type, use uint32_t if possible (i.e., for small games / shallow stack sizes)
-
-    template <std::size_t N, typename T = uint32_t, typename E = gamestate_encoder_base<N, T>>
+    template <std::size_t N, typename T = uint32_t>
     struct node_base
     {
         using uint_type = T;
-        using encoder_type = E;
+        using encoder_type = gamestate_encoder_base<N, T>;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // data
@@ -47,7 +32,7 @@ namespace mkp
 
         std::vector<std::unique_ptr<node_base>> m_children;
         uint_type m_id;    // ui32 or ui64
-        uint8_t m_game_state;
+        gb_gamestate_t m_game_state;
         uint8_t m_active_player;
         uint8_t m_level;
 
@@ -55,7 +40,7 @@ namespace mkp
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        node_base(const uint_type id, const uint8_t game_state, const uint8_t active_player, const uint8_t level)
+        node_base(const uint_type id, const gb_gamestate_t game_state, const uint8_t active_player, const uint8_t level)
             : m_id(id), m_game_state(game_state), m_active_player(active_player), m_level(level)
         {
         }
@@ -76,18 +61,18 @@ namespace mkp
         virtual void print_node() const = 0;
     };
 
-    template <std::size_t N, typename T = uint32_t, typename E = gamestate_encoder_base<N, T>>
-    struct node_infoset : public node_base<N, T, E>
+    template <std::size_t N, typename T = uint32_t>
+    struct node_infoset : public node_base<N, T>
     {
-        using node_base<N, T, E>::uint_type;
-        using node_base<N, T, E>::encoder_type;
+        using node_base<N, T>::uint_type;
+        using node_base<N, T>::encoder_type;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        node_infoset(const uint_type id, const uint8_t game_state, const uint8_t active_player, const uint8_t level)
-            : node_base<N, T, E>(id, game_state, active_player, level)
+        node_infoset(const uint_type id, const gb_gamestate_t game_state, const uint8_t active_player, const uint8_t level)
+            : node_base<N, T>(id, game_state, active_player, level)
         {
         }
 
@@ -113,7 +98,7 @@ namespace mkp
                 std::cout << "  ";
             }
             std::cout << "I-Node(" << this->m_id << "), ";
-            std::cout << to_string(static_cast<gb_gamestate_t>(this->m_game_state)) << ", ";
+            std::cout << to_string(this->m_game_state) << ", ";
             std::cout << "P:" << std::to_string(this->m_active_player) << " || ";
             std::cout << this->m_children.size() << " children: \n";
 
@@ -124,11 +109,11 @@ namespace mkp
         }
     };
 
-    template <std::size_t N, typename T = uint32_t, typename E = gamestate_encoder_base<N, T>>
-    struct node_terminal : public node_base<N, T, E>
+    template <std::size_t N, typename T = uint32_t>
+    struct node_terminal : public node_base<N, T>
     {
-        using node_base<N, T, E>::uint_type;
-        using node_base<N, T, E>::encoder_type;
+        using node_base<N, T>::uint_type;
+        using node_base<N, T>::encoder_type;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // DATA
@@ -141,9 +126,9 @@ namespace mkp
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
-        node_terminal(const uint_type id, const uint8_t game_state, const uint8_t active_player, const uint8_t level,
+        node_terminal(const uint_type id, const gb_gamestate_t game_state, const uint8_t active_player, const uint8_t level,
                       const std::array<int32_t, N>& payouts, const bool showdown)
-            : node_base<N, T, E>(id, game_state, active_player, level), m_payouts(payouts), m_showdown(showdown)
+            : node_base<N, T>(id, game_state, active_player, level), m_payouts(payouts), m_showdown(showdown)
         {
         }
 
@@ -151,8 +136,10 @@ namespace mkp
         // ACCESSORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
+        // terminal nodes are terminal
         virtual bool is_terminal() const override { return true; }
 
+        // return utility, if there is no showdown, we return the precomputed payouts
         virtual std::array<int32_t, N> utility(const gamecards<N>& cards, encoder_type* ptr_enc) const override
         {
             if (!m_showdown)
@@ -163,6 +150,7 @@ namespace mkp
             return ptr_enc->decode(this->m_id).payouts_showdown(cards);
         }
 
+        // print for logging / debug
         virtual void print_node() const override
         {
             auto array_to_string = [](const std::array<int32_t, N>& arr) -> std::string {
@@ -186,50 +174,47 @@ namespace mkp
     };
 
     // recursively init game tree
-    template <std::size_t N, typename T = uint32_t, typename E = gamestate_encoder_base<N, T>, typename A = mkp::identity>
-    std::unique_ptr<node_base<N, T, E>> init_tree(const gamestate<N>& gamestate, E* ptr_enc, const uint8_t level = 0,
-                                                  A action_abstraction = A{})
+    template <std::size_t N, typename T = uint32_t>
+    [[nodiscard]] std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, gamestate_encoder_base<N, T>* ptr_enc,
+                                                             action_abstraction_base<N>* ptr_aa, const uint8_t level = 0)
     {
         if (gamestate.in_terminal_state())
         {
-            // if there is no showdown, we know the outcome & payouts in advance
+            // if there is no showdown, we know the outcome & payouts in advance, otherwise we cannot precompute the result
             if (gamestate.is_showdown())
             {
                 std::array<int32_t, N> payouts_unknown{};
-                return std::make_unique<node_terminal<N, T, E>>(
-                    ptr_enc->encode(gamestate),                       // id
-                    static_cast<uint8_t>(gamestate.gamestate_v()),    // game state, i.e., preflop, flop etc.
-                    gamestate.active_player(),                        // active player
-                    level,                                            // depth
-                    payouts_unknown,                                  // payouts unknown w/o cards
-                    true);                                            // showdown: yes
+                return std::make_unique<node_terminal<N, T>>(ptr_enc->encode(gamestate),    // id
+                                                             gamestate.gamestate_v(),       // game state, i.e., preflop, flop etc.
+                                                             gamestate.active_player(),     // active player
+                                                             level,                         // depth
+                                                             payouts_unknown,               // payouts unknown w/o cards
+                                                             true);                         // showdown: yes
             }
             else
             {
-                return std::make_unique<node_terminal<N, T, E>>(
-                    ptr_enc->encode(gamestate),                       // id
-                    static_cast<uint8_t>(gamestate.gamestate_v()),    // game state, i.e., preflop, flop etc.
-                    gamestate.active_player(),                        // active player
-                    level,                                            // depth
-                    gamestate.payouts_noshodown(),                    // payouts
-                    false);                                           // showdown: no
+                return std::make_unique<node_terminal<N, T>>(ptr_enc->encode(gamestate),        // id
+                                                             gamestate.gamestate_v(),           // game state, i.e., preflop, flop etc.
+                                                             gamestate.active_player(),         // active player
+                                                             level,                             // depth
+                                                             gamestate.payouts_noshowdown(),    // payouts
+                                                             false);                            // showdown: no
             }
         }
         else
         {
-            auto info = std::make_unique<node_infoset<N, T, E>>(ptr_enc->encode(gamestate),                       // id
-                                                                static_cast<uint8_t>(gamestate.gamestate_v()),    // the gamestate
-                                                                gamestate.active_player(),                        // active player
-                                                                level);                                           // depth
+            auto info = std::make_unique<node_infoset<N, T>>(ptr_enc->encode(gamestate),    // id
+                                                             gamestate.gamestate_v(),       // the game state
+                                                             gamestate.active_player(),     // active player
+                                                             level);                        // depth
 
-            const auto all_actions = action_abstraction(gamestate.possible_actions());
-
-            for (const auto pa : all_actions)
+            const auto actions = ptr_aa->filter_actions(gamestate);
+            for (const auto pa : actions)
             {
                 auto new_gamestate = gamestate;
                 new_gamestate.execute_action(pa);
 
-                info->m_children.push_back(init_tree(new_gamestate, ptr_enc, static_cast<uint8_t>(level + 1), action_abstraction));
+                info->m_children.push_back(init_tree(new_gamestate, ptr_enc, ptr_aa, static_cast<uint8_t>(level + 1)));
             }
             return info;
         }

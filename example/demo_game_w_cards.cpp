@@ -156,7 +156,7 @@ int main()
                 }
 
                 std::cout << "\nResults:\n";
-                const auto results = game.is_showdown() ? game.payouts_showdown(gamecards) : game.payouts_noshodown();
+                const auto results = game.is_showdown() ? game.payouts_showdown(gamecards) : game.payouts_noshowdown();
                 for (unsigned int i = 0; i < results.size(); ++i)
                 {
                     std::cout << i << ": " << results[i] << " (started with: " << chips[i] << " => " << chips[i] + results[i] << ")\n";

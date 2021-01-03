@@ -198,13 +198,27 @@ namespace mkp
         // create (default) game but with specific starting chip counts
         constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N>(1000)
         {
-            if (chips_start[0] < 500 || chips_start[1] < 1000)
+            if constexpr (N == 2)
             {
-                throw std::runtime_error("gamestate(array<int32_t, N>): not enough chips available to post blinds");
+                if (chips_start[0] < 1000 || chips_start[1] < 500)
+                {
+                    throw std::runtime_error("gamestate(array<int32_t, N>): not enough chips available to post blinds");
+                }
             }
+            else
+            {
+                if (chips_start[0] < 500 || chips_start[1] < 1000)
+                {
+                    throw std::runtime_error("gamestate(array<int32_t, N>): not enough chips available to post blinds");
+                }
+            }
+
+            // adjust chips
             m_chips_behind = chips_start;
-            m_chips_behind[0] -= m_chips_front[0];
-            m_chips_behind[1] -= m_chips_front[1];
+            for (uint8_t i = 0; i < N; ++i)
+            {
+                m_chips_behind[i] -= m_chips_front[i];
+            }
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -217,7 +231,7 @@ namespace mkp
         // do we have a showdown or did all but one player fold
         [[nodiscard]] constexpr bool is_showdown() const noexcept { return num_alive() > 1; }
 
-        // return current gamestate
+        // return current game state
         [[nodiscard]] constexpr gb_gamestate_t gamestate_v() const noexcept { return m_gamestate; }
 
         // return current player
@@ -326,11 +340,11 @@ namespace mkp
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("payouts_shodown(): game not in terminal state");
+                throw std::runtime_error("payouts_showdown(): game not in terminal state");
             }
             if (!is_showdown())
             {
-                throw std::runtime_error("payouts_shodown(): terminale state involves no showdown, but cards are given");
+                throw std::runtime_error("payouts_showdown(): terminale state involves no showdown, but cards are given");
             }
 
             const auto pots = all_pots();
@@ -341,15 +355,15 @@ namespace mkp
         }
 
         // return payout on terminal state (only for states with no showdown required)
-        [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshodown() const
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshowdown() const
         {
             if (!in_terminal_state())
             {
-                throw std::runtime_error("payouts_noshodown(): game not in terminal state");
+                throw std::runtime_error("payouts_noshowdown(): game not in terminal state");
             }
             if (is_showdown())
             {
-                throw std::runtime_error("payouts_noshodown(): terminale state involves showdown but no cards are given");
+                throw std::runtime_error("payouts_noshowdown(): terminale state involves showdown but no cards are given");
             }
 
             // winner collects all
