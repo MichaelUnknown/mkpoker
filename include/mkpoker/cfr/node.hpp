@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mkpoker/cfr/action_abstraction.hpp>
-#include <mkpoker/cfr/gamestate_encoder.hpp>
+#include <mkpoker/cfr/game_abstraction.hpp>
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/mtp.hpp>
 
@@ -24,7 +24,7 @@ namespace mkp
     struct node_base
     {
         using uint_type = T;
-        using encoder_type = gamestate_encoder_base<N, T>;
+        using encoder_type = game_abstraction_base<N, T>;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // data
@@ -175,7 +175,7 @@ namespace mkp
 
     // recursively init game tree
     template <std::size_t N, typename T = uint32_t>
-    [[nodiscard]] std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, gamestate_encoder_base<N, T>* ptr_enc,
+    [[nodiscard]] std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, game_abstraction_base<N, T>* ptr_enc,
                                                              action_abstraction_base<N>* ptr_aa, const uint8_t level = 0)
     {
         if (gamestate.in_terminal_state())
