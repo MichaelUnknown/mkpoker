@@ -16,7 +16,7 @@ namespace mkp
         virtual ~game_abstraction_base() = default;
 
         virtual uint_type encode(const gamestate<N>& gamestate) = 0;
-        virtual [[nodiscard]] gamestate<N> decode(const uint_type i) const = 0;
+        [[nodiscard]] virtual gamestate<N> decode(const uint_type i) const = 0;
     };
 
     // sample encoder that stores / enumerates the gamestates
@@ -34,7 +34,7 @@ namespace mkp
             return index++;
         }
 
-        virtual [[nodiscard]] gamestate<N> decode(const uint_type i) const override { return storage.at(i); }
+        [[nodiscard]] virtual gamestate<N> decode(const uint_type i) const override { return storage.at(i); }
     };
 
     // sample encoder that stores / enumerates the gamestates
@@ -47,7 +47,7 @@ namespace mkp
 
         virtual uint_type encode([[maybe_unused]] const gamestate<N>& gamestate) override { return index++; }
 
-        virtual [[nodiscard]] gamestate<N> decode([[maybe_unused]] const uint_type i) const override
+        [[nodiscard]] virtual gamestate<N> decode([[maybe_unused]] const uint_type i) const override
         {
             throw std::runtime_error("gamestate_discarder does not provide a decode function");
         }
