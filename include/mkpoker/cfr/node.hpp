@@ -64,8 +64,8 @@ namespace mkp
     template <std::size_t N, typename T = uint32_t>
     struct node_infoset : public node_base<N, T>
     {
-        using node_base<N, T>::uint_type;
-        using node_base<N, T>::encoder_type;
+        using typename node_base<N, T>::uint_type;
+        using typename node_base<N, T>::encoder_type;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
@@ -112,8 +112,8 @@ namespace mkp
     template <std::size_t N, typename T = uint32_t>
     struct node_terminal : public node_base<N, T>
     {
-        using node_base<N, T>::uint_type;
-        using node_base<N, T>::encoder_type;
+        using typename node_base<N, T>::uint_type;
+        using typename node_base<N, T>::encoder_type;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // DATA
