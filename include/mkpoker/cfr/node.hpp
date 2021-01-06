@@ -1,3 +1,22 @@
+/*
+
+Copyright (C) 2020 Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #pragma once
 
 #include <mkpoker/cfr/action_abstraction.hpp>
@@ -55,7 +74,7 @@ namespace mkp
         virtual bool is_terminal() const = 0;
 
         // utility function for that node
-        virtual std::array<int32_t, N> utility(const gamecards<N>& cards, encoder_type* ptr_enc) const = 0;
+        virtual std::array<int32_t, N> utility(const gamecards<N>& cards, const encoder_type* ptr_enc) const = 0;
 
         // for debug
         virtual void print_node() const = 0;
@@ -85,7 +104,7 @@ namespace mkp
 
         // infoset nodes do not have a (fix) utility function
         virtual std::array<int32_t, N> utility([[maybe_unused]] const gamecards<N>& cards,
-                                               [[maybe_unused]] encoder_type* ptr_enc) const override
+                                               [[maybe_unused]] const encoder_type* ptr_enc) const override
         {
             throw std::runtime_error("node_infoset: utility(...) not available for info set node");
         }
@@ -140,7 +159,7 @@ namespace mkp
         virtual bool is_terminal() const override { return true; }
 
         // return utility, if there is no showdown, we return the precomputed payouts
-        virtual std::array<int32_t, N> utility(const gamecards<N>& cards, encoder_type* ptr_enc) const override
+        virtual std::array<int32_t, N> utility(const gamecards<N>& cards, const encoder_type* ptr_enc) const override
         {
             if (!m_showdown)
             {

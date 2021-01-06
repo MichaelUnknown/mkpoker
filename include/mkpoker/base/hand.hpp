@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) 2020 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -176,7 +177,17 @@ namespace mkp
             }
 
             // return string representation, is noexcept since we only allow valid objects to be created
-            [[nodiscard]] std::string str() const noexcept { return std::string(m_card1.str() + m_card2.str()); }
+            [[nodiscard]] std::string str() const noexcept
+            {
+                if constexpr (is_rank_v<c_r_type>)
+                {
+                    return std::string(m_card1.str() + m_card2.str() + (m_card1 == m_card2 ? " " : (m_card1 > m_card2 ? "s" : "o")));
+                }
+                else
+                {
+                    return std::string(m_card1.str() + m_card2.str());
+                }
+            }
 
             ///////////////////////////////////////////////////////////////////////////////////////
             // MUTATORS

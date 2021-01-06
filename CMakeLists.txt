@@ -52,6 +52,7 @@ target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/perm
 
 # configure according to options, build examples, tests etc.
 if(MKPOKER_BUILD_FOR_DEV)
+    message(STATUS "Using strict compiler warnings enabled")
     target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
     target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
     target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
@@ -59,11 +60,15 @@ endif()
 if(MKPOKER_BUILD_EXAMPLES)
     message(STATUS "Building samples enabled")
     add_subdirectory(example)
+else()
+    message(STATUS "Building samples DISABLED")
 endif()
 if(MKPOKER_BUILD_TESTS)
     message(STATUS "Testing enabled")
     enable_testing()
     add_subdirectory(test)
+else()
+    message(STATUS "Testing DISABLED")
 endif()
 
 
