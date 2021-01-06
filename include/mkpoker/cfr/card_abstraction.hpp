@@ -28,7 +28,7 @@ namespace mkp
     template <std::size_t N, typename T = uint32_t>
     struct card_abstraction_by_range final : public card_abstraction_base<N, T>
     {
-        using card_abstraction_base<N, T>::uint_type;
+        using typename card_abstraction_base<N, T>::uint_type;
 
         [[nodiscard]] virtual uint_type size(const gb_gamestate_t game_state) const override { return c_num_ranks * c_num_ranks; }
 

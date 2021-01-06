@@ -23,7 +23,7 @@ namespace mkp
     template <std::size_t N, typename T = uint32_t>
     struct gamestate_enumerator final : public game_abstraction_base<N, T>
     {
-        using game_abstraction_base<N, T>::uint_type;
+        using typename game_abstraction_base<N, T>::uint_type;
 
         uint_type index = 0;
         std::vector<gamestate<N>> storage = {};
@@ -41,7 +41,7 @@ namespace mkp
     template <std::size_t N, typename T = uint32_t>
     struct gamestate_discarder final : public game_abstraction_base<N, T>
     {
-        using game_abstraction_base<N, T>::uint_type;
+        using typename game_abstraction_base<N, T>::uint_type;
 
         uint_type index = 0;
 
