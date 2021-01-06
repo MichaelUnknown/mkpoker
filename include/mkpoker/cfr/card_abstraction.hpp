@@ -17,11 +17,11 @@ namespace mkp
 
         virtual ~card_abstraction_base() = default;
 
-        virtual uint_type size(const gb_gamestate_t game_state) const = 0;
-        virtual uint_type id(const gb_gamestate_t game_state, const gamecards<N>& cards) const = 0;
+        [[nodiscard]] virtual uint_type size(const gb_gamestate_t game_state) const = 0;
+        [[nodiscard]] virtual uint_type id(const gb_gamestate_t game_state, const gamecards<N>& cards) const = 0;
 
         // debug / human readable description of that abstraction
-        virtual std::string str_id(const gb_gamestate_t game_state, uint_type id) const = 0;
+        [[nodiscard]] virtual std::string str_id(const gb_gamestate_t game_state, uint_type id) const = 0;
     };
 
     // sample card abstraction that buckets cards by range classification, i.e. AA, AKs, AKo etc.
@@ -30,17 +30,15 @@ namespace mkp
     {
         using card_abstraction_base<N, T>::uint_type;
 
-        virtual ~card_abstraction_base() = default;
+        [[nodiscard]] virtual uint_type size(const gb_gamestate_t game_state) const override { return c_num_ranks * c_num_ranks; }
 
-        virtual uint_type size(const gb_gamestate_t game_state) const override { return c_num_ranks * c_num_ranks; }
-
-        virtual uint_type id(const gb_gamestate_t game_state, const gamecards<N>& cards) const override
+        [[nodiscard]] virtual uint_type id(const gb_gamestate_t game_state, const gamecards<N>& cards) const override
         {
             get_index(cards.get_hand(state.active_player()));
         }
 
         // debug / human readable description of that id
-        virtual std::string str_id(const gb_gamestate_t game_state, uint_type id) const override
+        [[nodiscard]] virtual std::string str_id(const gb_gamestate_t game_state, uint_type id) const override
         {
             return str_hand_2r(range::get_hand(static_cast<uint8_t>(id))) + " (" + std::to_string(id) + ")";
         }

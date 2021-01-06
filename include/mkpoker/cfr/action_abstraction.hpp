@@ -16,14 +16,14 @@ namespace mkp
     {
         virtual ~action_abstraction_base() = default;
 
-        virtual [[nodiscard]] std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const = 0;
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const = 0;
     };
 
     // sample action abstraction that allows only fold, call, raise pot and allin
     template <std::size_t N>
     struct action_abstraction_fcr final : public action_abstraction_base<N>
     {
-        virtual [[nodiscard]] std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
         {
             // pot-sized raise: amount to call + 100 * (amount to call + pot size) / 100
             auto pot_sized_raise = 2 * gamestate.amount_to_call() + gamestate.pot_size();
@@ -50,7 +50,7 @@ namespace mkp
     template <std::size_t N>
     struct action_abstraction_noop final : public action_abstraction_base<N>
     {
-        virtual [[nodiscard]] std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
         {
             return gamestate.possible_actions();
         }
