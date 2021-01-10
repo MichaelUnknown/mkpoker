@@ -32,12 +32,120 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <vector>
 
 namespace mkp
 {
+    //// computes the number of nodes
+    //template <std::size_t N, typename T>
+    //std::size_t tree_size(mkp::node_base<N, T>* root)
+    //{
+    //    std::size_t res{};
+    //    for (auto&& child : root->m_children)
+    //    {
+    //        res += tree_size(child.get());
+    //    }
+    //    return 1 + res;
+    //}
+
+    namespace detail
+    {
+        struct tree_size_t
+        {
+            std::size_t info = 0;
+            std::size_t term = 0;
+
+            tree_size_t& operator+=(const tree_size_t& other)
+            {
+                info += other.info;
+                term += other.term;
+                return *this;
+            }
+        };
+
+        template <std::size_t N, typename T>
+        tree_size_t tree_size_impl(mkp::node_base<N, T>* ptr_root)
+        {
+            tree_size_t res{};
+            for (auto&& child : ptr_root->m_children)
+            {
+                res += tree_size_impl(child.get());
+            }
+
+            if (ptr_root->is_terminal())
+            {
+                ++res.term;
+            }
+            else
+            {
+                ++res.info;
+            }
+
+            return res;
+        }
+
+        struct regret_stats_t
+        {
+            int64_t sum = 0;
+            int32_t min = std::numeric_limits<int32_t>::max();
+            int32_t max = std::numeric_limits<int32_t>::lowest();
+
+            regret_stats_t& operator+=(const regret_stats_t& other)
+            {
+                sum += other.sum;
+                min = other.min < min ? other.min : min;
+                max = other.max > max ? other.max : max;
+                return *this;
+            }
+        };
+
+        template <std::size_t N, typename T>
+        regret_stats_t regret_stats_impl(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
+        {
+            regret_stats_t res{};
+            if (ptr_root->is_terminal())
+            {
+                return res;
+            }
+
+            for (auto&& child : ptr_root->m_children)
+            {
+                res += regret_stats_impl(child.get(), data);
+            }
+
+            // we want to sum all the entries of one gamestate, so...
+            // for each card abstraction id 'i', sum the values of all actions
+            const auto gs_id = ptr_root->m_id;
+            for (uint32_t i = 0; i < data[gs_id].size(); ++i)
+            {
+                const auto local_sum = std::reduce(data[gs_id][i].cbegin(), data[gs_id][i].cend());
+                const auto [local_min, local_max] = std::minmax_element(data[gs_id][i].cbegin(), data[gs_id][i].cend());
+                res.sum += local_sum;
+                res.min = *local_min < res.min ? *local_min : res.min;
+                res.max = *local_max > res.max ? *local_max : res.max;
+            }
+
+            return res;
+        }
+    }    // namespace detail
+
+    // computes the number of nodes
+    template <std::size_t N, typename T>
+    auto tree_size(mkp::node_base<N, T>* ptr_root)
+    {
+        return detail::tree_size_impl(ptr_root);
+    }
+
+    // computes the sum of all regret / strategy entries
+    template <std::size_t N, typename T>
+    auto regret_stats(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
+    {
+        return detail::regret_stats_impl(ptr_root, data);
+    }
+
     template <std::size_t N, typename T = uint32_t>
     struct cfr_data
     {
@@ -47,14 +155,17 @@ namespace mkp
         // - gamestate
         //  - cards/card_abstraction_id
         //   - action
+        //
+        // since we traverse the game tree with fixed cards, this layout (vector of actions for each card abstraction id)
+        // should be more cache friendly than the other way round, although it makes printint the tree a little bit
+        // more cumbersome
+
         std::vector<std::vector<std::vector<int32_t>>> m_regret_sum;
         std::vector<std::vector<std::vector<int32_t>>> m_strategy_sum;
         std::unique_ptr<node_base<N, T>> m_root;
         const game_abstraction_base<N, T>* m_ptr_ga;
         const action_abstraction_base<N>* m_ptr_aa;
         const card_abstraction_base<N, T>* m_ptr_ca;
-        //const action_abstraction_base<N, T>* m_ptr_aa;
-        // == std::vector<int32_t> m_action_abstraction_sizes;
 
         cfr_data() = delete;
         cfr_data(std::unique_ptr<node_base<N, T>> root, game_abstraction_base<N, T>* ptr_ga, action_abstraction_base<N>* ptr_aa,
@@ -65,7 +176,7 @@ namespace mkp
         }
 
         // print nodes recursively
-        void print_strategy_r(const node_base<N, T>* ptr_node, const int level, const int print_level_max = 128) const
+        void print_strategy(const node_base<N, T>* ptr_node, const int level, const int print_level_max = 128) const
         {
             if (level > print_level_max)
             {
@@ -84,21 +195,16 @@ namespace mkp
             std::vector<std::vector<std::pair<uint32_t, float>>> vec_temp(all_actions.size(), vec_init);
             for (uint32_t i = 0; i < m_strategy_sum[gs_id].size(); ++i)
             {
-                // skip empty indizes
+                // skip empty indices
                 if (std::reduce(m_strategy_sum[gs_id][i].cbegin(), m_strategy_sum[gs_id][i].cend()) == 0)
                 {
                     continue;
                 }
 
                 const auto values = normalize(m_strategy_sum[gs_id][i]);
-                uint32_t j = 0;
-                //o << space << print_card_abstraction_id(node->m_state, i) << ":\n";
-                for (const auto e : values)
+                for (uint32_t j = 0; j < values.size(); ++j)
                 {
-                    //vec_temp[j].push_back(std::make_pair(i, e));
-                    vec_temp[j].emplace_back(i, e);
-                    //o << space << (all_actions[j].str()) << " : " << e << "\n";
-                    ++j;
+                    vec_temp[j].emplace_back(i, values[j]);
                 }
             }
 
@@ -112,7 +218,7 @@ namespace mkp
                 std::sort(vec_temp[i].begin(), vec_temp[i].end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
                 for (uint32_t j = 0; j < vec_temp[i].size(); ++j)
                 {
-                    if (j < 25 || j > vec_temp[i].size() - 25)
+                    if (j < 75 || j > vec_temp[i].size() - 75)
                         std::cout << space << m_ptr_ca->str_id(ptr_node->m_game_state, vec_temp[i][j].first) << " => "
                                   << vec_temp[i][j].second << "\n";
                 }
@@ -124,7 +230,7 @@ namespace mkp
             {
                 if (!e->is_terminal())
                 {
-                    print_strategy_r(e.get(), level + 1, print_level_max);
+                    print_strategy(e.get(), level + 1, print_level_max);
                 }
             }
         }
@@ -176,23 +282,19 @@ namespace mkp
                                   std::array<float, 2> reach)
     {
         // if the node is terminal, return utility
-        //
         if (ptr_node->is_terminal())
         {
-            //std::cout << node->m_hash << ": returning " << node->utility_vec(cards)[node->m_active_player] << ", "
-            //          << node->utility_vec(cards)[1 - node->m_active_player] << "\n";
             return ptr_node->utility(cards, cfrd.m_ptr_ga);
         }
 
         // otherwise, call cfr for each action recursively with updated reach for the active player
-        //
 
-        // get new strategy
         const auto ap = ptr_node->m_active_player;
         const auto game_abstraction_id = ptr_node->m_id;
         const auto card_abstraction_id = cfrd.m_ptr_ca->id(ptr_node->m_game_state, ptr_node->m_active_player, cards);
-        auto strategy = get_strategy(cfrd.m_regret_sum[game_abstraction_id][card_abstraction_id]);
-        // update strategy sum
+
+        // get new strategy, update strategy sum
+        const auto strategy = get_strategy(cfrd.m_regret_sum[game_abstraction_id][card_abstraction_id]);
         update_strategy_sum(cfrd.m_strategy_sum[game_abstraction_id][card_abstraction_id], strategy, reach[ap]);
 
         const auto& all_nodes = ptr_node->m_children;

@@ -46,6 +46,7 @@ namespace mkp
     };
 
     // sample card abstraction that buckets cards by range classification, i.e. AA, AKs, AKo etc.
+    // keep in mind, that this abstraction only works preflop
     template <std::size_t N, typename T = uint32_t>
     struct card_abstraction_by_range final : public card_abstraction_base<N, T>
     {

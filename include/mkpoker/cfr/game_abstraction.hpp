@@ -15,7 +15,10 @@ namespace mkp
 
         virtual ~game_abstraction_base() = default;
 
+        // takes a new gamestate as input and returns the id
         virtual uint_type encode(const gamestate<N>& gamestate) = 0;
+
+        // converts the id back to the actual gamestate
         [[nodiscard]] virtual gamestate<N> decode(const uint_type i) const = 0;
     };
 
@@ -37,7 +40,7 @@ namespace mkp
         [[nodiscard]] virtual gamestate<N> decode(const uint_type i) const override { return storage.at(i); }
     };
 
-    // sample encoder that stores / enumerates the gamestates
+    // sample encoder that disacrds the gamestate and just returns a new numbe reach time
     template <std::size_t N, typename T = uint32_t>
     struct gamestate_discarder final : public game_abstraction_base<N, T>
     {
