@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/base/range.hpp>
 #include <mkpoker/base/rank.hpp>
 #include <mkpoker/game/game.hpp>
+#include <mkpoker/util/mtp.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -30,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mkp
 {
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct card_abstraction_base
     {
         using uint_type = T;
@@ -47,7 +48,7 @@ namespace mkp
 
     // sample card abstraction that buckets cards by range classification, i.e. AA, AKs, AKo etc.
     // keep in mind, that this abstraction only works preflop
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct card_abstraction_by_range final : public card_abstraction_base<N, T>
     {
         using typename card_abstraction_base<N, T>::uint_type;

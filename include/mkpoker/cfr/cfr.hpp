@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/cfr/node.hpp>
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/algorithm.hpp>
+#include <mkpoker/util/mtp.hpp>
 
 #include <algorithm>
 #include <array>
@@ -39,18 +40,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mkp
 {
-    //// computes the number of nodes
-    //template <std::size_t N, typename T>
-    //std::size_t tree_size(mkp::node_base<N, T>* root)
-    //{
-    //    std::size_t res{};
-    //    for (auto&& child : root->m_children)
-    //    {
-    //        res += tree_size(child.get());
-    //    }
-    //    return 1 + res;
-    //}
-
     namespace detail
     {
         struct tree_size_t
@@ -66,7 +55,7 @@ namespace mkp
             }
         };
 
-        template <std::size_t N, typename T>
+        template <std::size_t N, UnsignedIntegral T>
         tree_size_t tree_size_impl(mkp::node_base<N, T>* ptr_root)
         {
             tree_size_t res{};
@@ -102,7 +91,7 @@ namespace mkp
             }
         };
 
-        template <std::size_t N, typename T>
+        template <std::size_t N, UnsignedIntegral T>
         regret_stats_t regret_stats_impl(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
         {
             regret_stats_t res{};
@@ -133,23 +122,23 @@ namespace mkp
     }    // namespace detail
 
     // computes the number of nodes
-    template <std::size_t N, typename T>
+    template <std::size_t N, UnsignedIntegral T>
     auto tree_size(mkp::node_base<N, T>* ptr_root)
     {
         return detail::tree_size_impl(ptr_root);
     }
 
     // computes the sum of all regret / strategy entries
-    template <std::size_t N, typename T>
+    template <std::size_t N, UnsignedIntegral T>
     auto regret_stats(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
     {
         return detail::regret_stats_impl(ptr_root, data);
     }
 
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct cfr_data
     {
-        using game_encode_type = T;
+        //using uint_type = T;
 
         // 3 layers:
         // - gamestate
@@ -309,8 +298,6 @@ namespace mkp
             utility_all_children.push_back(utility_this_child);
             const auto adjusted_utility_this_child = utility_this_child * strategy[i];
             node_utility += adjusted_utility_this_child;
-            //std::cout << "Xresult (" << std::to_string(node->m_active_player) << ", " << reach_new[node->m_active_player]
-            //          << "): " << res[node->m_active_player] << "\n";
         }
 
         // update regrets

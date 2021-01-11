@@ -38,15 +38,15 @@ namespace mkp
     // state [preflop, flop etc.], which one might need to compute a card abstraction)
     //
     // N = number of players 2..6
-    // T = unsigned integer type, use uint32_t if possible (i.e., for small games / shallow stack sizes)
-    template <std::size_t N, typename T = uint32_t>
+    // T = type for hash/id, use uint32_t if possible (i.e., for small games / shallow stack sizes)
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct node_base
     {
         using uint_type = T;
         using encoder_type = game_abstraction_base<N, T>;
 
         ///////////////////////////////////////////////////////////////////////////////////////
-        // data
+        // DATA
         ///////////////////////////////////////////////////////////////////////////////////////
 
         std::vector<std::unique_ptr<node_base>> m_children;
@@ -80,7 +80,7 @@ namespace mkp
         virtual void print_node() const = 0;
     };
 
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct node_infoset : public node_base<N, T>
     {
         using typename node_base<N, T>::uint_type;
@@ -128,7 +128,7 @@ namespace mkp
         }
     };
 
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct node_terminal : public node_base<N, T>
     {
         using typename node_base<N, T>::uint_type;
@@ -193,7 +193,7 @@ namespace mkp
     };
 
     // recursively init game tree
-    template <std::size_t N, typename T = uint32_t>
+    template <std::size_t N, UnsignedIntegral T = uint32_t>
     [[nodiscard]] std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, game_abstraction_base<N, T>* ptr_enc,
                                                              action_abstraction_base<N>* ptr_aa, const uint8_t level = 0)
     {
