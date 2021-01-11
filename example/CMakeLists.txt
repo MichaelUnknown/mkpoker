@@ -12,5 +12,6 @@ add_executable(demo_game_w_cards demo_game_w_cards.cpp)
 target_link_libraries(demo_game_w_cards PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME})
 
 # demo cfr
+find_package(Threads REQUIRED)
 add_executable(demo_cfr demo_cfr.cpp)
-target_link_libraries(demo_cfr PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+target_link_libraries(demo_cfr PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME} Threads::Threads)
