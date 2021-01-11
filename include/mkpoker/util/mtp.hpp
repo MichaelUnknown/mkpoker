@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace mkp
 {
     template <class T>
-    concept UnsignedIntegral = (std::is_integral<T>::value) && (std::is_signed<T>::value);
+    concept UnsignedIntegral = (std::is_integral<T>::value) && (std::is_unsigned<T>::value);
 
     namespace detail
     {

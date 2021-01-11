@@ -138,8 +138,6 @@ namespace mkp
     template <std::size_t N, UnsignedIntegral T = uint32_t>
     struct cfr_data
     {
-        //using uint_type = T;
-
         // 3 layers:
         // - gamestate
         //  - cards/card_abstraction_id
@@ -225,16 +223,16 @@ namespace mkp
         }
 
        private:
-        void init(node_base<N, T>* node)
+        void init(node_base<N, T>* ptr_node)
         {
-            // number of actions / children of that node
-            const auto inner = std::vector<int32_t>(node->m_children.size(), 0);
-            // numer of possible card combinations according to card abstraction
-            const auto init_vec = std::vector<std::vector<int32_t>>(m_ptr_ca->size(node->m_game_state), inner);
+            // size of inner vector: number of actions / children of that node
+            const auto inner = std::vector<int32_t>(ptr_node->m_children.size(), 0);
+            // size of outer vector: numer of possible card combinations according to card abstraction
+            const auto init_vec = std::vector<std::vector<int32_t>>(m_ptr_ca->size(ptr_node->m_game_state), inner);
             m_regret_sum.push_back(init_vec);
             m_strategy_sum.push_back(init_vec);
 
-            for (auto&& child : node->m_children)
+            for (auto&& child : ptr_node->m_children)
             {
                 init(child.get());
             }
