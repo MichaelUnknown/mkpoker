@@ -35,10 +35,22 @@ namespace mkp
     {
         virtual ~action_abstraction_base() = default;
 
+        // restricts the list of possible actions
         [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const = 0;
     };
 
-    // a simple abstraction that allows a limited numer of actions preflop and  checking down to the river
+    // action abstraction that allows every action
+    template <std::size_t N>
+    struct action_abstraction_noop final : public action_abstraction_base<N>
+    {
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
+        {
+            return gamestate.possible_actions();
+        }
+    };
+
+    // a simple abstraction that allows preflop actions (fold, call, raise pot and all in) and 'checking down to the river',
+    // i.e., no postflop actions
     template <std::size_t N>
     struct action_abstraction_simple_preflop final : public action_abstraction_base<N>
     {
@@ -48,7 +60,8 @@ namespace mkp
 
             if (gamestate.gamestate_v() == gb_gamestate_t::PREFLOP_BET)
             {
-                // pot-sized raise: amount to call + 100 * (amount to call + pot size) / 100
+                // XX%-sized raise: amount to call + XX * (amount to call + pot size) / 100
+                // pot-sized raise: amount to call + amount to call + pot size
                 auto pot_sized_raise = 2 * gamestate.amount_to_call() + gamestate.pot_size();
 
                 const auto all = gamestate.possible_actions();
@@ -71,16 +84,6 @@ namespace mkp
                 ret.emplace_back(0, gb_action_t::CHECK, gamestate.active_player_v());
             }
             return ret;
-        }
-    };
-
-    // sample action abstraction that allows every action
-    template <std::size_t N>
-    struct action_abstraction_noop final : public action_abstraction_base<N>
-    {
-        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
-        {
-            return gamestate.possible_actions();
         }
     };
 

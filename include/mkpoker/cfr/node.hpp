@@ -50,7 +50,7 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         std::vector<std::unique_ptr<node_base>> m_children;
-        uint_type m_id;                 // abstraction for the gamestate, ui32 or ui64
+        uint_type m_id;                 // hash/id for the gamestate, ui32 or ui64
         gb_gamestate_t m_game_state;    // preflop, flop etc.
         uint8_t m_active_player;        //
         uint8_t m_level;                // tree depth, for debug / printing the tree

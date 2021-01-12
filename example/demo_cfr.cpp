@@ -27,13 +27,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/card_generator.hpp>
 
-#include <chrono>    // sleep 1s
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <thread>    // sleep 1s
+#include <thread>
 #include <vector>
 
 int main()
@@ -59,15 +58,14 @@ int main()
         mkp::gamestate<2> game_2p{10'000};
         mkp::gamestate_enumerator<2, uint32_t> enc_2p{};
         mkp::action_abstraction_noop<2> aa_2p{};
-        auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
-        const auto [i, t] = tree_size(gametree_base_2p.get());
-        const auto cnt_nodes = i + t;
-        const auto mem = i * (sizeof(mkp::node_infoset<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>)) +
-                         t * (sizeof(mkp::node_terminal<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>));
-        std::cout << "game with 2 players, stack size 200BB, no action filter\n"
-                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n";
-        std::cout << "estimated size for tree nodes: " << mem / 1000 << "KB (" << mem / 1000000 << "MB)\n\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        //auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
+        //const auto [i, t] = tree_size(gametree_base_2p.get());
+        //const auto cnt_nodes = i + t;
+        //const auto mem = i * (sizeof(mkp::node_infoset<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>)) +
+        //                 t * (sizeof(mkp::node_terminal<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>));
+        //std::cout << "game with 2 players, stack size 200BB, no action filter\n"
+        //          << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n";
+        //std::cout << "estimated size for tree nodes: " << mem / 1000 << "KB (" << mem / 1000000 << "MB)\n\n";
     }
     {
         // simplified game: only a couple preflop actions are allowed (fold, call, raise with specific sizes)
@@ -105,7 +103,7 @@ int main()
             workers.push_back(std::thread([&cfrd_2p, &mu, tid]() {
                 mkp::card_generator cgen{};
                 std::array<std::array<int32_t, 2>, 1024> util{};
-                for (uint32_t i = 0; i < 500'000; ++i)
+                for (uint32_t i = 0; i < 500; ++i)
                 {
                     if (i % 50'000 == 0)
                     {

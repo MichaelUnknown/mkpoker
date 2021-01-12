@@ -38,7 +38,10 @@ namespace mkp
 
         virtual ~card_abstraction_base() = default;
 
+        // returns the number of different hashes/ids the abstraction produces for a given game state
         [[nodiscard]] virtual uint_type size(const gb_gamestate_t game_state) const = 0;
+
+        // returns the hash/id for given cards and game state
         [[nodiscard]] virtual uint_type id(const gb_gamestate_t game_state, const uint8_t active_player,
                                            const gamecards<N>& cards) const = 0;
 

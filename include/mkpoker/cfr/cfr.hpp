@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <mkpoker/base/range.hpp>
 #include <mkpoker/cfr/action_abstraction.hpp>
 #include <mkpoker/cfr/card_abstraction.hpp>
 #include <mkpoker/cfr/game_abstraction.hpp>
@@ -29,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -178,40 +180,67 @@ namespace mkp
 
             std::cout << space << gs.str_state() << "\n";
 
-            const std::vector<std::pair<uint32_t, float>> vec_init;
-            std::vector<std::vector<std::pair<uint32_t, float>>> vec_temp(all_actions.size(), vec_init);
-            for (uint32_t i = 0; i < m_strategy_sum[gs_id].size(); ++i)
+            // in case of preflop ranges, use pretty print
+            if (ptr_node->m_game_state == gb_gamestate_t::PREFLOP_BET && m_strategy_sum[gs_id].size() == c_range_size)
             {
-                // skip empty indices
-                if (std::reduce(m_strategy_sum[gs_id][i].cbegin(), m_strategy_sum[gs_id][i].cend()) == 0)
+                std::vector<range> vec_ranges(all_actions.size());
+                for (uint8_t i = 0; i < c_range_size; ++i)
                 {
-                    continue;
+                    const auto values = normalize(m_strategy_sum[gs_id][i]);
+                    for (uint32_t j = 0; j < vec_ranges.size(); ++j)
+                    {
+                        vec_ranges[j].set_normalized_value(i, static_cast<uint8_t>(values[j] * 100));
+                    }
                 }
 
-                const auto values = normalize(m_strategy_sum[gs_id][i]);
-                for (uint32_t j = 0; j < values.size(); ++j)
+                for (uint8_t i = 0; i < vec_ranges.size(); ++i)
                 {
-                    vec_temp[j].emplace_back(i, values[j]);
+                    std::cout << space << (all_actions[i].str()) << ": " << std::fixed << std::setprecision(2)
+                              << std::to_string(vec_ranges[i].percent()) << "%\n";
+
+                    std::cout << vec_ranges[i].str();
+                    std::cout << "\n";
                 }
             }
-
-            for (uint32_t i = 0; i < vec_temp.size(); ++i)
+            else
             {
-                std::cout << space << (all_actions[i].str()) << ": " << std::fixed << std::setprecision(2)
-                          << std::accumulate(vec_temp[i].cbegin(), vec_temp[i].cend(), 0.0f,
-                                             [](const float val, const auto& e) { return val + e.second; }) *
-                                 100 / vec_temp[i].size()
-                          << "%\n";
-                std::sort(vec_temp[i].begin(), vec_temp[i].end(), [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
-                for (uint32_t j = 0; j < vec_temp[i].size(); ++j)
+                const std::vector<std::pair<uint32_t, float>> vec_init;
+                std::vector<std::vector<std::pair<uint32_t, float>>> vec_temp(all_actions.size(), vec_init);
+                for (uint32_t i = 0; i < m_strategy_sum[gs_id].size(); ++i)
                 {
-                    if (j < 75 || j > vec_temp[i].size() - 75)
-                        std::cout << space << m_ptr_ca->str_id(ptr_node->m_game_state, vec_temp[i][j].first) << " => "
-                                  << vec_temp[i][j].second << "\n";
+                    // skip empty indices
+                    if (std::reduce(m_strategy_sum[gs_id][i].cbegin(), m_strategy_sum[gs_id][i].cend()) == 0)
+                    {
+                        continue;
+                    }
+
+                    const auto values = normalize(m_strategy_sum[gs_id][i]);
+                    for (uint32_t j = 0; j < values.size(); ++j)
+                    {
+                        vec_temp[j].emplace_back(i, values[j]);
+                    }
+                }
+
+                for (uint32_t i = 0; i < vec_temp.size(); ++i)
+                {
+                    std::cout << space << (all_actions[i].str()) << ": " << std::fixed << std::setprecision(2)
+                              << std::accumulate(vec_temp[i].cbegin(), vec_temp[i].cend(), 0.0f,
+                                                 [](const float val, const auto& e) { return val + e.second; }) *
+                                     100 / vec_temp[i].size()
+                              << "%\n";
+
+                    std::sort(vec_temp[i].begin(), vec_temp[i].end(),
+                              [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
+                    for (uint32_t j = 0; j < vec_temp[i].size(); ++j)
+                    {
+                        if (j < 25 || j > vec_temp[i].size() - 5)
+                            std::cout << space << m_ptr_ca->str_id(ptr_node->m_game_state, vec_temp[i][j].first) << " => "
+                                      << vec_temp[i][j].second << "\n";
+                    }
+                    std::cout << "\n";
                 }
                 std::cout << "\n";
             }
-            std::cout << "\n";
 
             for (auto&& e : ptr_node->m_children)
             {

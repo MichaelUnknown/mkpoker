@@ -317,7 +317,7 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         // get the numer of "real hands" (entries x factor 4/6/12) with value > 0
-        [[nodiscard]] constexpr uint16_t size_total() const noexcept
+        [[nodiscard]] constexpr uint16_t hands() const noexcept
         {
             uint16_t ret = 0;
             for (uint8_t i = 0; i < c_range_size; ++i)
@@ -351,6 +351,21 @@ namespace mkp
                 }
             }
             return ret;
+        }
+
+        // return weighted sum which is actually encoded in the values
+        [[nodiscard]] constexpr uint16_t total() const noexcept
+        {
+            return static_cast<uint16_t>(std::reduce(m_combos.cbegin(), m_combos.cend(), 0));
+        }
+
+        // percentage of full range
+        [[nodiscard]] constexpr uint16_t percent() const noexcept
+        {
+            // 13 pairs (x6), the diagonal
+            // 78 suited combinations (x4), upper triangle
+            // 78 non-suited combinations (x12), lower triangle
+            return static_cast<uint16_t>(total() * 100 / ((13 * 600) + (78 * 400) + (78 * 1200)));
         }
 
         // get the numer of entries (hand_2r objects) with value > 0 (not counting the factor 4/6/12)
@@ -410,34 +425,42 @@ namespace mkp
         // print complete information about stored range
         [[nodiscard]] std::string str() const noexcept
         {
-            std::string out{};
+            std::string out("   | A | K | Q | J | T | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 \n");
             for (uint8_t i = 0; i < c_range_size; i++)
             {
                 const int8_t top = c_rank_ace - i % c_num_ranks;
                 const int8_t left = c_rank_ace - i / c_num_ranks;
                 const auto value = m_combos[i];
 
+                if (top == c_rank_ace)
+                {
+                    out.append("---+---+---+---+---+---+---+---+---+---+---+---+---+---\n " + rank{rank_t(left)}.str() + " |");
+                }
+
                 if (top == left)
                 {
-                    out.append(rank{top}.str() + rank{top}.str() + " :");
+                    //out.append(rank{rank_t(top)}.str() + rank{rank_t(top)}.str() + " :");
                     if (value > 0)
                     {
-                        out.append(std::to_string(value / 6));
+                        const auto tmp = std::to_string(value / 6);
+                        out.append(std::string(" ", 3 - tmp.length()) + tmp);
                     }
                 }
                 else
                 {
                     const bool is_suited = left > top;
-                    out.append(rank{is_suited ? left : top}.str() + rank{is_suited ? top : left}.str() + (is_suited ? "s:" : "o:"));
+                    //out.append(rank{rank_t(is_suited ? left : top)}.str() + rank{rank_t(is_suited ? top : left)}.str() +
+                    //           (is_suited ? "s:" : "o:"));
                     if (value > 0)
                     {
-                        out.append(std::to_string(value / (is_suited ? 4 : 12)));
+                        const auto tmp = std::to_string(value / (is_suited ? 4 : 12));
+                        out.append(std::string(" ", 3 - tmp.length()) + tmp);
                     }
                 }
 
                 if (value == 0)
                 {
-                    out.append("---");
+                    out.append("  0");
                 }
 
                 out.append(top == c_rank_two ? "\n" : "|");
@@ -540,7 +563,7 @@ namespace mkp
         {
             if (index > c_rangeindex_max)
             {
-                throw std::runtime_error("set_value(const uint8_t, const uint16_t): value out of bounds '" + std::to_string(value) + "'");
+                throw std::runtime_error("set_value(const uint8_t, const uint16_t): index out of bounds '" + std::to_string(index) + "'");
             }
 
             if (value > max_value(index))
@@ -562,6 +585,24 @@ namespace mkp
             }
 
             m_combos[idx] = value;
+        }
+
+        // set normalized value at index i, throws if invalid input
+        void set_normalized_value(const uint8_t index, const uint8_t value)
+        {
+            if (index > c_rangeindex_max)
+            {
+                throw std::runtime_error("set_normalized_value(const uint8_t, const uint8_t): index out of bounds '" +
+                                         std::to_string(index) + "'");
+            }
+
+            if (value > 100)
+            {
+                throw std::runtime_error("set_normalized_value(const uint8_t, const uint8_t): value out of bounds '" +
+                                         std::to_string(value) + "'");
+            }
+
+            m_combos[index] = value * max_value(index) / 100;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////
