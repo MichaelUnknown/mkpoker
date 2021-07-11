@@ -31,32 +31,32 @@ jobs:
             cc: gcc-10
             cxx: g++-10
 
-          # clang 11 on ubuntu
+          # clang 12 on ubuntu
           - 
-            name: "ubuntu clang 11 Debug"
+            name: "ubuntu clang 12 Debug"
             os: ubuntu-20.04
             build_type: Debug
-            cc: clang-11
-            cxx: clang++-11
+            cc: clang-12
+            cxx: clang++-12
           - 
-            name: "ubuntu clang 11 Release"
+            name: "ubuntu clang 12 Release"
             os: ubuntu-20.04
             build_type: Release
-            cc: clang-11
-            cxx: clang++-11
+            cc: clang-12
+            cxx: clang++-12
           - 
-            name: "ubuntu clang 11 libcxx Debug"
+            name: "ubuntu clang 12 libcxx Debug"
             os: ubuntu-20.04
             build_type: Debug
-            cc: clang-11
-            cxx: clang++-11
+            cc: clang-12
+            cxx: clang++-12
             libcxx: true
           - 
-            name: "ubuntu clang 11 libcxx Release"
+            name: "ubuntu clang 12 libcxx Release"
             os: ubuntu-20.04
             build_type: Release
-            cc: clang-11
-            cxx: clang++-11
+            cc: clang-12
+            cxx: clang++-12
             libcxx: true
 
           # clang 11 on macos
