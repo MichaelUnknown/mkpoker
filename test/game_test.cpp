@@ -168,23 +168,32 @@ TEST(tgame, game_gamestate_ctor)
     EXPECT_EQ(g5.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
     EXPECT_EQ(g6.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
 
-    EXPECT_THROW(static_cast<void>(g2.payouts_noshodown()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g3.payouts_noshodown()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g4.payouts_noshodown()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g5.payouts_noshodown()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(g6.payouts_noshodown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g2.payouts_noshowdown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g3.payouts_noshowdown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g4.payouts_noshowdown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g5.payouts_noshowdown()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(g6.payouts_noshowdown()), std::runtime_error);
 }
 
 TEST(tgame, game_gamestate_ctor_chips)
 {
-    std::array<int, 2> chips2{1000, 500};
-    std::array<int, 3> chips3{1000, 500, 1000};
+    std::array<int, 2> chips2ok{1000, 500};
+    std::array<int, 2> chips2a{999, 500};
+    std::array<int, 2> chips2b{1000, 499};
+    std::array<int, 3> chips3ok{500, 1000, 1};
+    std::array<int, 3> chips3a{499, 1000, 1000};
+    std::array<int, 3> chips3b{500, 999, 1000};
     std::array<int, 4> chips4{1000, 500, 1000, 1000};
     std::array<int, 5> chips5{1000, 500, 1000, 1000, 1000};
     std::array<int, 6> chips6{1000, 500, 1000, 1000, 1000, 1000};
 
-    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(gamestate<2>(chips2ok)));
+    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2a)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2b)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(gamestate<3>(chips3ok)));
+    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3a)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3b)), std::runtime_error);
+
     EXPECT_THROW(static_cast<void>(gamestate<4>(chips4)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(gamestate<5>(chips5)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(gamestate<6>(chips6)), std::runtime_error);
@@ -213,7 +222,7 @@ TEST(tgame, game_gamestate_execute_action)
         EXPECT_EQ(game1.in_terminal_state(), true);
         EXPECT_EQ(game1.is_showdown(), true);
         //#if !defined(NDEBUG)
-        EXPECT_THROW(static_cast<void>(game1.payouts_noshodown()), std::runtime_error);
+        EXPECT_THROW(static_cast<void>(game1.payouts_noshowdown()), std::runtime_error);
         //#endif
         EXPECT_EQ(game1.possible_actions().size(), 0);
     }
@@ -260,7 +269,7 @@ TEST(tgame, game_gamestate_execute_action)
         // state should be game finished
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
         // payouts should be {-500,+4500,-4000}
-        EXPECT_EQ(game2.payouts_noshodown(), (std::array<int, 3>{-500, 4500, -4000}));
+        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int, 3>{-500, 4500, -4000}));
     }
 
     //

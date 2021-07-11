@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) 2020 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -176,7 +177,17 @@ namespace mkp
             }
 
             // return string representation, is noexcept since we only allow valid objects to be created
-            [[nodiscard]] std::string str() const noexcept { return std::string(m_card1.str() + m_card2.str()); }
+            [[nodiscard]] std::string str() const noexcept
+            {
+                if constexpr (is_rank_v<c_r_type>)
+                {
+                    return std::string(m_card1.str() + m_card2.str() + (m_card1 == m_card2 ? " " : (m_card1 > m_card2 ? "s" : "o")));
+                }
+                else
+                {
+                    return std::string(m_card1.str() + m_card2.str());
+                }
+            }
 
             ///////////////////////////////////////////////////////////////////////////////////////
             // MUTATORS
@@ -342,6 +353,7 @@ namespace mkp
 
 #if !defined(__clang__)
     // clang 11 seems to differ with msvc and gcc about these asserts :(
+    // todo: make a simplified exmaple and check which compiler is right/wrong
 
     // checks for hand_2c
     static_assert(std::is_standard_layout_v<hand_2c>, "hand_2c should have standard layout");

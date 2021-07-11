@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) 2020 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -19,12 +20,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <array>
-#include <cstddef>       // std::size_t
-#include <functional>    // std::identity
-#include <utility>       // std::integer_sequence, std::make_index_sequence, std::forward
+#include <cstddef>        // std::size_t
+#include <functional>     // std::identity
+#include <type_traits>    // std::is_integral etc.
+#include <utility>        // std::integer_sequence, std::make_index_sequence, std::forward
 
 namespace mkp
 {
+    template <class T>
+    concept UnsignedIntegral = (std::is_integral<T>::value) && (std::is_unsigned<T>::value);
+
     namespace detail
     {
         // use index_sequence / parameter packs to make the array, set to constant value

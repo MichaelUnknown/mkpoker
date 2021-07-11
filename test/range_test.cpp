@@ -21,35 +21,39 @@ TEST(trange, range_ctor_vector)
 {
     const std::vector<hand_2r> vhr{hand_2r{"AA"}, hand_2r{"43"}, hand_2r{"QK"}};
     EXPECT_EQ(range(vhr).size(), 3);
-    EXPECT_EQ(range(vhr).size_total(), 22);
+    EXPECT_EQ(range(vhr).hands(), 22);
+    EXPECT_EQ(range(vhr).total(), 2200);
+    EXPECT_EQ(range(vhr).percent(), 2200 * 100 / 132600);
 }
 
 TEST(trange, range_ctor_array)
 {
     const std::array<hand_2r, 3> vhr{hand_2r{"AA"}, hand_2r{"43"}, hand_2r{"QK"}};
     EXPECT_EQ(range(vhr).size(), 3);
-    EXPECT_EQ(range(vhr).size_total(), 22);
+    EXPECT_EQ(range(vhr).hands(), 22);
+    EXPECT_EQ(range(vhr).total(), 2200);
+    EXPECT_EQ(range(vhr).percent(), 2200 * 100 / 132600);
 }
 
 TEST(trange, range_ctor_str)
 {
     const range r2{"99+"};
     EXPECT_EQ(r2.size(), 6);
-    EXPECT_EQ(r2.size_total(), 36);
+    EXPECT_EQ(r2.hands(), 36);
 
     EXPECT_EQ(range("77").size(), 1);
-    EXPECT_EQ(range("77").size_total(), 6);
+    EXPECT_EQ(range("77").hands(), 6);
 
     EXPECT_EQ(range("43o,67o").size(), 2);
-    EXPECT_EQ(range("43o,67o").size_total(), 24);
+    EXPECT_EQ(range("43o,67o").hands(), 24);
 
     EXPECT_EQ(range("QJs,89s").size(), 2);
-    EXPECT_EQ(range("QJs,89s").size_total(), 8);
+    EXPECT_EQ(range("QJs,89s").hands(), 8);
 
     EXPECT_EQ(range("A3s+").size(), 11);
-    EXPECT_EQ(range("A3s+").size_total(), 44);
+    EXPECT_EQ(range("A3s+").hands(), 44);
     EXPECT_EQ(range("A3o+").size(), 11);
-    EXPECT_EQ(range("A3o+").size_total(), 11 * 12);
+    EXPECT_EQ(range("A3o+").hands(), 11 * 12);
 
     // too many / few tokens
     EXPECT_THROW(const range r1{"A"}, std::runtime_error);
@@ -129,20 +133,20 @@ TEST(trange, range_accessors)
     // size, size_total
     const range r1{"KK+"};
     EXPECT_EQ(2, r1.size());
-    EXPECT_EQ(2 * 6, r1.size_total());
+    EXPECT_EQ(2 * 6, r1.hands());
     const range r2{"ATs+"};
     EXPECT_EQ(4, r2.size());
-    EXPECT_EQ(4 * 4, r2.size_total());
+    EXPECT_EQ(4 * 4, r2.hands());
     const range r3{"K9o+"};
     EXPECT_EQ(4, r3.size());
-    EXPECT_EQ(4 * 12, r3.size_total());
+    EXPECT_EQ(4 * 12, r3.hands());
     range r4{};
     r4.fill();
     EXPECT_EQ(c_range_size, r4.size());
-    EXPECT_EQ(1326, r4.size_total());
+    EXPECT_EQ(1326, r4.hands());
     const range r5{"88+,A6s+,2Qo+"};
     EXPECT_EQ(7 + 8 + 10, r5.size());
-    EXPECT_EQ(7 * 6 + 8 * 4 + 10 * 12, r5.size_total());
+    EXPECT_EQ(7 * 6 + 8 * 4 + 10 * 12, r5.hands());
 
     // get value
     EXPECT_EQ(0, r1.value_of(hand_2r(1, 2)));
@@ -155,7 +159,7 @@ TEST(trange, range_mutators)
     range r0{};
     r0.fill();
     EXPECT_EQ(r0.size(), 169);
-    EXPECT_EQ(r0.size_total(), 1326);
+    EXPECT_EQ(r0.hands(), 1326);
     r0.clear();
     EXPECT_EQ(r0.size(), 0);
 
@@ -164,7 +168,7 @@ TEST(trange, range_mutators)
 
     r0.set_value(0, 100);
     EXPECT_EQ(r0.size(), 1);
-    EXPECT_EQ(r0.size_total(), 6);
+    EXPECT_EQ(r0.hands(), 6);
     EXPECT_EQ(r0.value_of(aces), 100);
 
     EXPECT_THROW(r0.set_value(c_range_size, 100), std::runtime_error);
@@ -173,7 +177,7 @@ TEST(trange, range_mutators)
 
     r0.set_value(kings, 100);
     EXPECT_EQ(r0.size(), 2);
-    EXPECT_EQ(r0.size_total(), 12);
+    EXPECT_EQ(r0.hands(), 12);
     EXPECT_EQ(r0.value_of(14), 100);
 }
 

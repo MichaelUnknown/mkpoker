@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) 2020 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -38,4 +39,35 @@ namespace mkp
         result += rhs;
         return result;
     }
+
+    // for calc_cfr
+    //
+
+    template <typename T, std::size_t N>
+    constexpr std::array<T, N>& operator*=(std::array<T, N>& lhs, const T val)
+    {
+        for (std::size_t i = 0; i < N; ++i)
+            lhs[i] *= val;
+        return lhs;
+    }
+
+    template <std::size_t N>
+    constexpr std::array<int32_t, N>& operator*=(std::array<int32_t, N>& lhs, const float val)
+    {
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            const float new_val = val * lhs[i];
+            lhs[i] = static_cast<int32_t>(new_val);
+        }
+        return lhs;
+    }
+
+    template <std::size_t N>
+    constexpr std::array<int32_t, N> operator*(const std::array<int32_t, N>& lhs, const float val)
+    {
+        std::array<int32_t, N> result = lhs;
+        result *= val;
+        return result;
+    }
+
 }    // namespace mkp
