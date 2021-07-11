@@ -59,16 +59,11 @@ int main()
         mkp::gamestate_enumerator<2, uint32_t> enc_2p{};
         mkp::action_abstraction_noop<2> aa_2p{};
 
-        // uncomment these lines to print/compute the demo
-
-        //auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
-        //const auto [i, t] = tree_size(gametree_base_2p.get());
-        //const auto cnt_nodes = i + t;
-        //const auto mem = i * (sizeof(mkp::node_infoset<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>)) +
-        //                 t * (sizeof(mkp::node_terminal<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>));
-        //std::cout << "game with 2 players, stack size 200BB, no action filter\n"
-        //          << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n";
-        //std::cout << "estimated size for tree nodes: " << mem / 1000 << "KB (" << mem / 1000000 << "MB)\n\n";
+        auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
+        const auto [i, t] = tree_size(gametree_base_2p.get());
+        const auto cnt_nodes = i + t;
+        std::cout << "game with 2 players, stack size 10BB, no action filter\n"
+                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n\n";
     }
     {
         // simplified game: only a couple preflop actions are allowed (fold, call, raise with specific sizes)
@@ -80,11 +75,9 @@ int main()
         auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p_fcr);
         const auto [i, t] = tree_size(gametree_base_2p.get());
         const auto cnt_nodes = i + t;
-        const auto mem = i * (sizeof(mkp::node_infoset<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>)) +
-                         t * (sizeof(mkp::node_terminal<2, uint32_t>) + sizeof(std::unique_ptr<mkp::node_base<2, uint32_t>>));
         std::cout << "game with 2 players, stack size 200BB, action filter 'preflop poker'\n"
                   << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n";
-        std::cout << "estimated size for tree nodes: " << mem << " (" << mem / 1000 << "KB)\n\n";
+        std::cout << "\n------------------------------------------------------\n\n";
     }
 
     // with the 'preflop' game, we can train an AI using the CFR algorithm
@@ -105,8 +98,8 @@ int main()
         {
             workers.push_back(std::thread([&cfrd_2p, &mu, tid]() {
                 mkp::card_generator cgen{};
-                std::array<std::array<int32_t, 2>, 1024> util{};
-                for (uint32_t i = 0; i < 500; ++i)
+                std::array<std::array<int32_t, 2>, 65536> util{};
+                for (uint32_t i = 0; i < 1000000; ++i)
                 {
                     if (i % 50'000 == 0)
                     {
@@ -123,7 +116,7 @@ int main()
                             std::lock_guard<std::mutex> guard(mu);
                             std::cout << "thread: " << tid << "\n"
                                       << "stats after " << i << " iterations | sum: " << stats.sum << ", min: " << stats.min
-                                      << ", max: " << stats.max << "\n average utility: " << sum_util / sz << "/" << sum_util_r / sz
+                                      << ", max: " << stats.max << "\naverage utility: " << sum_util / sz << "/" << sum_util_r / sz
                                       << std::endl;
                         }
                     }
@@ -133,6 +126,7 @@ int main()
                 }
             }));
         }
+        std::cout << "trainig 'preflop poker'...\n";
         std::for_each(workers.begin(), workers.end(), [](std::thread& t) { t.join(); });
         std::cout << "\n\n";
 

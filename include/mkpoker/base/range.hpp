@@ -354,9 +354,11 @@ namespace mkp
         }
 
         // return weighted sum which is actually encoded in the values
-        [[nodiscard]] constexpr uint16_t total() const noexcept
+        // max value: (13*600+78*400+78*1200) = 132600
+        [[nodiscard]] constexpr uint32_t total() const noexcept
         {
-            return static_cast<uint16_t>(std::reduce(m_combos.cbegin(), m_combos.cend(), 0));
+            //return static_cast<uint32_t>(std::reduce(m_combos.cbegin(), m_combos.cend(), 0));
+            return std::reduce(m_combos.cbegin(), m_combos.cend(), uint32_t(0));
         }
 
         // percentage of full range
