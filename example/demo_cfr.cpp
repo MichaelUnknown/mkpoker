@@ -58,6 +58,9 @@ int main()
         mkp::gamestate<2> game_2p{10'000};
         mkp::gamestate_enumerator<2, uint32_t> enc_2p{};
         mkp::action_abstraction_noop<2> aa_2p{};
+
+        // uncomment these lines to print/compute the demo
+
         //auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
         //const auto [i, t] = tree_size(gametree_base_2p.get());
         //const auto cnt_nodes = i + t;
