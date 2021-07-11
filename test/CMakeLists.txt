@@ -8,11 +8,12 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 
 # add gtest
-CPMAddPackage(
-    NAME googletest
-    GITHUB_REPOSITORY google/googletest
-    VERSION 1.10.x
-)
+CPMAddPackage("gh:MichaelUnknown/googletest#05eb4740d18f69cf17919c15f7c0d34da35b7f5e@1.10.x")
+#CPMAddPackage(
+#    NAME googletest
+#    GITHUB_REPOSITORY MichaelUnknown/googletest
+#    VERSION 1.10.x
+#)
 # for gtest_discover_tests
 include(GoogleTest)
 

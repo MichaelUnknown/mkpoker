@@ -1,7 +1,7 @@
 # ---- Add dependencies via CPM ----
 # see https://github.com/TheLartians/CPM.cmake for more info
 
-set(CPM_DOWNLOAD_VERSION 0.27.5)
+set(CPM_DOWNLOAD_VERSION 0.32.0)
 
 if(CPM_SOURCE_CACHE)
   set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")

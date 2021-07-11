@@ -120,10 +120,10 @@ jobs:
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
-      # install clang 11 and libc++ if necessary
+      # install clang 12 and libc++ if necessary
       - 
-        name: "install clang 11"
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-11')
+        name: "install clang 12"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-12')
         working-directory: "${{ env.HOME }}"
         shell: bash
         run: |
