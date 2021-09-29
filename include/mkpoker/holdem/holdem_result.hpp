@@ -82,7 +82,7 @@ namespace mkp
             {
                 if (k & mask)
                 {
-                    str += rank(i).str();
+                    str += rank(rank_t(i)).str();
                 }
             }
 
