@@ -1,3 +1,4 @@
+#include <mkpoker/holdem/holdem_evaluation.hpp>
 #include <mkpoker/holdem/holdem_result.hpp>
 #include <mkpoker/util/mtp.hpp>
 
@@ -73,7 +74,7 @@ TEST(tholdem_eval_result, hevr_kickers)
     }
 }
 
-TEST(tholdem_eval_result, hevr_make_he_result)
+TEST(tholdem_eval_result, hevr_make_hev_result)
 {
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 31)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, c_rank_eight, 0, 0)), std::runtime_error);
@@ -138,7 +139,8 @@ TEST(tholdem_eval_result, hevr_make_he_result)
         {
             for (auto&& mi : ranks)
             {
-                //for (uint16_t ki = 0; ki < std::numeric_limits<uint16_t>::max(); ++ki)
+                // for (uint16_t ki = 0; ki < 8192; ++ki)
+                // test for the first 5 kickers only
                 for (uint16_t ki = 0; ki < 31; ++ki)
                 {
                     try
@@ -148,6 +150,27 @@ TEST(tholdem_eval_result, hevr_make_he_result)
                     }
                     catch (...)
                     {
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST(tholdem_eval_result, print_all_hev_results)
+{
+    for (uint8_t i = 0; i < 52; ++i)
+    {
+        for (uint8_t j = i + 1; j < 52; ++j)
+        {
+            for (uint8_t k = j + 1; k < 52; ++k)
+            {
+                for (uint8_t l = k + 1; l < 52; ++l)
+                {
+                    for (uint8_t m = l + 1; m < 52; ++m)
+                    {
+                        EXPECT_NO_THROW(const auto her = evaluate_safe(mkp::cardset(mkp::make_bitset(i, j, k, l, m))););
+                        EXPECT_NO_THROW(std::string str = evaluate_safe(mkp::cardset(mkp::make_bitset(i, j, k, l, m))).str(););
                     }
                 }
             }
