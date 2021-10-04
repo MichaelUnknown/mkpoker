@@ -165,9 +165,12 @@ namespace mkp
         // create a new game with starting stacksize
         template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            : m_chips_behind(
-                  make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize; })),
-              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 500 : i == 1 ? 1000 : 0; })),
+            : m_chips_behind(make_array<int32_t, N>([&](std::size_t i) {
+                  return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize;
+              })),
+              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0   ? 500
+                                                                               : i == 1 ? 1000
+                                                                                        : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
               m_minraise(1000),
               m_current(round0_first_player),
@@ -182,9 +185,12 @@ namespace mkp
         // create a new game with starting stacksize, specialization for heads up
         template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
         constexpr explicit gamestate(const int32_t stacksize)
-            : m_chips_behind(
-                  make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize; })),
-              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0 ? 1000 : i == 1 ? 500 : 0; })),
+            : m_chips_behind(make_array<int32_t, N>([&](std::size_t i) {
+                  return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize;
+              })),
+              m_chips_front(make_array<int32_t, N>([&](std::size_t i) { return i == 0   ? 1000
+                                                                               : i == 1 ? 500
+                                                                                        : 0; })),
               m_playerstate(make_array<N>(gb_playerstate_t::INIT)),
               m_minraise(1000),
               m_current(round0_first_player),
@@ -232,7 +238,7 @@ namespace mkp
         // do we have a showdown or did all but one player fold
         [[nodiscard]] constexpr bool is_showdown() const noexcept { return num_alive() > 1; }
 
-        // return current game state
+        // return current game state (preflop, flop, turn, river, finished)
         [[nodiscard]] constexpr gb_gamestate_t gamestate_v() const noexcept { return m_gamestate; }
 
         // return current player
@@ -241,8 +247,11 @@ namespace mkp
         // return current player
         [[nodiscard]] constexpr gb_pos_t active_player_v() const noexcept { return m_current; }
 
-        // return player state
+        // return current player's state
         [[nodiscard]] constexpr gb_playerstate_t active_player_state_v() const noexcept { return m_playerstate[active_player()]; }
+
+        // return all player's state
+        [[nodiscard]] constexpr std::array<gb_playerstate_t, N> all_players_state() const noexcept { return m_playerstate; }
 
         // return chip counts
         [[nodiscard]] constexpr std::array<int32_t, N> chips_front() const noexcept { return m_chips_front; }
@@ -410,7 +419,7 @@ namespace mkp
             }
 
             // add all in if player has any chips behind
-            if (chips_remaining > 0)    // && highest_bet != chips_total)
+            if (chips_remaining > 0)
             {
                 // add all in
                 ret.emplace_back(chips_remaining, gb_action_t::ALLIN, pos_t);
