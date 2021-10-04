@@ -155,6 +155,8 @@ TEST(tgame, game_gamestate_ctor)
     const auto g4 = gamestate<4>(2000);
     const auto g5 = gamestate<5>(2000);
     const auto g6 = gamestate<6>(2000);
+    // all players should be on state init
+    EXPECT_EQ(g6.all_players_state(), make_array<6>(gb_playerstate_t::INIT));
 
     EXPECT_EQ(g2.active_player(), 1);    // should be BB
     EXPECT_EQ(g3.active_player(), 2);    // should be UTG for the rest
@@ -234,6 +236,8 @@ TEST(tgame, game_gamestate_execute_action)
         auto game2 = gamestate<3>(10000);
         // state should be preflop bet
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+        // all players should be on state init
+        EXPECT_EQ(game2.all_players_state(), make_array<3>(gb_playerstate_t::INIT));
         // UTG bets 2BB (3000 total)
         game2.execute_action(player_action_t{3000, gb_action_t::RAISE, game2.active_player_v()});
         // SB folds
