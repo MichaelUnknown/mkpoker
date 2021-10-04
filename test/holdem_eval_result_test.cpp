@@ -159,6 +159,7 @@ TEST(tholdem_eval_result, hevr_make_hev_result)
 
 TEST(tholdem_eval_result, print_all_hev_results)
 {
+    EXPECT_EQ(holdem_result(c_straight_flush + 1, c_rank_ace, 0, 0).str(), std::string("invalid evaluation result"));
     for (uint8_t i = 0; i < 52; ++i)
     {
         for (uint8_t j = i + 1; j < 52; ++j)
