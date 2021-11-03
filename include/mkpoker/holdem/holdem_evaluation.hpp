@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) 2021 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -19,8 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <mkpoker/base/cardset.hpp>
-#include <mkpoker/holdem/holdem_result.hpp>
 #include <mkpoker/holdem/holdem_lookup_tables.hpp>
+#include <mkpoker/holdem/holdem_result.hpp>
 #include <mkpoker/util/bit.hpp>
 
 #include <cstdint>
@@ -86,7 +86,7 @@ namespace mkp
         if (const uint16_t mask_quads = (mask_c & mask_d & mask_h & mask_s); mask_quads)
         {
             return holdem_result(c_four_of_a_kind, cross_idx_high16(mask_quads), 0,
-                                            (uint16_t(1) << cross_idx_high16(mask_all_cards & ~mask_quads)));
+                                 (uint16_t(1) << cross_idx_high16(mask_all_cards & ~mask_quads)));
         }
 
         // this mask is used for for full house and trips
@@ -122,7 +122,10 @@ namespace mkp
         if (mask_trips)
         {
             const uint16_t mask_kickers = mask_all_cards & ~(mask_trips);
-            return holdem_result(c_three_of_a_kind, cross_idx_high16(mask_trips), 0, mkpoker_table_top3[mask_kickers]);
+            const auto high_kicker = cross_idx_high16(mask_kickers);
+            const auto low_kicker = cross_idx_high16(mask_kickers & ~(uint16_t(1) << high_kicker));
+            return holdem_result(c_three_of_a_kind, cross_idx_high16(mask_trips), 0,
+                                 uint16_t(1) << high_kicker | uint16_t(1) << low_kicker);
         }
 
         // 5)
@@ -130,7 +133,7 @@ namespace mkp
         const uint16_t mask_pair = (mask_all_cards ^ (mask_c ^ mask_d ^ mask_h ^ mask_s));
         if (const auto num_pairs = std::popcount(mask_pair); num_pairs > 1)
         {
-            // get the two highest ranks from the mask (keep in minde - with 6/7 cards, there can be 3 pairs)
+            // get the two highest ranks from the mask (keep in mind - with 6/7 cards, there can be 3 pairs)
             const auto high_rank = cross_idx_high16(mask_pair);
             const auto low_rank = cross_idx_high16(mask_pair & ~(uint16_t(1) << high_rank));
             // from the remaining cards, get the highest rank
