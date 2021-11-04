@@ -31,46 +31,46 @@ jobs:
             cc: gcc-10
             cxx: g++-10
 
-          # clang 12 on ubuntu
+          # clang 13 on ubuntu
           - 
-            name: "ubuntu clang 12 Debug"
+            name: "ubuntu clang 13 Debug"
             os: ubuntu-latest
             build_type: Debug
-            cc: clang-12
-            cxx: clang++-12
+            cc: clang-13
+            cxx: clang++-13
           - 
-            name: "ubuntu clang 12 Release"
+            name: "ubuntu clang 13 Release"
             os: ubuntu-latest
             build_type: Release
-            cc: clang-12
-            cxx: clang++-12
+            cc: clang-13
+            cxx: clang++-13
           - 
-            name: "ubuntu clang 12 libcxx Debug"
+            name: "ubuntu clang 13 libcxx Debug"
             os: ubuntu-latest
             build_type: Debug
-            cc: clang-12
-            cxx: clang++-12
+            cc: clang-13
+            cxx: clang++-13
             libcxx: true
           - 
-            name: "ubuntu clang 12 libcxx Release"
+            name: "ubuntu clang 13 libcxx Release"
             os: ubuntu-latest
             build_type: Release
-            cc: clang-12
-            cxx: clang++-12
+            cc: clang-13
+            cxx: clang++-13
             libcxx: true
 
-          # clang 12 on macos
+          # clang 13 on macos
           - 
-            name: "macos clang 12 Debug"
+            name: "macos clang 13 Debug"
             os: macos-latest
             build_type: Debug
-            cc: /usr/local/opt/llvm/bin/clang-12
+            cc: /usr/local/opt/llvm/bin/clang-13
             cxx: /usr/local/opt/llvm/bin/clang++
           - 
-            name: "macos clang 12 Release"
+            name: "macos clang 13 Release"
             os: macos-latest
             build_type: Release
-            cc: /usr/local/opt/llvm/bin/clang-12
+            cc: /usr/local/opt/llvm/bin/clang-13
             cxx: /usr/local/opt/llvm/bin/clang++
 
           # exclude apple clange for the moment because of lacking lib features
@@ -116,21 +116,21 @@ jobs:
         id: init
         shell: bash
         run: |
-          llvm_tag=llvmorg-11.0.1-rc1
+          llvm_tag=llvmorg-13.0.0
           echo ::set-output name=llmv-version::$llvm_tag
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
-      # install clang 12 and libc++ if necessary
+      # install clang 13 and libc++ if necessary
       - 
-        name: "install clang 12"
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-12')
+        name: "install clang 13"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-13')
         working-directory: "${{ env.HOME }}"
         shell: bash
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 11
+          sudo ./llvm.sh 13
 
       # cache the llvm installation
       -
@@ -163,8 +163,8 @@ jobs:
           cmake \
             -S llvm \
             -B build \
-            -D CMAKE_C_COMPILER:STRING=gcc-10 \
-            -D CMAKE_CXX_COMPILER:STRING=g++-10 \
+            -D CMAKE_C_COMPILER=gcc-10 \
+            -D CMAKE_CXX_COMPILER=g++-10 \
             -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
             -D CMAKE_BUILD_TYPE=Release
@@ -186,11 +186,11 @@ jobs:
             echo "MKP_MONO=-D CMAKE_BUILD_TYPE=${{matrix.cfg.build_type}}$cov" >> $GITHUB_ENV
 
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS:STRING=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS:STRING=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             fi
 
           else
@@ -206,7 +206,7 @@ jobs:
           cmake \
           -S . \
           -B build \
-          -D MKPOKER_BUILD_TESTS:BOOL=ON -D MKPOKER_BUILD_EXAMPLES:BOOL=ON -D MKPOKER_BUILD_FOR_DEV:BOOL=ON \
+          -D MKPOKER_BUILD_TESTS=ON -D MKPOKER_BUILD_EXAMPLES=ON -D MKPOKER_BUILD_FOR_DEV=ON \
           ${{ env.CXX_ARGS }} \
           ${{ env.LDD_ARGS }} \
           ${{ env.MKP_MONO }}
