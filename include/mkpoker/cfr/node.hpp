@@ -39,11 +39,12 @@ namespace mkp
     //
     // N = number of players 2..6
     // T = type for hash/id, use uint32_t if possible (i.e., for small games / shallow stack sizes)
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
+    template <std::size_t N, typename T, UnsignedIntegral U = uint32_t>
     struct node_base
     {
-        using uint_type = T;
-        using encoder_type = game_abstraction_base<N, T>;
+        using game_type = T;
+        using uint_type = U;
+        using encoder_type = game_abstraction_base<T, U>;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // DATA
@@ -80,18 +81,19 @@ namespace mkp
         virtual void print_node() const = 0;
     };
 
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
-    struct node_infoset : public node_base<N, T>
+    template <std::size_t N, typename T, UnsignedIntegral U = uint32_t>
+    struct node_infoset : public node_base<N, T, U>
     {
-        using typename node_base<N, T>::uint_type;
-        using typename node_base<N, T>::encoder_type;
+        using typename node_base<N, T, U>::game_type;
+        using typename node_base<N, T, U>::uint_type;
+        using typename node_base<N, T, U>::encoder_type;
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
         node_infoset(const uint_type id, const gb_gamestate_t game_state, const uint8_t active_player, const uint8_t level)
-            : node_base<N, T>(id, game_state, active_player, level)
+            : node_base<N, T, U>(id, game_state, active_player, level)
         {
         }
 
@@ -128,9 +130,10 @@ namespace mkp
         }
     };
 
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
+    template <std::size_t N, typename T, UnsignedIntegral U = uint32_t>
     struct node_terminal : public node_base<N, T>
     {
+        using typename node_base<N, T, U>::game_type;
         using typename node_base<N, T>::uint_type;
         using typename node_base<N, T>::encoder_type;
 
@@ -147,7 +150,7 @@ namespace mkp
 
         node_terminal(const uint_type id, const gb_gamestate_t game_state, const uint8_t active_player, const uint8_t level,
                       const std::array<int32_t, N>& payouts, const bool showdown)
-            : node_base<N, T>(id, game_state, active_player, level), m_payouts(payouts), m_showdown(showdown)
+            : node_base<N, T, U>(id, game_state, active_player, level), m_payouts(payouts), m_showdown(showdown)
         {
         }
 
@@ -193,9 +196,11 @@ namespace mkp
     };
 
     // recursively init game tree
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
-    [[nodiscard]] std::unique_ptr<node_base<N, T>> init_tree(const gamestate<N>& gamestate, game_abstraction_base<N, T>* ptr_enc,
-                                                             action_abstraction_base<N>* ptr_aa, const uint8_t level = 0)
+    template <template <std::size_t... Ns> typename T, std::size_t N, std::size_t... Ns, UnsignedIntegral U = uint32_t>
+    [[nodiscard]] std::unique_ptr<node_base<N, T<N, Ns...>, U>> init_tree(const T<N, Ns...>& gamestate,
+                                                                          game_abstraction_base<T<N, Ns...>, U>* ptr_enc,
+                                                                          action_abstraction_base<T<N, Ns...>>* ptr_aa,
+                                                                          const uint8_t level = 0)
     {
         if (gamestate.in_terminal_state())
         {
@@ -203,29 +208,31 @@ namespace mkp
             if (gamestate.is_showdown())
             {
                 std::array<int32_t, N> payouts_unknown{};
-                return std::make_unique<node_terminal<N, T>>(ptr_enc->encode(gamestate),    // id
-                                                             gamestate.gamestate_v(),       // game state, i.e., preflop, flop etc.
-                                                             gamestate.active_player(),     // active player
-                                                             level,                         // depth
-                                                             payouts_unknown,               // payouts unknown w/o cards
-                                                             true);                         // showdown: yes
+                return std::make_unique<node_terminal<N, T<N, Ns...>, U>>(
+                    ptr_enc->encode(gamestate),    // id
+                    gamestate.gamestate_v(),       // game state, i.e., preflop, flop etc.
+                    gamestate.active_player(),     // active player
+                    level,                         // depth
+                    payouts_unknown,               // payouts unknown w/o cards
+                    true);                         // showdown: yes
             }
             else
             {
-                return std::make_unique<node_terminal<N, T>>(ptr_enc->encode(gamestate),        // id
-                                                             gamestate.gamestate_v(),           // game state, i.e., preflop, flop etc.
-                                                             gamestate.active_player(),         // active player
-                                                             level,                             // depth
-                                                             gamestate.payouts_noshowdown(),    // payouts
-                                                             false);                            // showdown: no
+                return std::make_unique<node_terminal<N, T<N, Ns...>, U>>(
+                    ptr_enc->encode(gamestate),        // id
+                    gamestate.gamestate_v(),           // game state, i.e., preflop, flop etc.
+                    gamestate.active_player(),         // active player
+                    level,                             // depth
+                    gamestate.payouts_noshowdown(),    // payouts
+                    false);                            // showdown: no
             }
         }
         else
         {
-            auto info = std::make_unique<node_infoset<N, T>>(ptr_enc->encode(gamestate),    // id
-                                                             gamestate.gamestate_v(),       // the game state
-                                                             gamestate.active_player(),     // active player
-                                                             level);                        // depth
+            auto info = std::make_unique<node_infoset<N, T<N, Ns...>, U>>(ptr_enc->encode(gamestate),    // id
+                                                                          gamestate.gamestate_v(),       // the game state
+                                                                          gamestate.active_player(),     // active player
+                                                                          level);                        // depth
 
             const auto actions = ptr_aa->filter_actions(gamestate);
             for (const auto pa : actions)

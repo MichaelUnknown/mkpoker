@@ -28,36 +28,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mkp
 {
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
+    template <typename T, UnsignedIntegral U = uint32_t>
     struct game_abstraction_base
     {
-        using uint_type = T;
+        using game_type = T;
+        using uint_type = U;
 
         virtual ~game_abstraction_base() = default;
 
         // takes a new gamestate as input and returns the id
-        virtual uint_type encode(const gamestate<N>& gamestate) = 0;
+        virtual uint_type encode(const game_type& gamestate) = 0;
 
         // converts the id back to the actual gamestate
-        [[nodiscard]] virtual gamestate<N> decode(const uint_type id) const = 0;
+        [[nodiscard]] virtual game_type decode(const uint_type id) const = 0;
     };
 
     // sample encoder that stores / enumerates the gamestates
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
-    struct gamestate_enumerator final : public game_abstraction_base<N, T>
+    template <typename T, UnsignedIntegral U = uint32_t>
+    struct gamestate_enumerator final : public game_abstraction_base<T, U>
     {
-        using typename game_abstraction_base<N, T>::uint_type;
+        using typename game_abstraction_base<T, U>::game_type;
+        using typename game_abstraction_base<T, U>::uint_type;
 
         uint_type index = 0;
-        std::vector<gamestate<N>> storage = {};
+        std::vector<game_type> storage = {};
 
-        virtual uint_type encode(const gamestate<N>& gamestate) override
+        virtual uint_type encode(const game_type& gamestate) override
         {
             storage.push_back(gamestate);
             return index++;
         }
 
-        [[nodiscard]] virtual gamestate<N> decode(const uint_type id) const override { return storage.at(id); }
+        [[nodiscard]] virtual game_type decode(const uint_type id) const override { return storage.at(id); }
     };
 
 }    // namespace mkp
