@@ -351,7 +351,7 @@ namespace mkp
             }
             if (is_showdown())
             {
-                throw std::runtime_error("payouts_noshowdown(): terminale state involves showdown but no cards are given");
+                throw std::runtime_error("payouts_noshowdown(): terminal state involves showdown but payouts_noshowdown() called");
             }
 
             // winner collects all
@@ -710,6 +710,41 @@ namespace mkp
         constexpr explicit gamestate_w_rake(const std::array<int32_t, N>& chips_start) : gamestate<N>(chips_start) {}
 
         ///////////////////////////////////////////////////////////////////////////////////////
+        // ACCESSORS
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        // return payout on terminal state (only for states with no showdown required)
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshowdown() const
+        {
+            if (!gamestate<N>::in_terminal_state())
+            {
+                throw std::runtime_error("payouts_noshowdown(): game not in terminal state");
+            }
+            if (gamestate<N>::is_showdown())
+            {
+                throw std::runtime_error("payouts_noshowdown(): terminal state involves showdown but payouts_noshowdown() called");
+            }
+
+            // winner collects all
+
+            // rake
+            const bool rake_active_this_hand = m_last_aggressive_action.m_amount > 0;
+            const auto total_pot_ajusted = gamestate<N>::pot_size() * (rake_active_this_hand ? (1.0f - c_rake) : 1.0f);
+
+            constexpr auto indices = make_array<unsigned, N>(identity{});
+            const auto winner = *std::find_if(indices.cbegin(), indices.cend(), [&](const unsigned idx) {
+                return gamestate<N>::m_playerstate[idx] != gb_playerstate_t::OUT;
+            });
+            return make_array<int32_t, N>([&](const unsigned idx) {
+                return idx == winner ? -gamestate<N>::m_chips_front[idx] + total_pot_ajusted    // winner: pot - invested
+                                     : -gamestate<N>::m_chips_front[idx];                       // loser: -invested
+            });
+        }
+
+        // adjustment to payouts showdown not necessary, pot_distribution takes care
+        // [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
+
+        ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS
         ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -724,13 +759,14 @@ namespace mkp
         {
 #if !defined(NDEBUG)
             // check if active player is a match
-            if (m_current != pa.m_pos)
+            if (gamestate<N>::m_current != pa.m_pos)
             {
                 throw std::runtime_error("execute_action(): active player of action and game state differ");
             }
 
             // check if action is valid (expensive)
-            if (const auto all_actions = possible_actions(); std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
+            if (const auto all_actions = gamestate<N>::possible_actions();
+                std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
             {
                 throw std::runtime_error("execute_action(): tried to execute invalid action");
             }
@@ -769,9 +805,9 @@ namespace mkp
             }
 
 #if !defined(NDEBUG)
-            m_debug_alive = num_alive();
-            m_debug_actionable = num_actionable();
-            m_debug_future = num_future_actionable();
+            gamestate<N>::m_debug_alive = gamestate<N>::num_alive();
+            gamestate<N>::m_debug_actionable = gamestate<N>::num_actionable();
+            gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
 #endif
 
             std::cout << "\n\n--------------------------------------\n" << this->str_state();
@@ -871,9 +907,9 @@ namespace mkp
             }
 
 #if !defined(NDEBUG)
-            m_debug_alive = num_alive();
-            m_debug_actionable = num_actionable();
-            m_debug_future = num_future_actionable();
+            gamestate<N>::m_debug_alive = gamestate<N>::num_alive();
+            gamestate<N>::m_debug_actionable = gamestate<N>::num_actionable();
+            gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
 #endif
         }
 
