@@ -57,8 +57,8 @@ namespace mkp
             }
         };
 
-        template <std::size_t N, UnsignedIntegral T>
-        tree_size_t tree_size_impl(mkp::node_base<N, T>* ptr_root)
+        template <std::size_t N, typename T, UnsignedIntegral U>
+        tree_size_t tree_size_impl(mkp::node_base<N, T, U>* ptr_root)
         {
             tree_size_t res{};
             for (auto&& child : ptr_root->m_children)
@@ -93,8 +93,8 @@ namespace mkp
             }
         };
 
-        template <std::size_t N, UnsignedIntegral T>
-        regret_stats_t regret_stats_impl(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
+        template <std::size_t N, typename T, UnsignedIntegral U>
+        regret_stats_t regret_stats_impl(mkp::node_base<N, T, U>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
         {
             regret_stats_t res{};
             if (ptr_root->is_terminal())
@@ -124,20 +124,20 @@ namespace mkp
     }    // namespace detail
 
     // computes the number of nodes
-    template <std::size_t N, UnsignedIntegral T>
-    auto tree_size(mkp::node_base<N, T>* ptr_root)
+    template <std::size_t N, typename T, UnsignedIntegral U>
+    auto tree_size(mkp::node_base<N, T, U>* ptr_root)
     {
         return detail::tree_size_impl(ptr_root);
     }
 
     // computes the sum of all regret / strategy entries
-    template <std::size_t N, UnsignedIntegral T>
-    auto regret_stats(mkp::node_base<N, T>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
+    template <std::size_t N, typename T, UnsignedIntegral U>
+    auto regret_stats(mkp::node_base<N, T, U>* ptr_root, const std::vector<std::vector<std::vector<int32_t>>>& data)
     {
         return detail::regret_stats_impl(ptr_root, data);
     }
 
-    template <std::size_t N, UnsignedIntegral T = uint32_t>
+    template <std::size_t N, typename T, UnsignedIntegral U = uint32_t>
     struct cfr_data
     {
         // 3 layers:
@@ -151,21 +151,21 @@ namespace mkp
 
         std::vector<std::vector<std::vector<int32_t>>> m_regret_sum;
         std::vector<std::vector<std::vector<int32_t>>> m_strategy_sum;
-        std::unique_ptr<node_base<N, T>> m_root;
-        const game_abstraction_base<N, T>* m_ptr_ga;
-        const action_abstraction_base<N>* m_ptr_aa;
-        const card_abstraction_base<N, T>* m_ptr_ca;
+        std::unique_ptr<node_base<N, T, U>> m_root;
+        const game_abstraction_base<T, U>* m_ptr_ga;
+        const action_abstraction_base<T>* m_ptr_aa;
+        const card_abstraction_base<N, U>* m_ptr_ca;
 
         cfr_data() = delete;
-        cfr_data(std::unique_ptr<node_base<N, T>> root, game_abstraction_base<N, T>* ptr_ga, action_abstraction_base<N>* ptr_aa,
-                 card_abstraction_base<N, T>* ptr_ca)
+        cfr_data(std::unique_ptr<node_base<N, T, U>> root, game_abstraction_base<T, U>* ptr_ga, action_abstraction_base<T>* ptr_aa,
+                 card_abstraction_base<N, U>* ptr_ca)
             : m_root(std::move(root)), m_ptr_ga(ptr_ga), m_ptr_aa(ptr_aa), m_ptr_ca(ptr_ca)
         {
             init(m_root.get());
         }
 
         // print nodes recursively
-        void print_strategy(const node_base<N, T>* ptr_node, const int level, const int print_level_max = 128) const
+        void print_strategy(const node_base<N, T, U>* ptr_node, const int level, const int print_level_max = 128) const
         {
             if (level > print_level_max)
             {
@@ -252,7 +252,7 @@ namespace mkp
         }
 
        private:
-        void init(node_base<N, T>* ptr_node)
+        void init(node_base<N, T, U>* ptr_node)
         {
             // size of inner vector: number of actions / children of that node
             const auto inner = std::vector<int32_t>(ptr_node->m_children.size(), 0);
@@ -294,8 +294,9 @@ namespace mkp
 
     // recursively compute the utilization for the current node, given a set of cards
     // uses cfrd to store regrets / strategy
-    std::array<int32_t, 2> cfr_2p(const gamecards<2>& cards, cfr_data<2, uint32_t>& cfrd, node_base<2, uint32_t>* ptr_node,
-                                  std::array<float, 2> reach)
+    template <typename game_type>
+    std::array<int32_t, 2> cfr_2p(const gamecards<2>& cards, cfr_data<2, game_type, uint32_t>& cfrd,
+                                  node_base<2, game_type, uint32_t>* ptr_node, std::array<float, 2> reach)
     {
         // if the node is terminal, return utility
         if (ptr_node->is_terminal())

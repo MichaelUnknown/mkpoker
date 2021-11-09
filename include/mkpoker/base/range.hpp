@@ -373,6 +373,10 @@ namespace mkp
         // get the numer of entries (hand_2r objects) with value > 0 (not counting the factor 4/6/12)
         [[nodiscard]] constexpr uint8_t size() const noexcept
         {
+            return std::accumulate(m_combos.cbegin(), m_combos.cend(), uint8_t(0),
+                                   [](const uint8_t r, const uint16_t value) -> uint8_t { return value > 0 ? r + 1 : r; });
+
+            /*
 #if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
             // clang 11 does not support c++20 constexpr accumualte yet
             // also exclude other compilers, only gcc and msvc currently support it
@@ -391,6 +395,7 @@ namespace mkp
                                    [](const uint8_t r, const uint16_t value) -> uint8_t { return value > 0 ? r + 1 : r; });
             // was: static_cast<uint8_t>(r + 1);
 #endif
+            */
         }
 
         // get value at index i

@@ -352,7 +352,7 @@ namespace mkp
     //using hand_2r = v1::hand_helper<rank, true, false, 2>;
 
 #if !defined(__clang__)
-    // clang 11 seems to differ with msvc and gcc about these asserts :(
+    // clang seems to differ with msvc and gcc about these asserts :(
     // todo: make a simplified exmaple and check which compiler is right/wrong
 
     // checks for hand_2c

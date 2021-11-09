@@ -223,9 +223,7 @@ TEST(tgame, game_gamestate_execute_action)
         game1.execute_action(player_action_t{1000, gb_action_t::ALLIN, game1.active_player_v()});
         EXPECT_EQ(game1.in_terminal_state(), true);
         EXPECT_EQ(game1.is_showdown(), true);
-        //#if !defined(NDEBUG)
         EXPECT_THROW(static_cast<void>(game1.payouts_noshowdown()), std::runtime_error);
-        //#endif
         EXPECT_EQ(game1.possible_actions().size(), 0);
     }
 
@@ -435,5 +433,170 @@ TEST(tgame, game_gamestate_payouts)
         EXPECT_EQ(g4.gamestate_v(), gb_gamestate_t::GAME_FIN);
         const std::array<int32_t, 4> expected_payouts4{2000, 2000, -5000, 1000};
         EXPECT_EQ(g4.payouts_showdown(gc4), expected_payouts4);
+    }
+}
+
+TEST(tgame, game_gamestate_execute_action_rake)
+{
+    //
+    // test exceptions
+    //
+    {
+        auto game1 = gamestate_w_rake<2, 10, 100>(3000);
+        EXPECT_GT(game1.possible_actions().size(), 0);
+#if !defined(NDEBUG)
+        EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
+        EXPECT_THROW(game1.execute_action(player_action_t{1499, gb_action_t::RAISE, game1.active_player_v()}), std::runtime_error);
+#endif
+
+        game1.execute_action(player_action_t{1500, gb_action_t::RAISE, game1.active_player_v()});
+        EXPECT_EQ(game1.active_player(), 0);
+        EXPECT_EQ(game1.in_terminal_state(), false);
+        EXPECT_EQ(game1.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+
+        game1.execute_action(player_action_t{2000, gb_action_t::ALLIN, game1.active_player_v()});
+        game1.execute_action(player_action_t{1000, gb_action_t::ALLIN, game1.active_player_v()});
+        EXPECT_EQ(game1.in_terminal_state(), true);
+        EXPECT_EQ(game1.is_showdown(), true);
+        EXPECT_THROW(static_cast<void>(game1.payouts_noshowdown()), std::runtime_error);
+        EXPECT_EQ(game1.possible_actions().size(), 0);
+    }
+
+    //
+    // test different actions
+    //
+    {
+        auto game2 = gamestate_w_rake<3, 10, 100>(10000);
+        // state should be preflop bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+        // all players should be on state init
+        EXPECT_EQ(game2.all_players_state(), make_array<3>(gb_playerstate_t::INIT));
+        // UTG bets 2BB (3'000 total)
+        game2.execute_action(player_action_t{3000, gb_action_t::RAISE, game2.active_player_v()});
+        // SB folds
+        game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
+        // BB calls (2'000 total)
+        game2.execute_action(player_action_t{2000, gb_action_t::CALL, game2.active_player_v()});
+        // total pot: 6'500
+        // state should be flop bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::FLOP_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // UTG bets 1BB (1'000 total)
+        game2.execute_action(player_action_t{1000, gb_action_t::RAISE, game2.active_player_v()});
+        // BB calls (1'000 total)
+        game2.execute_action(player_action_t{1000, gb_action_t::CALL, game2.active_player_v()});
+        // total pot: 8'500
+        // state should be turn bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::TURN_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // UTG checks
+        game2.execute_action(player_action_t{0, gb_action_t::CHECK, game2.active_player_v()});
+        // total pot: 8'500
+        // state should be river bet
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::RIVER_BET);
+        // active player should be BB
+        EXPECT_EQ(game2.active_player(), 1);
+        // BB goes all in (6000 total)
+        game2.execute_action(player_action_t{6000, gb_action_t::ALLIN, game2.active_player_v()});
+        // UTG folds
+        game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
+        // state should be game finished
+        EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // payouts should be {-500,+4500,-4000}
+        // after 10% rake: payout is 8'500 - 850 = 7'650
+        const int rake = 8'500 * (0.1);
+        const int payout = 8'500 - rake;
+        const int winnings = payout - 4'000;
+        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int, 3>{-500, winnings, -4000}));
+    }
+
+    //
+    // test showdown
+    //
+    {
+        auto game3 = gamestate_w_rake<3, 10, 100>(10000);
+        // everyone calls
+        game3.execute_action(player_action_t{1000, gb_action_t::CALL, game3.active_player_v()});
+        game3.execute_action(player_action_t{500, gb_action_t::CALL, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be flop bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::FLOP_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be turn bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::TURN_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be river bet
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::RIVER_BET);
+        // everyone calls
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        game3.execute_action(player_action_t{0, gb_action_t::CHECK, game3.active_player_v()});
+        // state should be game finished
+        EXPECT_EQ(game3.gamestate_v(), gb_gamestate_t::GAME_FIN);
+    }
+}
+
+TEST(tgame, game_gamestate_payouts_rake)
+{
+    // rake - reuse test from before but add 50% and 4.375% (PS rake)
+
+    const std::array<card, 11> cards{// board
+                                     card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
+                                     // SB
+                                     card("Tc"), card("Td"),
+                                     // BB
+                                     card("Qc"), card("Jc"),
+                                     // UTG
+                                     card("Qs"), card("Js")};
+    const gamecards<3> gc{cards};
+    {
+        // 50% rake
+        auto g_rake_1 = gamestate_w_rake<3, 5, 10>(3000);
+        g_rake_1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        g_rake_1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        g_rake_1.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        EXPECT_EQ(g_rake_1.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // old payouts (0% rake)
+        const std::array<int32_t, 3> expected_payouts1{-3000, 1500, 1500};
+        // from the 9'000 pot, 50% is taken by the casino as rake, so 4500 are
+        // distributed to the winners -> 2'250 each so they should have a net
+        // loss of (-)750 each
+        const auto diff = 1500 - (-750);
+        // which is a difference of (-)2'250 to the old expected winnings of +1500
+        const std::array<int32_t, 3> expected_payouts1_after_rake = {expected_payouts1[0], expected_payouts1[1] - diff,
+                                                                     expected_payouts1[2] - diff};
+        EXPECT_EQ(g_rake_1.payouts_showdown(gc), expected_payouts1_after_rake);
+    }
+    {
+        // 4.375% rake
+        auto g_rake_2 = gamestate_w_rake<3, 4'375, 100'000>(3000);
+        g_rake_2.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        g_rake_2.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        g_rake_2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        EXPECT_EQ(g_rake_2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // old payouts (0% rake)
+        const std::array<int32_t, 3> expected_payouts2{-3000, 1500, 1500};
+        // from the 9'000 pot, 4.375% is taken by the casino as rake (393.75), so the remaining
+        // 9'000 - 393 are distributed to the winners -> 4'303 each so they should have a net
+        // plus 1'303
+        const auto rake = static_cast<int>(9'000 * 0.04375);
+        const auto payout = ((9'000 - rake) / 2) - 3000;
+        const auto diff = 1500 - payout;
+        // which is a difference of (-)2'250 to the old expected winnings of +1500
+        const std::array<int32_t, 3> expected_payouts2_after_rake = {expected_payouts2[0], expected_payouts2[1] - diff,
+                                                                     expected_payouts2[2] - diff};
+        EXPECT_EQ(g_rake_2.payouts_showdown(gc), expected_payouts2_after_rake);
     }
 }

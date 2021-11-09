@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) 2021 Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -30,20 +30,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mkp
 {
-    template <std::size_t N>
+    template <typename T>
     struct action_abstraction_base
     {
+        using game_type = T;
+
         virtual ~action_abstraction_base() = default;
 
         // restricts the list of possible actions
-        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const = 0;
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const game_type& gamestate) const = 0;
     };
 
     // action abstraction that allows every action
-    template <std::size_t N>
-    struct action_abstraction_noop final : public action_abstraction_base<N>
+    template <typename T>
+    struct action_abstraction_noop final : public action_abstraction_base<T>
     {
-        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
+        using typename action_abstraction_base<T>::game_type;
+
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const game_type& gamestate) const override
         {
             return gamestate.possible_actions();
         }
@@ -51,10 +55,12 @@ namespace mkp
 
     // a simple abstraction that allows preflop actions (fold, call, raise pot and all in) and 'checking down to the river',
     // i.e., no postflop actions
-    template <std::size_t N>
-    struct action_abstraction_simple_preflop final : public action_abstraction_base<N>
+    template <typename T>
+    struct action_abstraction_simple_preflop final : public action_abstraction_base<T>
     {
-        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const gamestate<N>& gamestate) const override
+        using typename action_abstraction_base<T>::game_type;
+
+        [[nodiscard]] virtual std::vector<player_action_t> filter_actions(const game_type& gamestate) const override
         {
             std::vector<player_action_t> ret;
 

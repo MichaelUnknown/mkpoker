@@ -7,23 +7,28 @@ SpacesBeforeTrailingComments : 4
 ColumnLimit : 140
 IndentPPDirectives : None
 
-DerivePointerAlignment : false
-PointerAlignment : Left
-
-AlignAfterOpenBracket : Align
-AlignConsecutiveAssignments : false
-
-AllowShortFunctionsOnASingleLine : Inline
-AllowShortLoopsOnASingleLine : false
-Cpp11BracedListStyle : true
-
 AlignTrailingComments : true
 ReflowComments : false
 
 NamespaceIndentation : All
 FixNamespaceComments : true
+
+DerivePointerAlignment : false
+PointerAlignment : Left
+
+AllowShortFunctionsOnASingleLine : Inline
+
+AlignAfterOpenBracket : Align
+AlignConsecutiveAssignments : false
 AllowShortIfStatementsOnASingleLine : false
 AllowShortBlocksOnASingleLine : false
+AllowShortLoopsOnASingleLine : false
+Cpp11BracedListStyle : true
+BreakBeforeConceptDeclarations : true
+IndentRequires : true
+EmptyLineBeforeAccessModifier : Always
+# ArrayInitializerAlignmentStyle : Right
+# LambdaBodyIndentation : Signature
 
 BreakBeforeBraces : Custom
 BraceWrapping :

@@ -22,7 +22,7 @@ TEST(trange, range_ctor_vector)
     const std::vector<hand_2r> vhr{hand_2r{"AA"}, hand_2r{"43"}, hand_2r{"QK"}};
     EXPECT_EQ(range(vhr).size(), 3);
     EXPECT_EQ(range(vhr).hands(), 22);
-    EXPECT_EQ(range(vhr).total(), 2200);
+    EXPECT_EQ(range(vhr).total(), 2200u);
     EXPECT_EQ(range(vhr).percent(), 2200 * 100 / 132600);
 }
 
@@ -31,7 +31,7 @@ TEST(trange, range_ctor_array)
     const std::array<hand_2r, 3> vhr{hand_2r{"AA"}, hand_2r{"43"}, hand_2r{"QK"}};
     EXPECT_EQ(range(vhr).size(), 3);
     EXPECT_EQ(range(vhr).hands(), 22);
-    EXPECT_EQ(range(vhr).total(), 2200);
+    EXPECT_EQ(range(vhr).total(), 2200u);
     EXPECT_EQ(range(vhr).percent(), 2200 * 100 / 132600);
 }
 

@@ -40,7 +40,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace mkp
 {
     // represents just the cards of a game
-    template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
+    template <std::size_t N>
+        requires(N >= 2 && N <= 6)
     class gamecards
     {
        public:
@@ -133,11 +134,11 @@ namespace mkp
 
     // class representing a game state without cards
     // chips / stack size are in milli BBs, meaning 1000 equals 1 big blind
-    template <std::size_t N, std::enable_if_t<N >= 2 && N <= 6, int> = 0>
+    template <std::size_t N>
+        requires(N >= 2 && N <= 6)
     class gamestate
     {
        protected:
-        //std::array<int32_t, N> m_chips_start;
         std::array<int32_t, N> m_chips_behind;
         std::array<int32_t, N> m_chips_front;
         std::array<gb_playerstate_t, N> m_playerstate;
@@ -151,7 +152,7 @@ namespace mkp
         int m_debug_future = num_future_actionable();
 #endif
 
-        // which player starts betting in the first round? heads up: BB(==BTN), otherweise: UTG
+        // which player starts betting in the first betting round? heads up: BB(==BTN), otherweise: UTG
         static constexpr auto round0_first_player = N > 2 ? gb_pos_t::UTG : gb_pos_t::BB;
 
        public:
@@ -241,7 +242,7 @@ namespace mkp
         // return current game state (preflop, flop, turn, river, finished)
         [[nodiscard]] constexpr gb_gamestate_t gamestate_v() const noexcept { return m_gamestate; }
 
-        // return current player
+        // return current player as uint8_t
         [[nodiscard]] constexpr uint8_t active_player() const noexcept { return static_cast<uint8_t>(m_current); }
 
         // return current player
@@ -250,13 +251,13 @@ namespace mkp
         // return current player's state
         [[nodiscard]] constexpr gb_playerstate_t active_player_state_v() const noexcept { return m_playerstate[active_player()]; }
 
-        // return all player's state
+        // return all players' state
         [[nodiscard]] constexpr std::array<gb_playerstate_t, N> all_players_state() const noexcept { return m_playerstate; }
 
-        // return chip counts
+        // return chip counts (chips placed in front of each player)
         [[nodiscard]] constexpr std::array<int32_t, N> chips_front() const noexcept { return m_chips_front; }
 
-        // return chip counts
+        // return chip counts (chips behind for each player)
         [[nodiscard]] constexpr std::array<int32_t, N> chips_behind() const noexcept { return m_chips_behind; }
 
         // helper: highest bet
@@ -349,7 +350,7 @@ namespace mkp
             }
             if (is_showdown())
             {
-                throw std::runtime_error("payouts_noshowdown(): terminale state involves showdown but no cards are given");
+                throw std::runtime_error("payouts_noshowdown(): terminal state involves showdown but payouts_noshowdown() called");
             }
 
             // winner collects all
@@ -536,7 +537,7 @@ namespace mkp
             else if (num_act == 0)
             {
                 //
-                // this round ended, reset minbet and player state
+                // this betting round ended, reset minbet and player state
                 //
 
                 if (m_gamestate == gb_gamestate_t::RIVER_BET)
@@ -546,7 +547,7 @@ namespace mkp
                 }
                 else
                 {
-                    // active player at round start is always SB unless folded or allin
+                    // active player at betting round start is always SB unless folded or allin
                     m_current = gb_pos_t::SB;
                     while (m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::OUT ||
                            m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::ALLIN)
@@ -605,20 +606,6 @@ namespace mkp
         // players who can act (i.e. INIT or ALIVE && able to call/bet)
         [[nodiscard]] constexpr int num_actionable() const noexcept
         {
-#if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
-            // clang 11 does not support c++20 constexpr accumualte yet
-            // also exclude other compilers, only gcc and msvc currently support it
-            uint8_t ret = 0;
-            for (uint8_t index = 0; index < N; index++)
-            {
-                if (m_playerstate[index] == gb_playerstate_t::INIT ||
-                    (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
-                {
-                    ++ret;
-                }
-            }
-            return ret;
-#else
             constexpr auto indices = make_array<unsigned, N>(identity{});
             return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
                 return (m_playerstate[idx] == gb_playerstate_t::INIT ||
@@ -626,7 +613,6 @@ namespace mkp
                            ? val + 1
                            : val;
             });
-#endif
         }
 
         // players who can act in the next betting round (i.e. not OUT or ALLIN)
@@ -665,6 +651,309 @@ namespace mkp
             // 2b) sum_per_winner = sum / (winners.size())
             const int32_t sum_p_winner =
                 std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+
+            // 3) return payouts for every position according to winners / losers, ignore amounts
+            //    chips <= lower ? ignore
+            //                   : player_is_a_winner ? add won chips
+            //                                        : subtract lost chips
+            return make_array<int32_t, N>([&](const unsigned idx) {
+                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
+                           ? -chips_front_adjusted[idx] + sum_p_winner
+                           : -chips_front_adjusted[idx];    // will return 0 for players who are not involved
+            });
+        }
+    };
+
+    // class representing a game state without cards, with rake
+    // the base class does NOT have a virtual destructor,
+    // so DON'T use this class with new/delete and pointer to base class!!!
+    //
+    // alternatives to think about:
+    //  - use virtual destructor in base (one less function to copy, but vtable)
+    //  - build rake into the base class (less code to write, but more instructions in non-raked simulations)
+    template <std::size_t N, std::size_t c_rake_numer, std::size_t c_rake_denom>
+        requires(N >= 2 && N <= 6 && c_rake_numer > 0 && c_rake_denom > 0 && c_rake_numer < c_rake_denom)
+    class gamestate_w_rake : public gamestate<N>
+    {
+       protected:
+        // last aggressive action: if everyone else folds, return the last bet to the aggressor
+        // (winner of the pot) before computing rake
+        // if there never is a raise preflop, the big blind is returnd to BB
+        // -> init with BB posting the big blind
+        player_action_t m_last_aggressive_action = {1000, gb_action_t::RAISE, gb_pos_t::BB};
+
+        // rake as float between 0..1
+        static constexpr float c_rake = 1.0f * c_rake_numer / c_rake_denom;
+
+       public:
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // CTORS
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        // no invalid objects
+        gamestate_w_rake() = delete;
+
+        // create a new game with starting stacksize
+        constexpr explicit gamestate_w_rake(const int32_t stacksize) : gamestate<N>(stacksize) {}
+
+        // create (default) game but with specific starting chip counts
+        constexpr explicit gamestate_w_rake(const std::array<int32_t, N>& chips_start) : gamestate<N>(chips_start) {}
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // ACCESSORS
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        // return payout on terminal state (only for states with no showdown required)
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_noshowdown() const
+        {
+            if (!gamestate<N>::in_terminal_state())
+            {
+                throw std::runtime_error("payouts_noshowdown(): game not in terminal state");
+            }
+            if (gamestate<N>::is_showdown())
+            {
+                throw std::runtime_error("payouts_noshowdown(): terminal state involves showdown but payouts_noshowdown() called");
+            }
+
+            // winner collects all
+
+            // rake
+            const bool rake_active_this_hand = m_last_aggressive_action.m_amount > 0;
+            const auto total_pot_ajusted = gamestate<N>::pot_size() * (rake_active_this_hand ? (1.0f - c_rake) : 1.0f);
+
+            constexpr auto indices = make_array<unsigned, N>(identity{});
+            const auto winner = *std::find_if(indices.cbegin(), indices.cend(), [&](const unsigned idx) {
+                return gamestate<N>::m_playerstate[idx] != gb_playerstate_t::OUT;
+            });
+            return make_array<int32_t, N>([&](const unsigned idx) {
+                return idx == winner ? -gamestate<N>::m_chips_front[idx] + total_pot_ajusted    // winner: pot - invested
+                                     : -gamestate<N>::m_chips_front[idx];                       // loser: -invested
+            });
+        }
+
+        // return payout on terminal state (only for states with showdown)
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
+        {
+            if (!gamestate<N>::in_terminal_state())
+            {
+                throw std::runtime_error("payouts_showdown(): game not in terminal state");
+            }
+            if (!gamestate<N>::is_showdown())
+            {
+                throw std::runtime_error("payouts_showdown(): terminale state involves no showdown, but cards are given");
+            }
+
+            const auto pots = gamestate<N>::all_pots();
+            // return pot_distribution for each (side)pot, add everything up
+            return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
+                return val + pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+            });
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // MUTATORS
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        // update game according to action
+        constexpr void execute_action(const player_action_t& pa) noexcept(
+#if !defined(NDEBUG)
+            false
+#else
+            true
+#endif
+        )
+        {
+#if !defined(NDEBUG)
+            // check if active player is a match
+            if (gamestate<N>::m_current != pa.m_pos)
+            {
+                throw std::runtime_error("execute_action(): active player of action and game state differ");
+            }
+
+            // check if action is valid (expensive)
+            if (const auto all_actions = gamestate<N>::possible_actions();
+                std::find(all_actions.cbegin(), all_actions.cend(), pa) == all_actions.cend())
+            {
+                throw std::runtime_error("execute_action(): tried to execute invalid action");
+            }
+#endif
+
+            // adjust chips and player state if necessary
+            const uint8_t pos = static_cast<uint8_t>(pa.m_pos);
+            switch (pa.m_action)
+            {
+                case gb_action_t::FOLD:
+                    gamestate<N>::m_playerstate[pos] = gb_playerstate_t::OUT;
+                    break;
+                case gb_action_t::CHECK:
+                    gamestate<N>::m_playerstate[pos] = gb_playerstate_t::ALIVE;
+                    break;
+                case gb_action_t::CALL:
+                case gb_action_t::RAISE:
+                case gb_action_t::ALLIN:
+                    // raise and all in can increase the minraise amount
+                    if (const int32_t raise_size = pa.m_amount + gamestate<N>::m_chips_front[pos] - gamestate<N>::current_highest_bet();
+                        raise_size > gamestate<N>::m_minraise)
+                    {
+                        gamestate<N>::m_minraise = raise_size;
+                        // update last aggressive action if it actually was a raise
+                        if (pa.m_action != gb_action_t::CALL)
+                        {
+                            m_last_aggressive_action = pa;
+                        }
+                    }
+                    // handle chips and status every time
+                    gamestate<N>::m_chips_behind[pos] -= pa.m_amount;
+                    gamestate<N>::m_chips_front[pos] += pa.m_amount;
+                    gamestate<N>::m_playerstate[pos] =
+                        gamestate<N>::m_chips_behind[pos] == 0 ? gb_playerstate_t::ALLIN : gb_playerstate_t::ALIVE;
+                    break;
+            }
+
+#if !defined(NDEBUG)
+            gamestate<N>::m_debug_alive = gamestate<N>::num_alive();
+            gamestate<N>::m_debug_actionable = gamestate<N>::num_actionable();
+            gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
+#endif
+
+            // check if:
+            //  - the entire hand ended (showdown or everyone but one player folded)
+            //  - the current betting round ended (no one can act)
+            //  - none of the above
+            if (const auto num_act = gamestate<N>::num_actionable();
+                gamestate<N>::num_alive() < 2 || (num_act == 0 && gamestate<N>::num_future_actionable() < 2))
+            {
+                //
+                // the entire hand ended
+                //
+
+                // if there is no showdown (i.e., all but one player folded), return the last bet to the (winning) player
+                // so that this bet is not subject to post flop rake (if the hand ends preflop, there is no rake at all)
+                if (gamestate<N>::num_alive() < 2)
+                {
+                    gamestate<N>::m_chips_front[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] -= m_last_aggressive_action.m_amount;
+                    gamestate<N>::m_chips_behind[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] += m_last_aggressive_action.m_amount;
+
+                    if (gamestate<N>::m_gamestate == gb_gamestate_t::PREFLOP_BET)
+                    {
+                        // hand ended preflop -> set m_amount to negative to signal no rake
+                        // last aggressive move is initialized to BB posting the big blind, so the amount should never be zero
+
+                        m_last_aggressive_action.m_amount = -m_last_aggressive_action.m_amount;
+                    }
+                }
+                else
+                {
+                    // remove unnecessary chips from chips_front if the last call/fold left a player with an unmatched bet
+                    // this can happen if the last caller does not have enough chips to match the bet and is all in instead
+                    // or someone reraises to an all in and everyone else folds
+                    if (const auto highest_bet = gamestate<N>::current_highest_bet();
+                        std::count(gamestate<N>::m_chips_front.cbegin(), gamestate<N>::m_chips_front.cend(), highest_bet) < 2)
+                    {
+                        for (unsigned i = 0; i < N; ++i)
+                        {
+                            if (gamestate<N>::m_chips_front[i] == highest_bet)
+                            {
+                                auto chips = gamestate<N>::m_chips_front;
+                                std::sort(chips.begin(), chips.end(), std::greater{});
+                                const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
+                                gamestate<N>::m_chips_front[i] -= difference;
+                                gamestate<N>::m_chips_behind[i] += difference;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                gamestate<N>::m_gamestate = gb_gamestate_t::GAME_FIN;
+            }
+            else if (num_act == 0)
+            {
+                //
+                // this round ended, reset minbet and player state
+                //
+
+                if (gamestate<N>::m_gamestate == gb_gamestate_t::RIVER_BET)
+                {
+                    // do nothinng, when the game is over
+                    gamestate<N>::m_gamestate = gb_gamestate_t::GAME_FIN;
+                }
+                else
+                {
+                    // active player at round start is always SB unless folded or allin
+                    gamestate<N>::m_current = gb_pos_t::SB;
+                    while (gamestate<N>::m_playerstate[static_cast<uint8_t>(gamestate<N>::m_current)] == gb_playerstate_t::OUT ||
+                           gamestate<N>::m_playerstate[static_cast<uint8_t>(gamestate<N>::m_current)] == gb_playerstate_t::ALLIN)
+                    {
+                        gamestate<N>::m_current = static_cast<gb_pos_t>((static_cast<uint8_t>(gamestate<N>::m_current) + 1) % N);
+                    }
+
+                    gamestate<N>::m_minraise = 1000;
+                    gamestate<N>::m_gamestate = static_cast<gb_gamestate_t>(static_cast<int>(gamestate<N>::m_gamestate) + 1);
+                    std::transform(gamestate<N>::m_playerstate.begin(), gamestate<N>::m_playerstate.end(),
+                                   gamestate<N>::m_playerstate.begin(),
+                                   [](const gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
+                }
+            }
+            else
+            {
+                //
+                // next players turn
+                //
+
+                do
+                {
+                    gamestate<N>::m_current = static_cast<gb_pos_t>((static_cast<uint8_t>(gamestate<N>::m_current) + 1) % N);
+                } while (gamestate<N>::m_playerstate[static_cast<uint8_t>(gamestate<N>::m_current)] == gb_playerstate_t::OUT ||
+                         gamestate<N>::m_playerstate[static_cast<uint8_t>(gamestate<N>::m_current)] == gb_playerstate_t::ALLIN);
+            }
+
+#if !defined(NDEBUG)
+            gamestate<N>::m_debug_alive = gamestate<N>::num_alive();
+            gamestate<N>::m_debug_actionable = gamestate<N>::num_actionable();
+            gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
+#endif
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // internal helpers
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+       protected:
+        // helper: distribute pot according to cards
+        [[nodiscard]] auto pot_distribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
+                                            const int32_t upper_bound, const int32_t lower_bound) const -> std::array<int32_t, N>
+        {
+            // 1) get the winners
+            // 1a) start with all possible winners
+            std::vector<std::pair<holdem_result, unsigned>> winners;
+            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
+                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
+            });
+            // 1b) sort by highest hand
+            std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+            const auto first_non_winner =
+                std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
+            const auto dist = std::distance(winners.cbegin(), first_non_winner);
+            // 1c) remove non_winners
+            // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
+            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
+
+            // 2) adjust the committed chips, adjust for rake, compute winning sum
+            // 2a) adjust the committed chips according to lower and upper bound
+            const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
+                const int32_t chips = gamestate<N>::m_chips_front[idx];
+                return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
+            });
+            // 2b) adjust for rake
+            // if m_last_aggressive_action.m_amount is negative, there was a preflop takedown -> no rake
+            const bool rake_active_this_hand = m_last_aggressive_action.m_amount > 0;
+            const int32_t total_pot = static_cast<int32_t>(std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) *
+                                                           (rake_active_this_hand ? (1.0f - c_rake) : 1.0f));
+            //const int32_t total_rake = static_cast<int32_t>(std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) *
+            //                                                (rake_active_this_hand ? c_rake : 0.0f));
+            // 2c) sum_per_winner = sum / (winners.size())
+            const int32_t sum_p_winner = total_pot / static_cast<int32_t>(winners.size());
 
             // 3) return payouts for every position according to winners / losers, ignore amounts
             //    chips <= lower ? ignore
