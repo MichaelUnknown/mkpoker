@@ -52,8 +52,9 @@ int main()
         auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
 
         const auto [i, t] = tree_size(gametree_base_2p.get());
+        const auto cnt_nodes = i + t;
         std::cout << "game with 2 players, stack size 4BB, no action filter\n"
-                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n\n";
+                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n\n";
         //gametree_base_2p->print_node();
     }
 
@@ -68,7 +69,7 @@ int main()
         const auto [i, t] = tree_size(gametree_base_2p.get());
         const auto cnt_nodes = i + t;
         std::cout << "game with 2 players, stack size 10BB, no action filter\n"
-                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n\n";
+                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n\n";
     }
     {
         // simplified game: only a couple preflop actions are allowed (fold, call, raise with specific sizes)
@@ -81,7 +82,7 @@ int main()
         const auto [i, t] = tree_size(gametree_base_2p.get());
         const auto cnt_nodes = i + t;
         std::cout << "game with 2 players, stack size 200BB, action filter 'preflop poker'\n"
-                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << i + t << "\n";
+                  << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n";
         std::cout << "\n------------------------------------------------------\n\n";
     }
 

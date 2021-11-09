@@ -686,17 +686,23 @@ namespace mkp
     // class representing a game state without cards, with rake
     // the base class does NOT have a virtual destructor,
     // so DON'T use this class with new/delete and pointer to base class!!!
+    //
+    // alternatives to think about:
+    //  - use virtual destructor in base (one less function to copy, but vtable)
+    //  - build rake into the base class (less code to write, but more instructions in non-raked simulations)
     template <std::size_t N, std::size_t c_rake_numer, std::size_t c_rake_denom>
-        requires(N >= 2 && N <= 6 && c_rake_numer >= 0 && c_rake_denom >= 0 && c_rake_numer < c_rake_denom)
+        requires(N >= 2 && N <= 6 && c_rake_numer > 0 && c_rake_denom > 0 && c_rake_numer < c_rake_denom)
     class gamestate_w_rake : public gamestate<N>
     {
        protected:
-        // if there never is a raise (and everyone folds), the big blind is returnd to BB
+        // last aggressive action: if everyone else folds, return the last bet to the aggressor
+        // (winner of the pot) before computing rake
+        // if there never is a raise preflop, the big blind is returnd to BB
         // -> init with BB posting the big blind
         player_action_t m_last_aggressive_action = {1000, gb_action_t::RAISE, gb_pos_t::BB};
 
         // rake as float between 0..1
-        static constexpr float c_rake = [&]() { return 1.0f * c_rake_numer / c_rake_denom; }();
+        static constexpr float c_rake = 1.0f * c_rake_numer / c_rake_denom;
 
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
