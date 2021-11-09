@@ -608,22 +608,6 @@ namespace mkp
         // players who can act (i.e. INIT or ALIVE && able to call/bet)
         [[nodiscard]] constexpr int num_actionable() const noexcept
         {
-            /*
-#if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
-            // clang 11 does not support c++20 constexpr accumualte yet
-            // also exclude other compilers, only gcc and msvc currently support it
-            uint8_t ret = 0;
-            for (uint8_t index = 0; index < N; index++)
-            {
-                if (m_playerstate[index] == gb_playerstate_t::INIT ||
-                    (m_playerstate[index] == gb_playerstate_t::ALIVE && m_chips_front[index] < current_highest_bet()))
-                {
-                    ++ret;
-                }
-            }
-            return ret;
-#else
-            */
             constexpr auto indices = make_array<unsigned, N>(identity{});
             return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
                 return (m_playerstate[idx] == gb_playerstate_t::INIT ||
@@ -631,7 +615,6 @@ namespace mkp
                            ? val + 1
                            : val;
             });
-            //#endif
         }
 
         // players who can act in the next betting round (i.e. not OUT or ALLIN)

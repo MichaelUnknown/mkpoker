@@ -142,7 +142,6 @@ namespace mkp
         gb_action_t m_action;
         gb_pos_t m_pos;
 
-        // it looks like clang 11 cannot construct player_action_t as POD, but needs an explicit ctor...
         player_action_t() = default;
         constexpr player_action_t(int32_t amount, gb_action_t action, gb_pos_t pos) noexcept
             : m_amount(amount), m_action(action), m_pos(pos){};

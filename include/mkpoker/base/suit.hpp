@@ -117,9 +117,8 @@ namespace mkp
         {
             switch (st)
             {
-                    // not supported by gcc, clang
-                    // not supported by intellisense
-                    //using enum suit_t;
+                    // TODO: use 'using enum suit_t;' when supported by all compilers
+                    // and intellisense
 
                 case suit_t::clubs:
                     return 'c';
