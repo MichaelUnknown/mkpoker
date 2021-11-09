@@ -28,9 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>      // std::find, std::sort
 #include <array>          //
-#include <atomic>         // remove
 #include <cstdint>        //
-#include <iostream>       // remove
 #include <numeric>        // std::accumulate
 #include <span>           //
 #include <stdexcept>      //
@@ -818,7 +816,6 @@ namespace mkp
             gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
 #endif
 
-            //std::cout << "\n\n--------------------------------------\n" << this->str_state();
             // check if:
             //  - the entire hand ended (showdown or everyone but one player folded)
             //  - the current betting round ended (no one can act)
@@ -834,9 +831,6 @@ namespace mkp
                 // so that this bet is not subject to post flop rake (if the hand ends preflop, there is no rake at all)
                 if (gamestate<N>::num_alive() < 2)
                 {
-                    //std::cout << "player " << static_cast<int>(m_last_aggressive_action.m_pos) << " took down the pot without showdown. "
-                    //          << m_last_aggressive_action.m_amount << " chips returned to player\n";
-
                     gamestate<N>::m_chips_front[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] -= m_last_aggressive_action.m_amount;
                     gamestate<N>::m_chips_behind[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] += m_last_aggressive_action.m_amount;
 
@@ -960,8 +954,6 @@ namespace mkp
             //                                                (rake_active_this_hand ? c_rake : 0.0f));
             // 2c) sum_per_winner = sum / (winners.size())
             const int32_t sum_p_winner = total_pot / static_cast<int32_t>(winners.size());
-            //std::cout << "pot/rake: " << total_pot << "/" << total_rake << ", sum_p_winner: " << sum_p_winner << " (" << winners.size()
-            //          << " players)\n";
 
             // 3) return payouts for every position according to winners / losers, ignore amounts
             //    chips <= lower ? ignore
