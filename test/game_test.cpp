@@ -437,3 +437,56 @@ TEST(tgame, game_gamestate_payouts)
         EXPECT_EQ(g4.payouts_showdown(gc4), expected_payouts4);
     }
 }
+
+TEST(tgame, game_gamestate_rake)
+{
+    // rake - reuse test from before but add 50% and 4.375% (PS rake)
+
+    const std::array<card, 11> cards{// board
+                                     card("2c"), card("2d"), card("6h"), card("7s"), card("Jd"),
+                                     // SB
+                                     card("Tc"), card("Td"),
+                                     // BB
+                                     card("Qc"), card("Jc"),
+                                     // UTG
+                                     card("Qs"), card("Js")};
+    const gamecards<3> gc{cards};
+    {
+        // 50% rake
+        auto g_rake_1 = gamestate_w_rake<3, 5, 10>(3000);
+        g_rake_1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        g_rake_1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        g_rake_1.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
+        EXPECT_EQ(g_rake_1.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // old payouts (0% rake)
+        const std::array<int32_t, 3> expected_payouts1{-3000, 1500, 1500};
+        // from the 9'000 pot, 50% is taken by the casino as rake, so 4500 are
+        // distributed to the winners -> 2'250 each so they should have a net
+        // loss of (-)750 each
+        const auto diff = 1500 - (-750);
+        // which is a difference of (-)2'250 to the old expected winnings of +1500
+        const std::array<int32_t, 3> expected_payouts1_after_rake = {expected_payouts1[0], expected_payouts1[1] - diff,
+                                                                     expected_payouts1[2] - diff};
+        EXPECT_EQ(g_rake_1.payouts_showdown(gc), expected_payouts1_after_rake);
+    }
+    {
+        // 4.375% rake
+        auto g_rake_2 = gamestate_w_rake<3, 4'375, 100'000>(3000);
+        g_rake_2.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        g_rake_2.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        g_rake_2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
+        EXPECT_EQ(g_rake_2.gamestate_v(), gb_gamestate_t::GAME_FIN);
+        // old payouts (0% rake)
+        const std::array<int32_t, 3> expected_payouts2{-3000, 1500, 1500};
+        // from the 9'000 pot, 4.375% is taken by the casino as rake (393.75), so the remaining
+        // 9'000 - 393 are distributed to the winners -> 4'303 each so they should have a net
+        // plus 1'303
+        const auto rake = static_cast<int>(9'000 * 0.04375);
+        const auto payout = ((9'000 - rake) / 2) - 3000;
+        const auto diff = 1500 - payout;
+        // which is a difference of (-)2'250 to the old expected winnings of +1500
+        const std::array<int32_t, 3> expected_payouts2_after_rake = {expected_payouts2[0], expected_payouts2[1] - diff,
+                                                                     expected_payouts2[2] - diff};
+        EXPECT_EQ(g_rake_2.payouts_showdown(gc), expected_payouts2_after_rake);
+    }
+}
