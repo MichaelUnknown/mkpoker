@@ -956,8 +956,8 @@ namespace mkp
             const bool rake_active_this_hand = m_last_aggressive_action.m_amount > 0;
             const int32_t total_pot = static_cast<int32_t>(std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) *
                                                            (rake_active_this_hand ? (1.0f - c_rake) : 1.0f));
-            const int32_t total_rake = static_cast<int32_t>(std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) *
-                                                            (rake_active_this_hand ? c_rake : 0.0f));
+            //const int32_t total_rake = static_cast<int32_t>(std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) *
+            //                                                (rake_active_this_hand ? c_rake : 0.0f));
             // 2c) sum_per_winner = sum / (winners.size())
             const int32_t sum_p_winner = total_pot / static_cast<int32_t>(winners.size());
             //std::cout << "pot/rake: " << total_pot << "/" << total_rake << ", sum_p_winner: " << sum_p_winner << " (" << winners.size()

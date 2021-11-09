@@ -351,8 +351,8 @@ namespace mkp
     using hand_2r = hand_helper<rank, true, false>;
     //using hand_2r = v1::hand_helper<rank, true, false, 2>;
 
-//#if !defined(__clang__)
-    // clang 11 seems to differ with msvc and gcc about these asserts :(
+#if !defined(__clang__)
+    // clang seems to differ with msvc and gcc about these asserts :(
     // todo: make a simplified exmaple and check which compiler is right/wrong
 
     // checks for hand_2c
@@ -380,6 +380,6 @@ namespace mkp
     static_assert(std::is_trivially_move_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
     static_assert(std::is_nothrow_copy_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
     static_assert(std::is_nothrow_move_constructible_v<hand_2r>, "hand_2r should be trivially & nothrow copy/move constructible");
-//#endif
+#endif
 
 }    // namespace mkp
