@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/card_generator.hpp>
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
@@ -103,7 +104,7 @@ int main()
             workers.push_back(std::thread([&cfrd_2p, &mu, tid]() {
                 mkp::card_generator cgen{};
                 std::array<std::array<int32_t, 2>, 65536> util{};
-                for (uint32_t i = 0; i < 15'000; ++i)
+                for (uint32_t i = 0; i < 500'000; ++i)
                 {
                     if (i % 50'000 == 0)
                     {
@@ -138,9 +139,16 @@ int main()
         cfrd_2p.print_strategy(cfrd_2p.m_root.get(), 0, 1);
     }
 
+    {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(100ms);
+    }
+
     // same with rake
     {
-        using game_type_w_r = mkp::gamestate_w_rake<2, 4'375, 100'000>;
+        // use an unrealistic high amount of rake (20%), to show the difference
+        // in the resulting strategy
+        using game_type_w_r = mkp::gamestate_w_rake<2, 200, 1'000>;
 
         game_type_w_r game_2p{200'000};
         mkp::gamestate_enumerator<game_type_w_r, uint32_t> enc_2p{};
@@ -157,7 +165,7 @@ int main()
             workers.push_back(std::thread([&cfrd_2p, &mu, tid]() {
                 mkp::card_generator cgen{};
                 std::array<std::array<int32_t, 2>, 65536> util{};
-                for (uint32_t i = 0; i < 150'000; ++i)
+                for (uint32_t i = 0; i < 500'000; ++i)
                 {
                     if (i % 50'000 == 0)
                     {

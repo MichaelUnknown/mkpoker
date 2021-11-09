@@ -28,8 +28,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>      // std::find, std::sort
 #include <array>          //
+#include <atomic>         // remove
 #include <cstdint>        //
-#include <iostream>       //
+#include <iostream>       // remove
 #include <numeric>        // std::accumulate
 #include <span>           //
 #include <stdexcept>      //
@@ -607,6 +608,7 @@ namespace mkp
         // players who can act (i.e. INIT or ALIVE && able to call/bet)
         [[nodiscard]] constexpr int num_actionable() const noexcept
         {
+            /*
 #if defined(__clang__) || !(defined(__GNUC__) || defined(_MSC_VER))
             // clang 11 does not support c++20 constexpr accumualte yet
             // also exclude other compilers, only gcc and msvc currently support it
@@ -621,6 +623,7 @@ namespace mkp
             }
             return ret;
 #else
+            */
             constexpr auto indices = make_array<unsigned, N>(identity{});
             return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
                 return (m_playerstate[idx] == gb_playerstate_t::INIT ||
@@ -628,7 +631,7 @@ namespace mkp
                            ? val + 1
                            : val;
             });
-#endif
+            //#endif
         }
 
         // players who can act in the next betting round (i.e. not OUT or ALLIN)
@@ -741,8 +744,24 @@ namespace mkp
             });
         }
 
-        // adjustment to payouts showdown not necessary, pot_distribution takes care
-        // [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
+        // return payout on terminal state (only for states with showdown)
+        [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
+        {
+            if (!gamestate<N>::in_terminal_state())
+            {
+                throw std::runtime_error("payouts_showdown(): game not in terminal state");
+            }
+            if (!gamestate<N>::is_showdown())
+            {
+                throw std::runtime_error("payouts_showdown(): terminale state involves no showdown, but cards are given");
+            }
+
+            const auto pots = gamestate<N>::all_pots();
+            // return pot_distribution for each (side)pot, add everything up
+            return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
+                return val + pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+            });
+        }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS
@@ -810,7 +829,7 @@ namespace mkp
             gamestate<N>::m_debug_future = gamestate<N>::num_future_actionable();
 #endif
 
-            std::cout << "\n\n--------------------------------------\n" << this->str_state();
+            //std::cout << "\n\n--------------------------------------\n" << this->str_state();
             // check if:
             //  - the entire hand ended (showdown or everyone but one player folded)
             //  - the current betting round ended (no one can act)
@@ -826,8 +845,8 @@ namespace mkp
                 // so that this bet is not subject to post flop rake (if the hand ends preflop, there is no rake at all)
                 if (gamestate<N>::num_alive() < 2)
                 {
-                    std::cout << "player " << static_cast<int>(m_last_aggressive_action.m_pos) << " took down the pot without showdown. "
-                              << m_last_aggressive_action.m_amount << " chips returned to player\n";
+                    //std::cout << "player " << static_cast<int>(m_last_aggressive_action.m_pos) << " took down the pot without showdown. "
+                    //          << m_last_aggressive_action.m_amount << " chips returned to player\n";
 
                     gamestate<N>::m_chips_front[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] -= m_last_aggressive_action.m_amount;
                     gamestate<N>::m_chips_behind[static_cast<uint8_t>(m_last_aggressive_action.m_pos)] += m_last_aggressive_action.m_amount;
@@ -952,8 +971,8 @@ namespace mkp
                                                             (rake_active_this_hand ? c_rake : 0.0f));
             // 2c) sum_per_winner = sum / (winners.size())
             const int32_t sum_p_winner = total_pot / static_cast<int32_t>(winners.size());
-            std::cout << "pot/rake: " << total_pot << "/" << total_rake << ", sum_p_winner: " << sum_p_winner << " (" << winners.size()
-                      << " players)\n";
+            //std::cout << "pot/rake: " << total_pot << "/" << total_rake << ", sum_p_winner: " << sum_p_winner << " (" << winners.size()
+            //          << " players)\n";
 
             // 3) return payouts for every position according to winners / losers, ignore amounts
             //    chips <= lower ? ignore
