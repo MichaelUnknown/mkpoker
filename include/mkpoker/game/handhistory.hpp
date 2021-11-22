@@ -112,7 +112,8 @@ namespace mkp
             {
                 case gb_action_t::FOLD:
                     fmt::print(m_f, "{}: folds\n", m_names[pos]);
-                    m_player_resume.push_back(std::make_pair(pos, fmt::format("Seat {}: {} folded {}\n", pos, m_names[pos], str_gs_at())));
+                    m_player_resume.push_back(
+                        std::make_pair(pos, fmt::format("Seat {}: {}{} folded {}\n", pos, m_names[pos], str_opt_pos(pos), str_gs_at())));
                     break;
 
                 case gb_action_t::CHECK:
@@ -134,20 +135,6 @@ namespace mkp
                 }
 
                 case gb_action_t::ALLIN: {
-                    //const auto aa_call = aa_is_call(a);
-                    //if (aa_call)
-                    //{
-                    //    fmt::print(m_f, "{}: calls ${} and is all-in\n", m_names[pos], m_game.chips_behind()[pos],
-                    //               a.m_amount + m_game.chips_front()[pos]);
-                    //}
-                    //else
-                    //{
-                    //    auto str_temp = is_bet(a) ? fmt::format("bets ${}", a.m_amount)
-                    //                              : fmt::format("raises ${} to ${}",
-                    //                                            a.m_amount + m_game.chips_front()[pos] - m_game.current_highest_bet(),
-                    //                                            a.m_amount + m_game.chips_front()[pos]);
-                    //}
-
                     auto str_temp = aa_is_call(a) ? fmt::format("calls ${}", a.m_amount)
                                     : is_bet(a)   ? fmt::format("bets ${}", a.m_amount)
                                                   : fmt::format("raises ${} to ${}",
@@ -172,10 +159,33 @@ namespace mkp
                 }
                 else
                 {
-                    // is there a showdown?
+                    // game finished
                     if (m_game.is_showdown())
                     {
                         fmt::print(m_f, "*** SHOW DOWN ***\n");
+
+                        const auto chips_dist = m_game.payouts_showdown(m_cards);
+                        for (unsigned pos = 0; pos < c_num_players; ++pos)
+                        {
+                            if (chips_dist[pos] > 0)
+                            {
+                                const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
+                                m_player_resume.push_back(
+                                    std::make_pair(pos, fmt::format("Seat {}: {}{} showed [{}] and won (${:.2f}) with {}\n", pos,
+                                                                    m_names[pos], str_opt_pos(pos), str_hand(m_cards.m_hands[pos]),
+                                                                    static_cast<float>(chips_dist[pos]), eval.str())));
+                            }
+                            // player didn't fold
+                            else if (chips_dist[pos] < 0 &&
+                                     std::find_if(m_player_resume.cbegin(), m_player_resume.cend(),
+                                                  [&](const auto& p) { return p.first == pos; }) == m_player_resume.cend())
+                            {
+                                const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
+                                m_player_resume.push_back(std::make_pair(
+                                    pos, fmt::format("Seat {}: {}{} showed [{}] and lost with {}{}\n", pos, m_names[pos], str_opt_pos(pos),
+                                                     str_hand(m_cards.m_hands[pos]), eval.str(), str_opt_cashout(pos))));
+                            }
+                        }
                     }
                     else
                     {
@@ -184,13 +194,13 @@ namespace mkp
                         const auto it_winner =
                             std::find_if(pstate.cbegin(), pstate.cend(), [](const auto& e) { return e != gb_playerstate_t::OUT; });
                         const auto pos = static_cast<unsigned>(std::distance(pstate.cbegin(), it_winner));
-                        m_player_resume.push_back(
-                            std::make_pair(pos, fmt::format("Seat {}: {} collected (${:.2f})\n", pos, m_names[pos], 142.13)));
+                        m_player_resume.push_back(std::make_pair(pos, fmt::format("Seat {}: {} collected (${:.2f})\n", pos, m_names[pos],
+                                                                                  static_cast<float>(m_game.pot_size()))));
                     }
 
                     fmt::print(m_f, "*** SUMMARY ***\n");
-                    fmt::print(m_f, "Total pot $2 | Rake $0.09\n");
-                    fmt::print(m_f, "Board [7s 4c 5s 4h Ks]\n");
+                    fmt::print(m_f, "Total pot ${} | Rake $0.09\n", m_game.pot_size());
+                    fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board));
 
                     std::sort(m_player_resume.begin(), m_player_resume.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
@@ -208,6 +218,47 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
        private:
+        // print hand pokerstars style
+        [[nodiscard]] constexpr std::string str_hand(const hand_2c h) const
+        {
+            return fmt::format("{} {}", h.m_card1.str(), h.m_card2.str());
+        }
+
+        // print board pokerstars style
+        [[nodiscard]] constexpr std::string str_board(const std::array<card, 5>& b) const
+        {
+            return fmt::format("{} {} {} {} {}", b[0].str(), b[1].str(), b[2].str(), b[3].str(), b[4].str());
+        }
+
+        // print SB, BB or BTN
+        [[nodiscard]] constexpr std::string str_opt_pos(unsigned i) const
+        {
+            switch (i)
+            {
+                case 0:
+                    return " (small blind)";
+                case 1:
+                    return " (big blind)";
+                case 5:
+                    return " (button)";
+                default:
+                    return "";
+            }
+        }
+
+        // cashed out?
+        [[nodiscard]] constexpr std::string str_opt_cashout(unsigned i) const
+        {
+            if (m_game.chips_behind()[i] == 0)
+            {
+                return " (cashed out).";
+            }
+            else
+            {
+                return "";
+            }
+        }
+
         // used for 'when did a player fold?'
         [[nodiscard]] constexpr std::string str_gs_at() const
         {

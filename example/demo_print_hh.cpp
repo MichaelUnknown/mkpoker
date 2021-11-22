@@ -77,30 +77,6 @@ int main()
             {
                 fmt::print("the hand ended\n{}\n", game.str_state());
                 const auto pots = game.all_pots();
-                //for (unsigned int i = 1; auto&& e : pots)
-                //{
-                //    std::cout << "Pot " << i << ":\nEligible players: ";
-                //    for (auto&& p : std::get<0>(e))
-                //    {
-                //        std::cout << p << " (" << gamecards.m_hands[p].str() << ") ";
-                //    }
-                //    std::cout << "\nThe board is: ";
-                //    for (const auto cards = gamecards.board_n(5); auto&& c : cards)
-                //    {
-                //        std::cout << c.str() << " ";
-                //    }
-                //    std::cout << "\nlower: " << std::get<2>(e) << ", upper: " << std::get<1>(e) << "\n";
-                //    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-                //    ++i;
-                //}
-
-                //std::cout << "\nResults:\n";
-                //const auto results = game.is_showdown() ? game.payouts_showdown(gamecards) : game.payouts_noshowdown();
-                //for (unsigned int i = 0; i < results.size(); ++i)
-                //{
-                //    std::cout << i << ": " << results[i] << " (started with: " << chips[i] << " => " << chips[i] + results[i] << ")\n";
-                //}
-                //std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
                 std::rotate(names.begin(), names.begin() + 1, names.end());
                 ++cnt;
