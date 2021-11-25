@@ -284,14 +284,24 @@ namespace mkp
                 throw std::runtime_error("all_pots(): game not in terminal state");
             }
 
+            // adjust, if chips have to be returned
+            const auto chips_front = [&]() {
+                //
+                if (const auto chips_return = chips_to_return(); chips_return.second == 0)
+                {
+                    return m_chips_front;
+                }
+                else
+                {
+                    auto chips_front = m_chips_front;
+                    chips_front[static_cast<unsigned>(chips_return.first)] -= chips_return.second;
+                    return chips_front;
+                }
+            }();
+
             // 1) get all chip counts and sort by amount
-            // check if chips have to be returned, first
-            auto chips_return = chips_to_return();
-            auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned idx) {
-                return std::make_pair(
-                    idx != static_cast<unsigned>(chips_return.first) ? m_chips_front[idx] : (m_chips_front[idx] - chips_return.second),
-                    idx);
-            });
+            auto chips_and_players =
+                make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned idx) { return std::make_pair(chips_front[idx], idx); });
             std::sort(chips_and_players.begin(), chips_and_players.end(),
                       [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
@@ -308,7 +318,7 @@ namespace mkp
                 {
                     // skip players that can not win the pot
                 }
-                else if (const int32_t lower = m_chips_front[e.second]; lower == upper)
+                else if (const int32_t lower = chips_front[e.second]; lower == upper)
                 {
                     // same as upper -> add player
                     main_pot_players.push_back(e.second);

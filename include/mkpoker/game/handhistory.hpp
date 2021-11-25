@@ -160,9 +160,10 @@ namespace mkp
                 else
                 {
                     // return money if necessary
-                    if (auto chips_return = m_game.chips_to_return(); chips_return.second != 0)
+                    const auto chips_return = m_game.chips_to_return();
+                    if (chips_return.second != 0)
                     {
-                        fmt::print(m_f, "Uncalled bet (${}) returned to {}\n", chips_return.second,
+                        fmt::print(m_f, "Uncalled bet (${:.2f}) returned to {}\n", static_cast<float>(chips_return.second),
                                    m_names[static_cast<unsigned>(chips_return.first)]);
                     }
 
@@ -176,17 +177,18 @@ namespace mkp
                         {
                             if (chips_dist[pos] > 0)
                             {
+                                // player did win something
                                 const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
                                 m_player_resume.push_back(
                                     std::make_pair(pos, fmt::format("Seat {}: {}{} showed [{}] and won (${:.2f}) with {}\n", pos,
                                                                     m_names[pos], str_opt_pos(pos), str_hand(m_cards.m_hands[pos]),
                                                                     static_cast<float>(chips_dist[pos]), eval.str())));
                             }
-                            // player didn't fold
                             else if (chips_dist[pos] < 0 &&
                                      std::find_if(m_player_resume.cbegin(), m_player_resume.cend(),
                                                   [&](const auto& p) { return p.first == pos; }) == m_player_resume.cend())
                             {
+                                // lost, but didn't fold pre
                                 const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
                                 m_player_resume.push_back(std::make_pair(
                                     pos, fmt::format("Seat {}: {}{} showed [{}] and lost with {}{}\n", pos, m_names[pos], str_opt_pos(pos),
@@ -200,13 +202,18 @@ namespace mkp
                         const auto pstate = m_game.all_players_state();
                         const auto it_winner =
                             std::find_if(pstate.cbegin(), pstate.cend(), [](const auto& e) { return e != gb_playerstate_t::OUT; });
+                        const auto adjusted_pot = m_game.pot_size() - chips_return.second;
                         const auto pos = static_cast<unsigned>(std::distance(pstate.cbegin(), it_winner));
-                        m_player_resume.push_back(std::make_pair(pos, fmt::format("Seat {}: {} collected (${:.2f})\n", pos, m_names[pos],
-                                                                                  static_cast<float>(m_game.pot_size()))));
+
+                        fmt::print(m_f, "{} collected ${:.2f} from pot\n", m_names[pos], static_cast<float>(adjusted_pot));
+                        fmt::print(m_f, "{}: doesn't show hand\n", m_names[pos]);
+
+                        m_player_resume.push_back(std::make_pair(
+                            pos, fmt::format("Seat {}: {} collected (${:.2f})\n", pos, m_names[pos], static_cast<float>(adjusted_pot))));
                     }
 
                     fmt::print(m_f, "*** SUMMARY ***\n");
-                    fmt::print(m_f, "Total pot ${} | Rake $0.09\n", m_game.pot_size());
+                    fmt::print(m_f, "Total pot ${:.2f} | Rake $x.xx\n", static_cast<float>(m_game.pot_size() - chips_return.second));
                     fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board));
 
                     std::sort(m_player_resume.begin(), m_player_resume.end(),
