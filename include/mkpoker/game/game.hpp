@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>      // std::find, std::sort
 #include <array>          //
+#include <cassert>        //
 #include <cstdint>        //
 #include <numeric>        // std::accumulate
 #include <span>           //
@@ -284,8 +285,13 @@ namespace mkp
             }
 
             // 1) get all chip counts and sort by amount
-            auto chips_and_players =
-                make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned idx) { return std::make_pair(m_chips_front[idx], idx); });
+            // check if chips have to be returned, first
+            auto chips_return = chips_to_return();
+            auto chips_and_players = make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned idx) {
+                return std::make_pair(
+                    idx != static_cast<unsigned>(chips_return.first) ? m_chips_front[idx] : (m_chips_front[idx] - chips_return.second),
+                    idx);
+            });
             std::sort(chips_and_players.begin(), chips_and_players.end(),
                       [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
@@ -320,6 +326,29 @@ namespace mkp
             pots.emplace_back(std::make_tuple(main_pot_players, upper, 0));
 
             return pots;
+        }
+
+        // remove unnecessary chips from chips_front if the last call/fold left a player with an unmatched bet
+        [[nodiscard]] constexpr std::pair<gb_pos_t, int32_t> chips_to_return() const
+        {
+            if (const auto highest_bet = current_highest_bet(); std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
+            {
+                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) != m_chips_front.cend() &&
+                       "at least one player must have the exact highest chip count");
+                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) ==
+                           (std::find(m_chips_front.crbegin(), m_chips_front.crend(), highest_bet).base() - 1) &&
+                       "exactly one player must have the exact highest chip count");
+
+                const auto idx =    // player with highest chip count
+                    std::distance(m_chips_front.cbegin(), std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet));
+                auto chips = m_chips_front;
+                std::sort(chips.begin(), chips.end(), std::greater{});
+                return std::make_pair(gb_pos_t(idx), highest_bet - chips[1]);    // chips[1]: 2nd highest chip count
+            }
+            else
+            {
+                return std::make_pair(gb_pos_t(0), 0);
+            }
         }
 
         // return payout on terminal state (only for states with showdown)
@@ -515,22 +544,22 @@ namespace mkp
 
                 // remove unnecessary chips from chips_front if the last call/fold left a player with an unmatched bet
                 // this can happen if the last caller does not have enough chips to match the bet and is all in instead
-                if (const auto highest_bet = current_highest_bet();
-                    std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
-                {
-                    for (unsigned i = 0; i < N; ++i)
-                    {
-                        if (m_chips_front[i] == highest_bet)
-                        {
-                            auto chips = m_chips_front;
-                            std::sort(chips.begin(), chips.end(), std::greater{});
-                            const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
-                            m_chips_front[i] -= difference;
-                            m_chips_behind[i] += difference;
-                            break;
-                        }
-                    }
-                }
+                //if (const auto highest_bet = current_highest_bet();
+                //    std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
+                //{
+                //    for (unsigned i = 0; i < N; ++i)
+                //    {
+                //        if (m_chips_front[i] == highest_bet)
+                //        {
+                //            auto chips = m_chips_front;
+                //            std::sort(chips.begin(), chips.end(), std::greater{});
+                //            const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
+                //            m_chips_front[i] -= difference;
+                //            m_chips_behind[i] += difference;
+                //            break;
+                //        }
+                //    }
+                //}
 
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }

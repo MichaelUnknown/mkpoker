@@ -159,6 +159,13 @@ namespace mkp
                 }
                 else
                 {
+                    // return money if necessary
+                    if (auto chips_return = m_game.chips_to_return(); chips_return.second != 0)
+                    {
+                        fmt::print(m_f, "Uncalled bet (${}) returned to {}\n", chips_return.second,
+                                   m_names[static_cast<unsigned>(chips_return.first)]);
+                    }
+
                     // game finished
                     if (m_game.is_showdown())
                     {
