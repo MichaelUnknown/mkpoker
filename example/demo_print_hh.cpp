@@ -56,8 +56,8 @@ int main()
         const mkp::gamecards<c_num_players> gamecards(random_cards);
         auto game = mkp::gamestate<c_num_players>(chips);
 
-        // create hh printer, 1BB <=> 1000, pov of position 2
-        auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 1000);
+        // create hh printer, 1$ <=> 50'000 mBB, pov of position 2
+        auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000);
         //mkp::hh_ps<mkp::gamestate, 6> test1 = {};
         //mkp::hh_ps<mkp::gamestate, 6> test{game, gamecards, names, f_hh, 1, 2};
 

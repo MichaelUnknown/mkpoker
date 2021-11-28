@@ -361,7 +361,27 @@ namespace mkp
             }
         }
 
+        // return distribution of pot
+        [[nodiscard]] constexpr std::array<int32_t, N> pot_distribution(const gamecards<N>& cards) const
+        {
+            if (!in_terminal_state())
+            {
+                throw std::runtime_error("payouts_showdown(): game not in terminal state");
+            }
+            if (!is_showdown())
+            {
+                throw std::runtime_error("payouts_showdown(): terminale state involves no showdown, but cards are given");
+            }
+
+            const auto pots = all_pots();
+            // return pot_redistribution for each (side)pot, add everything up
+            return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
+                return val + side_pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+            });
+        }
+
         // return payout on terminal state (only for states with showdown)
+        // returns the chip differences to the start of the round (i.e., sum of all those changes minus rake = zero)
         [[nodiscard]] constexpr std::array<int32_t, N> payouts_showdown(const gamecards<N>& cards) const
         {
             if (!in_terminal_state())
@@ -374,9 +394,9 @@ namespace mkp
             }
 
             const auto pots = all_pots();
-            // return pot_distribution for each (side)pot, add everything up
+            // return chips redistribution for each (side) pot, add everything up
             return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
-                return val + pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+                return val + side_pot_chips_redistribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
             });
         }
 
@@ -662,10 +682,94 @@ namespace mkp
             });
         }
 
-        // helper: distribute pot according to cards
-        [[nodiscard]] auto pot_distribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
-                                            const int32_t upper_bound, const int32_t lower_bound) const -> std::array<int32_t, N>
+        // helper: return winners for given side pot and cards
+        [[nodiscard]] auto side_pot_winners(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices) const
+            -> std::vector<std::pair<holdem_result, unsigned>>
         {
+            std::vector<std::pair<holdem_result, unsigned>> winners;
+
+            // 1a) start with all possible winners
+            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
+                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
+            });
+            // 1b) sort by highest hand
+            std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+            const auto first_non_winner =
+                std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
+            const auto dist = std::distance(winners.cbegin(), first_non_winner);
+            // 1c) remove non_winners
+            // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
+            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
+
+            return winners;
+        }
+
+        // helper: relevant chips for that (side) pot
+        [[nodiscard]] auto side_pot_chips_adjusted(const int32_t upper_bound, const int32_t lower_bound) const noexcept
+            -> std::array<int32_t, N>
+        {
+            return make_array<int32_t, N>([&](const unsigned idx) {
+                const int32_t chips = m_chips_front[idx];
+                return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
+            });
+        }
+
+        // helper: returns how many chips each player wins/loses with that pot, accounts for how many chips
+        // each player invested during this hand, i.e., if the total pot is 10'000, there is one winner,
+        // and the winner invested 4'000 chips in this pot, the output will be +6'000 for the winner
+        // (and minus X for every other player that contributed X chips to that pot)
+        // that means that the sum of all redistribution values will amount to zero (if no rake)
+        [[nodiscard]] auto side_pot_chips_redistribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
+                                                         const int32_t upper_bound, const int32_t lower_bound) const
+            -> std::array<int32_t, N>
+        {
+            /*
+            // 1) get the winners
+            // 1a) start with all possible winners
+            std::vector<std::pair<holdem_result, unsigned>> winners;
+            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
+                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
+            });
+            // 1b) sort by highest hand
+            std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
+            const auto first_non_winner =
+                std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
+            const auto dist = std::distance(winners.cbegin(), first_non_winner);
+            // 1c) remove non_winners
+            // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
+            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
+            */
+
+            // 2) adjust the committed chips according to lower and upper bound, compute chips amount per winning player
+            /*
+            // 2a) adjust the committed chips according to lower and upper bound
+            const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
+                const int32_t chips = m_chips_front[idx];
+                return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
+            });
+            */
+            // 2b) sum_per_winner = sum / (winners.size())
+
+            const auto winners = side_pot_winners(cards, eligible_player_indices);
+            const auto chips_adjusted = side_pot_chips_adjusted(upper_bound, lower_bound);
+            const int32_t amount_each_winner =
+                std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+
+            // 3) return payouts for every position according to winners / losers / not involved in hand
+            //             player_is_a_winner ? add won chips
+            //                                        : subtract lost chips
+            return make_array<int32_t, N>([&](const unsigned idx) {
+                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
+                           ? -chips_adjusted[idx] + amount_each_winner    // winner
+                           : -chips_adjusted[idx];                        // loser or not involved (will return 0 for 2nd case)
+            });
+        }
+
+        // helper: similar to side_pot_chips_redistribution, but returns only how the chips from the pot are distributed between players
+        [[nodiscard]] auto side_pot_distribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
+                                                 const int32_t upper_bound, const int32_t lower_bound) const -> std::array<int32_t, N>
+        {
+            /*
             // 1) get the winners
             // 1a) start with all possible winners
             std::vector<std::pair<holdem_result, unsigned>> winners;
@@ -681,24 +785,27 @@ namespace mkp
             // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
             winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
 
-            // 2) adjust the committed chips, compute winning sum
-            // 2a) adjust the committed chips according to lower and upper bound
+            // 2) adjust chips, compute amount chips won
+            // 2a) adjust the (side) pot size according to committed chips and according to lower and upper bound
             const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
                 const int32_t chips = m_chips_front[idx];
                 return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
             });
             // 2b) sum_per_winner = sum / (winners.size())
-            const int32_t sum_p_winner =
+            const int32_t amount_each_winner =
                 std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+            */
 
-            // 3) return payouts for every position according to winners / losers, ignore amounts
-            //    chips <= lower ? ignore
-            //                   : player_is_a_winner ? add won chips
-            //                                        : subtract lost chips
+            const auto winners = side_pot_winners(cards, eligible_player_indices);
+            const auto chips_adjusted = side_pot_chips_adjusted(upper_bound, lower_bound);
+            const int32_t amount_each_winner =
+                std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+
+            // 3) return distribution of that (side) pot to all winners
             return make_array<int32_t, N>([&](const unsigned idx) {
                 return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
-                           ? -chips_front_adjusted[idx] + sum_p_winner
-                           : -chips_front_adjusted[idx];    // will return 0 for players who are not involved
+                           ? amount_each_winner
+                           : 0;
             });
         }
     };
@@ -783,9 +890,9 @@ namespace mkp
             }
 
             const auto pots = gamestate<N>::all_pots();
-            // return pot_distribution for each (side)pot, add everything up
+            // return chips redistribution for each (side) pot, add everything up
             return std::accumulate(pots.cbegin(), pots.cend(), std::array<int32_t, N>{}, [&](auto val, const auto& e) {
-                return val + pot_distribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
+                return val + side_pot_chips_redistribution(cards, std::get<0>(e), std::get<1>(e), std::get<2>(e));
             });
         }
 
@@ -960,8 +1067,9 @@ namespace mkp
 
        protected:
         // helper: distribute pot according to cards
-        [[nodiscard]] auto pot_distribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
-                                            const int32_t upper_bound, const int32_t lower_bound) const -> std::array<int32_t, N>
+        [[nodiscard]] auto side_pot_chips_redistribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
+                                                         const int32_t upper_bound, const int32_t lower_bound) const
+            -> std::array<int32_t, N>
         {
             // 1) get the winners
             // 1a) start with all possible winners
