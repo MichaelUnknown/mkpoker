@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdexcept>      //
 #include <tuple>          //
 #include <type_traits>    // std::enable_if
-#include <utility>        // std::pair
+#include <utility>        // std::pair, std::get
 #include <vector>         //
 
 namespace mkp
@@ -591,6 +591,15 @@ namespace mkp
                 //    }
                 //}
 
+                m_gamestate = gb_gamestate_t::GAME_FIN;
+            }
+            else if (const auto pos_last_player = std::distance(
+                         m_playerstate.cbegin(), std::find_if(m_playerstate.cbegin(), m_playerstate.cend(),
+                                                              [](const gb_playerstate_t elem) {
+                                                                  return elem != gb_playerstate_t::OUT && elem != gb_playerstate_t::ALLIN;
+                                                              }));
+                     num_actionable() == 1 && num_future_actionable() == 1 && m_chips_front[pos_last_player] == current_highest_bet())
+            {
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
             else if (num_act == 0)

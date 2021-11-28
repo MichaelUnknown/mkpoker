@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <stdexcept>
 #include <string>
-#include <utility>
+#include <utility>    // std::pair, std::get
 #include <vector>
 
 #include <fmt/core.h>
@@ -172,21 +172,60 @@ namespace mkp
                     // game finished
                     if (m_game.is_showdown())
                     {
+                        switch (m_last_state)
+                        {
+                            case gb_gamestate_t::PREFLOP_BET:
+                                fmt::print(m_f, "*** FLOP *** [{}]\n", str_board(m_cards.m_board, 3));
+                                [[fallthrough]];
+                            case gb_gamestate_t::FLOP_BET:
+                                fmt::print(m_f, "*** TURN *** [{}] [{}]\n", str_board(m_cards.m_board, 3), m_cards.m_board[3].str());
+                                [[fallthrough]];
+                            case gb_gamestate_t::TURN_BET:
+                                fmt::print(m_f, "*** RIVER *** [{}] [{}]\n", str_board(m_cards.m_board, 4), m_cards.m_board[4].str());
+                                break;
+                        }
                         fmt::print(m_f, "*** SHOW DOWN ***\n");
 
-                        const auto chips_dist = m_game.pot_distribution(m_cards);
+                        // get all pots, if pots.size() > 1, then the last pot is the main pot
+                        // get all players from the main pot and print the showdown info
+                        const auto pot = m_game.all_pots().back();
+                        const auto& vec_ids = std::get<0>(pot);
+
+                        // cards
+                        for (const auto& pos : vec_ids)
+                        {
+                            const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
+                            fmt::print(m_f, "{}: shows [{}] ({})\n", m_names[pos], str_hand(m_cards.m_hands[pos]), eval.str());
+                        }
+
+                        const auto pot_dist = m_game.pot_distribution(m_cards);
+
+                        // payouts
+                        for (const auto& pos : vec_ids)
+                        {
+                            if (pot_dist[pos] > 0)
+                            {
+                                fmt::print(m_f, "{} collected ${:.2f} from pot\n", m_names[pos], mbb_to_dollar(pot_dist[pos]));
+                            }
+                            else if (m_game.chips_behind()[pos] == 0)
+                            {
+                                fmt::print(m_f, "{} cashed out the hand for ${:.2f}\n", m_names[pos],
+                                           mbb_to_dollar(m_game.chips_front()[pos]));
+                            }
+                        }
+
                         for (unsigned pos = 0; pos < c_num_players; ++pos)
                         {
-                            if (chips_dist[pos] > 0)
+                            if (pot_dist[pos] > 0)
                             {
                                 // player did win something
                                 const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
                                 m_player_resume.push_back(
                                     std::make_pair(pos, fmt::format("Seat {}: {}{} showed [{}] and won (${:.2f}) with {}\n", pos,
                                                                     m_names[pos], str_opt_pos(pos), str_hand(m_cards.m_hands[pos]),
-                                                                    mbb_to_dollar(chips_dist[pos]), eval.str())));
+                                                                    mbb_to_dollar(pot_dist[pos]), eval.str())));
                             }
-                            else if (chips_dist[pos] <= 0 &&
+                            else if (pot_dist[pos] <= 0 &&
                                      std::find_if(m_player_resume.cbegin(), m_player_resume.cend(),
                                                   [&](const auto& p) { return p.first == pos; }) == m_player_resume.cend())
                             {
@@ -216,7 +255,7 @@ namespace mkp
 
                     fmt::print(m_f, "*** SUMMARY ***\n");
                     fmt::print(m_f, "Total pot ${:.2f} | Rake $x.xx\n", mbb_to_dollar(m_game.pot_size() - chips_return.second));
-                    fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board));
+                    fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board, 5));
 
                     std::sort(m_player_resume.begin(), m_player_resume.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
@@ -226,6 +265,10 @@ namespace mkp
                     }
                     fmt::print(m_f, "\n\n\n");
                 }
+            }
+            else if (new_state == gb_gamestate_t::TURN_BET)
+            {
+                auto i = 42;
             }
         }
 
@@ -247,9 +290,10 @@ namespace mkp
         }
 
         // print board pokerstars style
-        [[nodiscard]] constexpr std::string str_board(const std::array<card, 5>& b) const
+        [[nodiscard]] constexpr std::string str_board(const std::array<card, 5>& b, const unsigned n) const
         {
-            return fmt::format("{} {} {} {} {}", b[0].str(), b[1].str(), b[2].str(), b[3].str(), b[4].str());
+            return fmt::format("{} {} {}{}{}", b[0].str(), b[1].str(), b[2].str(), n > 3 ? fmt::format(" {}", b[3].str()) : "",
+                               n > 4 ? fmt::format(" {}", b[4].str()) : "");
         }
 
         // print SB, BB or BTN
@@ -354,14 +398,11 @@ namespace mkp
                 case gb_gamestate_t::GAME_FIN:
                     return {};
                 case gb_gamestate_t::FLOP_BET:
-                    return fmt::format("*** FLOP *** [{} {} {}]\n", m_cards.m_board[0].str(), m_cards.m_board[1].str(),
-                                       m_cards.m_board[2].str());
+                    return fmt::format("*** FLOP *** [{}]\n", str_board(m_cards.m_board, 3));
                 case gb_gamestate_t::TURN_BET:
-                    return fmt::format("*** TURN *** [{} {} {}] [{}]\n", m_cards.m_board[0].str(), m_cards.m_board[1].str(),
-                                       m_cards.m_board[2].str(), m_cards.m_board[3].str());
+                    return fmt::format("*** TURN *** [{}] [{}]\n", str_board(m_cards.m_board, 3), m_cards.m_board[3].str());
                 case gb_gamestate_t::RIVER_BET:
-                    return fmt::format("*** RIVER *** [{} {} {} {}] [{}]\n", m_cards.m_board[0].str(), m_cards.m_board[1].str(),
-                                       m_cards.m_board[2].str(), m_cards.m_board[3].str(), m_cards.m_board[4].str());
+                    return fmt::format("*** RIVER *** [{}] [{}]\n", str_board(m_cards.m_board, 4), m_cards.m_board[4].str());
                 default:
                     throw std::runtime_error("str_ccs(): invalid gb_gamestate_t");
             };

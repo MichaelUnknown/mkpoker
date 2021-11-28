@@ -60,9 +60,11 @@ int main()
         auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000);
         //mkp::hh_ps<mkp::gamestate, 6> test1 = {};
         //mkp::hh_ps<mkp::gamestate, 6> test{game, gamecards, names, f_hh, 1, 2};
+        fmt::print("game {}\n", cnt);
 
         for (;;)
         {
+            fmt::print("{}", game.str_state());
             const auto vec_actions = game.possible_actions();
             // select random actions
 
