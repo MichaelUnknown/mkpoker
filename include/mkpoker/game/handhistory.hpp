@@ -266,10 +266,6 @@ namespace mkp
                     fmt::print(m_f, "\n\n\n");
                 }
             }
-            else if (new_state == gb_gamestate_t::TURN_BET)
-            {
-                auto i = 42;
-            }
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////

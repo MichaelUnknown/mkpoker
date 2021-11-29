@@ -88,7 +88,7 @@ int main()
 
         std::fflush(f_hh);
 
-        if (cnt > 10)
+        if (cnt > 100)
         {
             return EXIT_SUCCESS;
         }

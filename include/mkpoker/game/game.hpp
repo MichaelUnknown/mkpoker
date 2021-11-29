@@ -72,8 +72,9 @@ namespace mkp
         // create with span of cards (works for any contiguous container)
         constexpr explicit gamecards(const std::span<const card> all_cards)
             : m_board(make_array<card, c_num_board_cards>([&](const uint8_t i) { return all_cards[i]; })),
-              m_hands(make_array<hand_2c, N>(
-                  [&](const uint8_t i) { return hand_2c(all_cards[2 * i + c_num_board_cards], all_cards[2 * i + c_num_board_cards + 1]); }))
+              m_hands(make_array<hand_2c, N>([&](const uint8_t i) {
+                  return hand_2c(all_cards[2ull * i + c_num_board_cards], all_cards[2ull * i + c_num_board_cards + 1]);
+              }))
         {
             if (all_cards.size() != (2 * N + c_num_board_cards) || cardset(all_cards).size() != 2 * N + c_num_board_cards)
             {
@@ -153,7 +154,7 @@ namespace mkp
         int m_debug_future = num_future_actionable();
 #endif
 
-        // which player starts betting in the first betting round? heads up: BB(==BTN), otherweise: UTG
+        // which player starts betting in the first betting round? heads up: BB(==BTN), otherwise: UTG
         static constexpr auto round0_first_player = N > 2 ? gb_pos_t::UTG : gb_pos_t::BB;
 
        public:
@@ -165,7 +166,8 @@ namespace mkp
         gamestate() = delete;
 
         // create a new game with starting stacksize
-        template <std::size_t U = N, std::enable_if_t<U != 2, int> = 0>
+        template <std::size_t U = N>
+            requires(U != 2)
         constexpr explicit gamestate(const int32_t stacksize)
             : m_chips_behind(make_array<int32_t, N>([&](std::size_t i) {
                   return i == 0 ? stacksize - 500 : i == 1 ? stacksize - 1000 : stacksize;
@@ -185,7 +187,8 @@ namespace mkp
         }
 
         // create a new game with starting stacksize, specialization for heads up
-        template <std::size_t U = N, std::enable_if_t<U == 2, int> = 0>
+        template <std::size_t U = N>
+            requires(U == 2)
         constexpr explicit gamestate(const int32_t stacksize)
             : m_chips_behind(make_array<int32_t, N>([&](std::size_t i) {
                   return i == 0 ? stacksize - 1000 : i == 1 ? stacksize - 500 : stacksize;
@@ -593,6 +596,7 @@ namespace mkp
 
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
+            // if there is only one player left to act and this player has the highest bet, the round
             else if (const auto pos_last_player = std::distance(
                          m_playerstate.cbegin(), std::find_if(m_playerstate.cbegin(), m_playerstate.cend(),
                                                               [](const gb_playerstate_t elem) {
@@ -620,11 +624,11 @@ namespace mkp
                     while (m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::OUT ||
                            m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::ALLIN)
                     {
-                        m_current = static_cast<gb_pos_t>((static_cast<uint8_t>(m_current) + 1) % N);
+                        m_current = static_cast<gb_pos_t>((static_cast<unsigned>(m_current) + 1) % N);
                     }
 
                     m_minraise = 1000;
-                    m_gamestate = static_cast<gb_gamestate_t>(static_cast<int>(m_gamestate) + 1);
+                    m_gamestate = static_cast<gb_gamestate_t>(static_cast<unsigned>(m_gamestate) + 1);
                     std::transform(m_playerstate.begin(), m_playerstate.end(), m_playerstate.begin(),
                                    [](const gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
                 }
@@ -637,7 +641,7 @@ namespace mkp
 
                 do
                 {
-                    m_current = static_cast<gb_pos_t>((static_cast<uint8_t>(m_current) + 1) % N);
+                    m_current = static_cast<gb_pos_t>((static_cast<unsigned>(m_current) + 1) % N);
                 } while (m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::OUT ||
                          m_playerstate[static_cast<uint8_t>(m_current)] == gb_playerstate_t::ALLIN);
             }
