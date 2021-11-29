@@ -54,7 +54,7 @@ int main()
         const auto chips = mkp::make_array<int, c_num_players>([&](auto) { return distrib(rng); });
         const auto random_cards = cgen.generate_v(5 + 2 * c_num_players);
         const mkp::gamecards<c_num_players> gamecards(random_cards);
-        auto game = mkp::gamestate<c_num_players>(chips);
+        auto game = mkp::gamestate<c_num_players, 50, 100>(chips);
 
         // create hh printer, 1$ <=> 50'000 mBB, pov of position 2
         auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000);
@@ -88,7 +88,7 @@ int main()
 
         std::fflush(f_hh);
 
-        if (cnt > 100)
+        if (cnt > 10)
         {
             return EXIT_SUCCESS;
         }

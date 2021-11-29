@@ -136,8 +136,9 @@ namespace mkp
 
     // class representing a game state without cards
     // chips / stack size are in milli BBs, meaning 1000 equals 1 big blind
-    template <std::size_t N>
-        requires(N >= 2 && N <= 6)
+    // N: number of players, A: rake numerator, B: rake denominator
+    template <std::size_t N, std::size_t A, std::size_t B>
+        requires(N >= 2 && N <= 6 && A > 0 && B > 0 && A < B)
     class gamestate
     {
        protected:
@@ -147,6 +148,8 @@ namespace mkp
         int32_t m_minraise;
         gb_pos_t m_current;
         gb_gamestate_t m_gamestate;
+        // rake is only taken when a flop was dealt
+        bool m_flop_dealt = false;
 
 #if !defined(NDEBUG)
         int m_debug_alive = num_alive();
@@ -156,6 +159,9 @@ namespace mkp
 
         // which player starts betting in the first betting round? heads up: BB(==BTN), otherwise: UTG
         static constexpr auto round0_first_player = N > 2 ? gb_pos_t::UTG : gb_pos_t::BB;
+        // rake, rake multiplier (1.0 - rake) as float between 0..1
+        static constexpr float c_rake = 1.0f * A / B;    // A/B: c_rake_numer / c_rake_denom
+        static constexpr float c_rake_multi = 1.0f - c_rake;
 
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +214,7 @@ namespace mkp
         }
 
         // create (default) game but with specific starting chip counts
-        constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N>(1000)
+        constexpr gamestate(const std::array<int32_t, N>& chips_start) : gamestate<N, A, B>(1000)
         {
             if constexpr (N == 2)
             {
@@ -273,10 +279,23 @@ namespace mkp
         // helper: chips to call for current player
         [[nodiscard]] constexpr int32_t amount_to_call() const noexcept { return current_highest_bet() - m_chips_front[active_player()]; }
 
-        // helper: total pot size
+        // total pot size (NOT adjusted for rake)
         [[nodiscard]] constexpr int32_t pot_size() const noexcept
         {
             return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+        }
+
+        // rake adjusted total pot size
+        [[nodiscard]] constexpr int32_t pot_size_rake_adjusted() const noexcept
+        {
+            return m_flop_dealt ? static_cast<int32_t>((pot_size() - chips_to_return().second) * c_rake_multi)
+                                : static_cast<int32_t>(pot_size() - chips_to_return().second);
+        }
+
+        // rake adjusted total pot size
+        [[nodiscard]] constexpr int32_t rake_size() const noexcept
+        {
+            return m_flop_dealt ? static_cast<int32_t>((pot_size() - chips_to_return().second) * c_rake) : 0;
         }
 
         // get alls pots (main pot + every side pot), the vector has the eligible player IDs
@@ -415,14 +434,17 @@ namespace mkp
                 throw std::runtime_error("payouts_noshowdown(): terminal state involves showdown but payouts_noshowdown() called");
             }
 
+            // rake
+            const auto total_pot_ajusted = static_cast<int32_t>(pot_size() * (m_flop_dealt ? c_rake_multi : 1.0f));
+
             // winner collects all
 
             constexpr auto indices = make_array<unsigned, N>(identity{});
             const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
                                               [&](const unsigned idx) { return m_playerstate[idx] != gb_playerstate_t::OUT; });
             return make_array<int32_t, N>([&](const unsigned idx) {
-                return idx == winner ? -m_chips_front[idx] + pot_size()    // winner: pot - invested
-                                     : -m_chips_front[idx];                // loser: -invested
+                return idx == winner ? -m_chips_front[idx] + total_pot_ajusted    // winner: pot - invested
+                                     : -m_chips_front[idx];                       // loser: -invested
             });
         }
 
@@ -571,28 +593,16 @@ namespace mkp
 
             if (const auto num_act = num_actionable(); num_alive() < 2 || (num_act == 0 && num_future_actionable() < 2))
             {
-                //
                 // the entire hand ended
-                //
 
-                // remove unnecessary chips from chips_front if the last call/fold left a player with an unmatched bet
-                // this can happen if the last caller does not have enough chips to match the bet and is all in instead
-                //if (const auto highest_bet = current_highest_bet();
-                //    std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
-                //{
-                //    for (unsigned i = 0; i < N; ++i)
-                //    {
-                //        if (m_chips_front[i] == highest_bet)
-                //        {
-                //            auto chips = m_chips_front;
-                //            std::sort(chips.begin(), chips.end(), std::greater{});
-                //            const int32_t difference = highest_bet - chips[1];    // chips[1]: 2nd highest chip count
-                //            m_chips_front[i] -= difference;
-                //            m_chips_behind[i] += difference;
-                //            break;
-                //        }
-                //    }
-                //}
+                // check if a flop would be dealt, e.g., for all in preflop
+                if (!m_flop_dealt)
+                {
+                    if (std::find(m_playerstate.cbegin(), m_playerstate.cend(), gb_playerstate_t::ALLIN) != m_playerstate.cend())
+                    {
+                        m_flop_dealt = true;
+                    }
+                }
 
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
@@ -604,6 +614,9 @@ namespace mkp
                                                               }));
                      num_actionable() == 1 && num_future_actionable() == 1 && m_chips_front[pos_last_player] == current_highest_bet())
             {
+                // there are at least 2 players alive (otherwise the 1st if would be true) and the
+                // entire hand ended -> there must be a showdown, so there will be a flop dealt
+                m_flop_dealt = true;
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
             else if (num_act == 0)
@@ -629,6 +642,10 @@ namespace mkp
 
                     m_minraise = 1000;
                     m_gamestate = static_cast<gb_gamestate_t>(static_cast<unsigned>(m_gamestate) + 1);
+                    if (m_gamestate == gb_gamestate_t::FLOP_BET)
+                    {
+                        m_flop_dealt = true;
+                    }
                     std::transform(m_playerstate.begin(), m_playerstate.end(), m_playerstate.begin(),
                                    [](const gb_playerstate_t st) { return st == gb_playerstate_t::ALIVE ? gb_playerstate_t::INIT : st; });
                 }
@@ -736,41 +753,14 @@ namespace mkp
                                                          const int32_t upper_bound, const int32_t lower_bound) const
             -> std::array<int32_t, N>
         {
-            /*
-            // 1) get the winners
-            // 1a) start with all possible winners
-            std::vector<std::pair<holdem_result, unsigned>> winners;
-            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
-                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
-            });
-            // 1b) sort by highest hand
-            std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
-            const auto first_non_winner =
-                std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
-            const auto dist = std::distance(winners.cbegin(), first_non_winner);
-            // 1c) remove non_winners
-            // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
-            */
-
-            // 2) adjust the committed chips according to lower and upper bound, compute chips amount per winning player
-            /*
-            // 2a) adjust the committed chips according to lower and upper bound
-            const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
-                const int32_t chips = m_chips_front[idx];
-                return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
-            });
-            */
-            // 2b) sum_per_winner = sum / (winners.size())
-
             const auto winners = side_pot_winners(cards, eligible_player_indices);
             const auto chips_adjusted = side_pot_chips_adjusted(upper_bound, lower_bound);
-            const int32_t amount_each_winner =
-                std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+            // adjust for rake
+            const int32_t total_pot = static_cast<int32_t>(std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) *
+                                                           (m_flop_dealt ? c_rake_multi : 1.0f));
+            const int32_t amount_each_winner = total_pot / static_cast<int32_t>(winners.size());
 
-            // 3) return payouts for every position according to winners / losers / not involved in hand
-            //             player_is_a_winner ? add won chips
-            //                                        : subtract lost chips
+            // return payouts for every position
             return make_array<int32_t, N>([&](const unsigned idx) {
                 return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
                            ? -chips_adjusted[idx] + amount_each_winner    // winner
@@ -778,43 +768,18 @@ namespace mkp
             });
         }
 
-        // helper: similar to side_pot_chips_redistribution, but returns only how the chips from the pot are distributed between players
+        // helper: similar to side_pot_chips_redistribution, but returns how the chips from the pot are distributed between players
         [[nodiscard]] auto side_pot_distribution(const gamecards<N>& cards, const std::vector<unsigned>& eligible_player_indices,
                                                  const int32_t upper_bound, const int32_t lower_bound) const -> std::array<int32_t, N>
         {
-            /*
-            // 1) get the winners
-            // 1a) start with all possible winners
-            std::vector<std::pair<holdem_result, unsigned>> winners;
-            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
-                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
-            });
-            // 1b) sort by highest hand
-            std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
-            const auto first_non_winner =
-                std::find_if(winners.cbegin() + 1, winners.cend(), [&](const auto& e) { return e.first < winners[0].first; });
-            const auto dist = std::distance(winners.cbegin(), first_non_winner);
-            // 1c) remove non_winners
-            // since there is no default ctor for holdem_result, we have to pass a dummy value to resize
-            winners.resize(dist, std::make_pair(holdem_result(0, 0, 0, 0), 0));
-
-            // 2) adjust chips, compute amount chips won
-            // 2a) adjust the (side) pot size according to committed chips and according to lower and upper bound
-            const auto chips_front_adjusted = make_array<int32_t, N>([&](const unsigned idx) {
-                const int32_t chips = m_chips_front[idx];
-                return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
-            });
-            // 2b) sum_per_winner = sum / (winners.size())
-            const int32_t amount_each_winner =
-                std::accumulate(chips_front_adjusted.cbegin(), chips_front_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
-            */
-
             const auto winners = side_pot_winners(cards, eligible_player_indices);
             const auto chips_adjusted = side_pot_chips_adjusted(upper_bound, lower_bound);
-            const int32_t amount_each_winner =
-                std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) / static_cast<int32_t>(winners.size());
+            // adjust for rake
+            const int32_t total_pot = static_cast<int32_t>(std::accumulate(chips_adjusted.cbegin(), chips_adjusted.cend(), 0) *
+                                                           (m_flop_dealt ? c_rake_multi : 1.0f));
+            const int32_t amount_each_winner = total_pot / static_cast<int32_t>(winners.size());
 
-            // 3) return distribution of that (side) pot to all winners
+            // return distribution of that (side) pot to all winners
             return make_array<int32_t, N>([&](const unsigned idx) {
                 return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
                            ? amount_each_winner
@@ -822,6 +787,8 @@ namespace mkp
             });
         }
     };
+
+    /*
 
     // class representing a game state without cards, with rake
     // the base class does NOT have a virtual destructor,
@@ -1126,5 +1093,7 @@ namespace mkp
             });
         }
     };
+
+    */
 
 }    // namespace mkp

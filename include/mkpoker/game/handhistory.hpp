@@ -23,9 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <stdexcept>
-#include <string>
-#include <utility>    // std::pair, std::get
+#include <cmath>        // std::round
+#include <stdexcept>    // std::runtime_error
+#include <string>       //
+#include <utility>      // std::pair, std::get
 #include <vector>
 
 #include <fmt/core.h>
@@ -161,6 +162,8 @@ namespace mkp
                 }
                 else
                 {
+                    // game finished
+
                     // return money if necessary
                     const auto chips_return = m_game.chips_to_return();
                     if (chips_return.second != 0)
@@ -169,9 +172,13 @@ namespace mkp
                                    m_names[static_cast<unsigned>(chips_return.first)]);
                     }
 
-                    // game finished
+                    const auto adjusted_pot = m_game.pot_size_rake_adjusted();
+                    const auto rake = m_game.rake_size();
+
                     if (m_game.is_showdown())
                     {
+                        // showdown
+
                         switch (m_last_state)
                         {
                             case gb_gamestate_t::PREFLOP_BET:
@@ -243,7 +250,6 @@ namespace mkp
                         const auto pstate = m_game.all_players_state();
                         const auto it_winner =
                             std::find_if(pstate.cbegin(), pstate.cend(), [](const auto& e) { return e != gb_playerstate_t::OUT; });
-                        const auto adjusted_pot = m_game.pot_size() - chips_return.second;
                         const auto pos = static_cast<unsigned>(std::distance(pstate.cbegin(), it_winner));
 
                         fmt::print(m_f, "{} collected ${:.2f} from pot\n", m_names[pos], mbb_to_dollar(adjusted_pot));
@@ -254,7 +260,7 @@ namespace mkp
                     }
 
                     fmt::print(m_f, "*** SUMMARY ***\n");
-                    fmt::print(m_f, "Total pot ${:.2f} | Rake $x.xx\n", mbb_to_dollar(m_game.pot_size() - chips_return.second));
+                    fmt::print(m_f, "Total pot ${:.2f} | Rake ${:.2f}\n", mbb_to_dollar(adjusted_pot), mbb_to_dollar(rake));
                     fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board, 5));
 
                     std::sort(m_player_resume.begin(), m_player_resume.end(),
