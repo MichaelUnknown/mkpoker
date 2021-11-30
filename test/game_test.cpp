@@ -144,17 +144,17 @@ TEST(tgame, game_gamecards_ctor_span)
 
 TEST(tgame, game_gamestate_ctor)
 {
-    EXPECT_THROW(static_cast<void>(gamestate<2>(999)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<3>(999)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<4>(999)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<5>(999)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<6>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<2, 0, 1>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<3, 0, 1>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<4, 0, 1>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<5, 0, 1>(999)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<6, 0, 1>(999)), std::runtime_error);
 
-    const auto g2 = gamestate<2>(2000);
-    const auto g3 = gamestate<3>(2000);
-    const auto g4 = gamestate<4>(2000);
-    const auto g5 = gamestate<5>(2000);
-    const auto g6 = gamestate<6>(2000);
+    const auto g2 = gamestate<2, 0, 1>(2000);
+    const auto g3 = gamestate<3, 0, 1>(2000);
+    const auto g4 = gamestate<4, 0, 1>(2000);
+    const auto g5 = gamestate<5, 0, 1>(2000);
+    const auto g6 = gamestate<6, 0, 1>(2000);
     // all players should be on state init
     EXPECT_EQ(g6.all_players_state(), make_array<6>(gb_playerstate_t::INIT));
 
@@ -179,26 +179,26 @@ TEST(tgame, game_gamestate_ctor)
 
 TEST(tgame, game_gamestate_ctor_chips)
 {
-    std::array<int, 2> chips2ok{1000, 500};
-    std::array<int, 2> chips2a{999, 500};
-    std::array<int, 2> chips2b{1000, 499};
-    std::array<int, 3> chips3ok{500, 1000, 1};
-    std::array<int, 3> chips3a{499, 1000, 1000};
-    std::array<int, 3> chips3b{500, 999, 1000};
-    std::array<int, 4> chips4{1000, 500, 1000, 1000};
-    std::array<int, 5> chips5{1000, 500, 1000, 1000, 1000};
-    std::array<int, 6> chips6{1000, 500, 1000, 1000, 1000, 1000};
+    std::array<int32_t, 2> chips2ok{1000, 500};
+    std::array<int32_t, 2> chips2a{999, 500};
+    std::array<int32_t, 2> chips2b{1000, 499};
+    std::array<int32_t, 3> chips3ok{500, 1000, 1};
+    std::array<int32_t, 3> chips3a{499, 1000, 1000};
+    std::array<int32_t, 3> chips3b{500, 999, 1000};
+    std::array<int32_t, 4> chips4{1000, 500, 1000, 1000};
+    std::array<int32_t, 5> chips5{1000, 500, 1000, 1000, 1000};
+    std::array<int32_t, 6> chips6{1000, 500, 1000, 1000, 1000, 1000};
 
-    EXPECT_NO_THROW(static_cast<void>(gamestate<2>(chips2ok)));
-    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2a)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<2>(chips2b)), std::runtime_error);
-    EXPECT_NO_THROW(static_cast<void>(gamestate<3>(chips3ok)));
-    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3a)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<3>(chips3b)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(gamestate<2, 0, 1>(chips2ok)));
+    EXPECT_THROW(static_cast<void>(gamestate<2, 0, 1>(chips2a)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<2, 0, 1>(chips2b)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(gamestate<3, 0, 1>(chips3ok)));
+    EXPECT_THROW(static_cast<void>(gamestate<3, 0, 1>(chips3a)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<3, 0, 1>(chips3b)), std::runtime_error);
 
-    EXPECT_THROW(static_cast<void>(gamestate<4>(chips4)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<5>(chips5)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(gamestate<6>(chips6)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<4, 0, 1>(chips4)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<5, 0, 1>(chips5)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(gamestate<6, 0, 1>(chips6)), std::runtime_error);
 }
 
 TEST(tgame, game_gamestate_execute_action)
@@ -207,7 +207,7 @@ TEST(tgame, game_gamestate_execute_action)
     // test exceptions
     //
     {
-        auto game1 = gamestate<2>(3000);
+        auto game1 = gamestate<2, 0, 1>(3000);
         EXPECT_GT(game1.possible_actions().size(), 0);
 #if !defined(NDEBUG)
         EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
@@ -231,7 +231,7 @@ TEST(tgame, game_gamestate_execute_action)
     // test different actions
     //
     {
-        auto game2 = gamestate<3>(10000);
+        auto game2 = gamestate<3, 0, 1>(10000);
         // state should be preflop bet
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
         // all players should be on state init
@@ -271,14 +271,14 @@ TEST(tgame, game_gamestate_execute_action)
         // state should be game finished
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
         // payouts should be {-500,+4500,-4000}
-        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int, 3>{-500, 4500, -4000}));
+        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int32_t, 3>{-500, 4500, -4000}));
     }
 
     //
     // test showdown
     //
     {
-        auto game3 = gamestate<3>(10000);
+        auto game3 = gamestate<3, 0, 1>(10000);
         // everyone calls
         game3.execute_action(player_action_t{1000, gb_action_t::CALL, game3.active_player_v()});
         game3.execute_action(player_action_t{500, gb_action_t::CALL, game3.active_player_v()});
@@ -307,9 +307,9 @@ TEST(tgame, game_gamestate_execute_action)
 }
 
 template <std::size_t N>
-constexpr auto make_games_array() -> typename std::array<gamestate<N>, 3>
+constexpr auto make_games_array() -> typename std::array<gamestate<N, 0, 1>, 3>
 {
-    return std::array<gamestate<N>, 3>{gamestate<N>(3000), gamestate<N>(3000), gamestate<N>(4000)};
+    return std::array<gamestate<N, 0, 1>, 3>{gamestate<N, 0, 1>(3000), gamestate<N, 0, 1>(3000), gamestate<N, 0, 1>(4000)};
 }
 
 TEST(tgame, game_gamestate_comp)
@@ -363,7 +363,7 @@ TEST(tgame, game_gamestate_payouts)
 
     // no showdown
     {
-        auto g0 = gamestate<3>(3000);
+        auto g0 = gamestate<3, 0, 1>(3000);
         // should not be in terminal state
         EXPECT_THROW(static_cast<void>(g0.payouts_showdown(gc)), std::runtime_error);
         EXPECT_THROW(static_cast<void>(g0.all_pots()), std::runtime_error);
@@ -377,7 +377,7 @@ TEST(tgame, game_gamestate_payouts)
 
     // showdown with 3 all in
     {
-        auto g1 = gamestate<3>(3000);
+        auto g1 = gamestate<3, 0, 1>(3000);
         // everyone calls
         g1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g1.active_player_v()});
         g1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g1.active_player_v()});
@@ -390,7 +390,7 @@ TEST(tgame, game_gamestate_payouts)
 
     // showdown with 2
     {
-        auto g2 = gamestate<3>(3000);
+        auto g2 = gamestate<3, 0, 1>(3000);
         // everyone calls
         g2.execute_action(player_action_t{1000, gb_action_t::CALL, g2.active_player_v()});     // utg
         g2.execute_action(player_action_t{500, gb_action_t::CALL, g2.active_player_v()});      // sb
@@ -419,7 +419,7 @@ TEST(tgame, game_gamestate_payouts)
         const gamecards<4> gc4{cards_4};
 
         const std::array<int32_t, 4> chips_start4{2000, 2000, 5000, 5000};
-        auto g4 = gamestate<4>(chips_start4);
+        auto g4 = gamestate<4, 0, 1>(chips_start4);
         const std::array<int32_t, 4> chips_front_expected4{500, 1000, 0, 0};
         const std::array<int32_t, 4> chips_behind_expected4{1500, 1000, 5000, 5000};
         // everyone calls
@@ -442,7 +442,7 @@ TEST(tgame, game_gamestate_execute_action_rake)
     // test exceptions
     //
     {
-        auto game1 = gamestate_w_rake<2, 10, 100>(3000);
+        auto game1 = gamestate<2, 10, 100>(3000);
         EXPECT_GT(game1.possible_actions().size(), 0);
 #if !defined(NDEBUG)
         EXPECT_THROW(game1.execute_action(player_action_t{1500, gb_action_t::RAISE, gb_pos_t::SB}), std::runtime_error);
@@ -466,7 +466,7 @@ TEST(tgame, game_gamestate_execute_action_rake)
     // test different actions
     //
     {
-        auto game2 = gamestate_w_rake<3, 10, 100>(10000);
+        auto game2 = gamestate<3, 10, 100>(10000);
         // state should be preflop bet
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
         // all players should be on state init
@@ -510,17 +510,17 @@ TEST(tgame, game_gamestate_execute_action_rake)
         EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
         // payouts should be {-500,+4500,-4000}
         // after 10% rake: payout is 8'500 - 850 = 7'650
-        const int rake = 8'500 * (0.1);
-        const int payout = 8'500 - rake;
-        const int winnings = payout - 4'000;
-        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int, 3>{-500, winnings, -4000}));
+        const int32_t rake = static_cast<int32_t>(8'500 * (0.1));
+        const int32_t payout = 8'500 - rake;
+        const int32_t winnings = payout - 4'000;
+        EXPECT_EQ(game2.payouts_noshowdown(), (std::array<int32_t, 3>{-500, winnings, -4000}));
     }
 
     //
     // test showdown
     //
     {
-        auto game3 = gamestate_w_rake<3, 10, 100>(10000);
+        auto game3 = gamestate<3, 10, 100>(10000);
         // everyone calls
         game3.execute_action(player_action_t{1000, gb_action_t::CALL, game3.active_player_v()});
         game3.execute_action(player_action_t{500, gb_action_t::CALL, game3.active_player_v()});
@@ -563,7 +563,7 @@ TEST(tgame, game_gamestate_payouts_rake)
     const gamecards<3> gc{cards};
     {
         // 50% rake
-        auto g_rake_1 = gamestate_w_rake<3, 5, 10>(3000);
+        auto g_rake_1 = gamestate<3, 5, 10>(3000);
         g_rake_1.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
         g_rake_1.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_1.active_player_v()});
         g_rake_1.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_1.active_player_v()});
@@ -581,7 +581,7 @@ TEST(tgame, game_gamestate_payouts_rake)
     }
     {
         // 4.375% rake
-        auto g_rake_2 = gamestate_w_rake<3, 4'375, 100'000>(3000);
+        auto g_rake_2 = gamestate<3, 4'375, 100'000>(3000);
         g_rake_2.execute_action(player_action_t{3000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
         g_rake_2.execute_action(player_action_t{2500, gb_action_t::ALLIN, g_rake_2.active_player_v()});
         g_rake_2.execute_action(player_action_t{2000, gb_action_t::ALLIN, g_rake_2.active_player_v()});
@@ -591,7 +591,7 @@ TEST(tgame, game_gamestate_payouts_rake)
         // from the 9'000 pot, 4.375% is taken by the casino as rake (393.75), so the remaining
         // 9'000 - 393 are distributed to the winners -> 4'303 each so they should have a net
         // plus 1'303
-        const auto rake = static_cast<int>(9'000 * 0.04375);
+        const auto rake = static_cast<int32_t>(9'000 * 0.04375);
         const auto payout = ((9'000 - rake) / 2) - 3000;
         const auto diff = 1500 - payout;
         // which is a difference of (-)2'250 to the old expected winnings of +1500

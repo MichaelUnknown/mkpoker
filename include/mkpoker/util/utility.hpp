@@ -19,27 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <cstdint>
-#include <iterator>
-#include <numeric>
-#include <vector>
+// from https://stackoverflow.com/questions/60802864/emulating-gccs-builtin-unreachable-in-visual-studio
+// as stand-in until std::unreachable() is available in the STL
 
 namespace mkp
 {
-    std::vector<float> normalize(const std::vector<int32_t>& v)
-    {
-        int64_t sum = std::reduce(v.cbegin(), v.cend());
-        if (sum > 0)
-        {
-            std::vector<float> ret;
-            ret.reserve(v.size());
-            std::transform(v.cbegin(), v.cend(), std::back_inserter(ret),
-                           [sum](const int32_t i) -> float { return static_cast<float>(i) / sum; });
-            return ret;
-        }
-        else
-        {
-            return std::vector<float>(v.size(), 1.0f / v.size());
-        }
-    }
+#ifdef __GNUC__    // GCC 4.8+, Clang, Intel and other compilers compatible with GCC (-std=c++0x or above)
+    [[noreturn]] inline __attribute__((always_inline)) void unreachable() { __builtin_unreachable(); }
+#elif defined(_MSC_VER)    // MSVC
+    [[noreturn]] __forceinline void unreachable() { __assume(false); }
+#else                      // ???
+    inline void unreachable() {}
+#endif
 }    // namespace mkp

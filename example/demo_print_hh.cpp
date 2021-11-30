@@ -2,7 +2,7 @@
 
 mkpoker - demo command line app that prints played hands
 
-Copyright (C) 2021 Michael Knörzer
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -40,7 +40,7 @@ int main()
     int cnt = 0;
 
     constexpr std::size_t c_num_players = 6;
-    std::uniform_int_distribution<> distrib(50'000, 100'000);
+    std::uniform_int_distribution<> distrib(70, 130);
     std::string input{};
     std::mt19937 rng{1927};
     mkp::card_generator cgen{};
@@ -50,13 +50,13 @@ int main()
     {
         // generate chips, game & cards for a six player game
         std::array<std::string, 6> names = {"Alf", "Bert", "Charles", "Dave", "Ethan", "Fred"};
-        // create random starting chips
-        const auto chips = mkp::make_array<int, c_num_players>([&](auto) { return distrib(rng); });
+        // create random starting chips between 70 and 130 BBs
+        const auto chips = mkp::make_array<int, c_num_players>([&](auto) { return 1000 * distrib(rng); });
         const auto random_cards = cgen.generate_v(5 + 2 * c_num_players);
         const mkp::gamecards<c_num_players> gamecards(random_cards);
         auto game = mkp::gamestate<c_num_players, 50, 100>(chips);
 
-        // create hh printer, 1$ <=> 50'000 mBB, pov of position 2
+        // create hh printer, $1.00 <=> 50'000 mBB, pov of position 2
         auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000);
         //mkp::hh_ps<mkp::gamestate, 6> test1 = {};
         //mkp::hh_ps<mkp::gamestate, 6> test{game, gamecards, names, f_hh, 1, 2};
@@ -90,9 +90,11 @@ int main()
 
         if (cnt > 10)
         {
+            std::fclose(f_hh);
+
             return EXIT_SUCCESS;
         }
     }
 
-    std::fclose(f_hh);
+    //std::fclose(f_hh);
 }

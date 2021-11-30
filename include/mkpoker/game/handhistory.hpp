@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -19,17 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <mkpoker/game/game.hpp>
+#include <mkpoker/util/utility.hpp>
 
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <cmath>        // std::round
 #include <stdexcept>    // std::runtime_error
 #include <string>       //
 #include <utility>      // std::pair, std::get
 #include <vector>
 
-#include <fmt/core.h>
+#include <fmt/core.h>    // std::FILE included by fmt
 
 namespace mkp
 {
@@ -68,7 +69,6 @@ namespace mkp
               m_bb_dollar_ratio(bb_dollar_ratio),
               m_last_state(m_game.gamestate_v())
         {
-            // assert that span has correct size
             assert(names.size() == N && "size of names must be equal to game size (number of players)");
             // assert that game state is init as the class is created
             assert(game.gamestate_v() == gb_gamestate_t::PREFLOP_BET && "wrong gamestate");
@@ -107,8 +107,6 @@ namespace mkp
 
         void add_action(const player_action_t& a)
         {
-            //m_actions.push_back(a);
-
             switch (auto pos = static_cast<unsigned>(a.m_pos); a.m_action)
             {
                 case gb_action_t::FOLD:
@@ -147,11 +145,11 @@ namespace mkp
                     break;
                 }
 
-                    //default:
-                    //    __assume(0);
-                    //    break;
+                default:
+                    mkp::unreachable();
             }
 
+            // execute action and check if the game state changed
             m_game.execute_action(a);
             if (const auto new_state = m_game.gamestate_v(); new_state != m_last_state)
             {
@@ -193,7 +191,7 @@ namespace mkp
                         }
                         fmt::print(m_f, "*** SHOW DOWN ***\n");
 
-                        // get all pots, if pots.size() > 1, then the last pot is the main pot
+                        // get all pots, the last pot is always the main pot
                         // get all players from the main pot and print the showdown info
                         const auto pot = m_game.all_pots().back();
                         const auto& vec_ids = std::get<0>(pot);

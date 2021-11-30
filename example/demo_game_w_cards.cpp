@@ -4,7 +4,7 @@ mkpoker - demo command line app that starts with a new game state and lets
 the user choose between the different legal actions for each player
 and step through a game
 
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -51,7 +51,7 @@ int main()
         // generate game/cards for a six player game
         const auto random_cards = cgen.generate_v(5 + 2 * c_num_players);
         const mkp::gamecards<c_num_players> gamecards(random_cards);
-        auto game = mkp::gamestate<c_num_players>(chips);
+        auto game = mkp::gamestate<c_num_players, 0, 1>(chips);
         std::cout << "New hand started. Your position is " << std::to_string(player_pos) << " \n";
 
         for (;;)

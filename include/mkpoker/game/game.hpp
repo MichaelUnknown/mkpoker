@@ -1,4 +1,5 @@
 /*
+
 Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
@@ -30,7 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>          //
 #include <cassert>        //
 #include <cstdint>        //
-#include <numeric>        // std::accumulate
+#include <functional>     // std::greater
+#include <numeric>        // std::accumulate, std::reduce
 #include <span>           //
 #include <stdexcept>      //
 #include <tuple>          //
@@ -138,7 +140,7 @@ namespace mkp
     // chips / stack size are in milli BBs, meaning 1000 equals 1 big blind
     // N: number of players, A: rake numerator, B: rake denominator
     template <std::size_t N, std::size_t A, std::size_t B>
-        requires(N >= 2 && N <= 6 && A > 0 && B > 0 && A < B)
+        requires(N >= 2 && N <= 6 && A >= 0 && B > 0 && A < B)
     class gamestate
     {
        protected:
@@ -282,21 +284,18 @@ namespace mkp
         // total pot size (NOT adjusted for rake)
         [[nodiscard]] constexpr int32_t pot_size() const noexcept
         {
-            return std::accumulate(m_chips_front.cbegin(), m_chips_front.cend(), int32_t(0));
+            return m_flop_dealt ? std::reduce(m_chips_front.cbegin(), m_chips_front.cend()) - chips_to_return().second
+                                : std::reduce(m_chips_front.cbegin(), m_chips_front.cend());
         }
 
         // rake adjusted total pot size
         [[nodiscard]] constexpr int32_t pot_size_rake_adjusted() const noexcept
         {
-            return m_flop_dealt ? static_cast<int32_t>((pot_size() - chips_to_return().second) * c_rake_multi)
-                                : static_cast<int32_t>(pot_size() - chips_to_return().second);
+            return m_flop_dealt ? static_cast<int32_t>(pot_size() * c_rake_multi) : pot_size();
         }
 
-        // rake adjusted total pot size
-        [[nodiscard]] constexpr int32_t rake_size() const noexcept
-        {
-            return m_flop_dealt ? static_cast<int32_t>((pot_size() - chips_to_return().second) * c_rake) : 0;
-        }
+        // total rake size
+        [[nodiscard]] constexpr int32_t rake_size() const noexcept { return m_flop_dealt ? static_cast<int32_t>(pot_size() * c_rake) : 0; }
 
         // get alls pots (main pot + every side pot), the vector has the eligible player IDs
         [[nodiscard]] auto all_pots() const -> std::vector<std::tuple<std::vector<unsigned>, int32_t, int32_t>>
@@ -323,7 +322,7 @@ namespace mkp
 
             // 1) get all chip counts and sort by amount
             auto chips_and_players =
-                make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned idx) { return std::make_pair(chips_front[idx], idx); });
+                make_array<std::pair<int32_t, unsigned>, N>([&](const unsigned pos) { return std::make_pair(chips_front[pos], pos); });
             std::sort(chips_and_players.begin(), chips_and_players.end(),
                       [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
 
@@ -371,11 +370,11 @@ namespace mkp
                            (std::find(m_chips_front.crbegin(), m_chips_front.crend(), highest_bet).base() - 1) &&
                        "exactly one player must have the exact highest chip count");
 
-                const auto idx =    // player with highest chip count
+                const auto pos =    // player with highest chip count
                     std::distance(m_chips_front.cbegin(), std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet));
                 auto chips = m_chips_front;
                 std::sort(chips.begin(), chips.end(), std::greater{});
-                return std::make_pair(gb_pos_t(idx), highest_bet - chips[1]);    // chips[1]: 2nd highest chip count
+                return std::make_pair(gb_pos_t(pos), highest_bet - chips[1]);    // chips[1]: 2nd highest chip count
             }
             else
             {
@@ -435,16 +434,27 @@ namespace mkp
             }
 
             // rake
-            const auto total_pot_ajusted = static_cast<int32_t>(pot_size() * (m_flop_dealt ? c_rake_multi : 1.0f));
+            const auto total_pot_ajusted = [&]() {
+                const auto pot = std::reduce(m_chips_front.cbegin(), m_chips_front.cend());
+                if (m_flop_dealt && c_rake != 0.0)
+                {
+                    const auto chips_returned = chips_to_return().second;
+                    return static_cast<int32_t>((pot - chips_returned) * c_rake_multi + chips_returned);
+                }
+                else
+                {
+                    return pot;
+                }
+            }();
 
             // winner collects all
 
-            constexpr auto indices = make_array<unsigned, N>(identity{});
-            const auto winner = *std::find_if(indices.cbegin(), indices.cend(),
-                                              [&](const unsigned idx) { return m_playerstate[idx] != gb_playerstate_t::OUT; });
-            return make_array<int32_t, N>([&](const unsigned idx) {
-                return idx == winner ? -m_chips_front[idx] + total_pot_ajusted    // winner: pot - invested
-                                     : -m_chips_front[idx];                       // loser: -invested
+            const auto pos_winner = std::distance(
+                m_playerstate.cbegin(),
+                std::find_if(m_playerstate.cbegin(), m_playerstate.cend(), [](const auto& e) { return e != gb_playerstate_t::OUT; }));
+            return make_array<int32_t, N>([&](const unsigned pos) {
+                return pos == pos_winner ? -m_chips_front[pos] + total_pot_ajusted    // winner: pot - invested
+                                         : -m_chips_front[pos];                       // loser: -invested
             });
         }
 
@@ -696,9 +706,9 @@ namespace mkp
         [[nodiscard]] constexpr int num_actionable() const noexcept
         {
             constexpr auto indices = make_array<unsigned, N>(identity{});
-            return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned idx) -> int {
-                return (m_playerstate[idx] == gb_playerstate_t::INIT ||
-                        (m_playerstate[idx] == gb_playerstate_t::ALIVE && m_chips_front[idx] < current_highest_bet()))
+            return std::accumulate(indices.cbegin(), indices.cend(), 0, [&](const int val, const unsigned pos) -> int {
+                return (m_playerstate[pos] == gb_playerstate_t::INIT ||
+                        (m_playerstate[pos] == gb_playerstate_t::ALIVE && m_chips_front[pos] < current_highest_bet()))
                            ? val + 1
                            : val;
             });
@@ -719,8 +729,8 @@ namespace mkp
             std::vector<std::pair<holdem_result, unsigned>> winners;
 
             // 1a) start with all possible winners
-            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned idx) {
-                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[idx].as_cardset())), idx);
+            std::for_each(eligible_player_indices.cbegin(), eligible_player_indices.cend(), [&](const unsigned pos) {
+                winners.emplace_back(evaluate_unsafe(cardset(cards.m_board).combine(cards.m_hands[pos].as_cardset())), pos);
             });
             // 1b) sort by highest hand
             std::sort(winners.begin(), winners.end(), [&](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; });
@@ -738,8 +748,8 @@ namespace mkp
         [[nodiscard]] auto side_pot_chips_adjusted(const int32_t upper_bound, const int32_t lower_bound) const noexcept
             -> std::array<int32_t, N>
         {
-            return make_array<int32_t, N>([&](const unsigned idx) {
-                const int32_t chips = m_chips_front[idx];
+            return make_array<int32_t, N>([&](const unsigned pos) {
+                const int32_t chips = m_chips_front[pos];
                 return chips <= lower_bound ? 0 : chips > upper_bound ? upper_bound - lower_bound : chips - lower_bound;
             });
         }
@@ -761,10 +771,10 @@ namespace mkp
             const int32_t amount_each_winner = total_pot / static_cast<int32_t>(winners.size());
 
             // return payouts for every position
-            return make_array<int32_t, N>([&](const unsigned idx) {
-                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
-                           ? -chips_adjusted[idx] + amount_each_winner    // winner
-                           : -chips_adjusted[idx];                        // loser or not involved (will return 0 for 2nd case)
+            return make_array<int32_t, N>([&](const unsigned pos) {
+                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == pos; }) != winners.cend()
+                           ? -chips_adjusted[pos] + amount_each_winner    // winner
+                           : -chips_adjusted[pos];                        // loser or not involved (will return 0 for 2nd case)
             });
         }
 
@@ -780,8 +790,8 @@ namespace mkp
             const int32_t amount_each_winner = total_pot / static_cast<int32_t>(winners.size());
 
             // return distribution of that (side) pot to all winners
-            return make_array<int32_t, N>([&](const unsigned idx) {
-                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == idx; }) != winners.cend()
+            return make_array<int32_t, N>([&](const unsigned pos) {
+                return std::find_if(winners.cbegin(), winners.cend(), [&](const auto& e) { return e.second == pos; }) != winners.cend()
                            ? amount_each_winner
                            : 0;
             });
