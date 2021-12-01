@@ -175,8 +175,8 @@ namespace mkp
                     return 'K';
                 case rank_t::ace:
                     return 'A';
-                default:                   // GCOV_EXCL_LINE
-                    mkp::unreachable();    // GCOV_EXCL_LINE
+                default:                   // LCOV_EXCL_LINE
+                    mkp::unreachable();    // LCOV_EXCL_LINE
             }
         }
 

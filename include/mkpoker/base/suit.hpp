@@ -131,8 +131,8 @@ namespace mkp
                     return 'h';
                 case suit_t::spades:
                     return 's';
-                default:                   // GCOV_EXCL_LINE
-                    mkp::unreachable();    // GCOV_EXCL_LINE
+                default:                   // LCOV_EXCL_LINE
+                    mkp::unreachable();    // LCOV_EXCL_LINE
             }
         }
 
