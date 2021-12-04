@@ -155,6 +155,11 @@ jobs:
         if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          echo setup gcc 11 to compile clang 13
+          sudo apt-get install -y gcc-11 g++-11
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
+
           echo source from checkout action should be here...
           ls -lh
           cd llvm-project
@@ -163,8 +168,8 @@ jobs:
           cmake \
             -S llvm \
             -B build \
-            -D CMAKE_C_COMPILER=gcc-10 \
-            -D CMAKE_CXX_COMPILER=g++-10 \
+            -D CMAKE_C_COMPILER=gcc-11 \
+            -D CMAKE_CXX_COMPILER=g++-11 \
             -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{ env.LIBCXX_INSTALL_PATH }}" \
             -D CMAKE_BUILD_TYPE=Release
