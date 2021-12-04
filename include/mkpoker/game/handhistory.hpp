@@ -284,20 +284,20 @@ namespace mkp
         }
 
         // print hand pokerstars style
-        [[nodiscard]] constexpr std::string str_hand(const hand_2c h) const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_hand(const hand_2c h) const
         {
             return fmt::format("{} {}", h.m_card1.str(), h.m_card2.str());
         }
 
         // print board pokerstars style
-        [[nodiscard]] constexpr std::string str_board(const std::array<card, 5>& b, const unsigned n) const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_board(const std::array<card, 5>& b, const unsigned n) const
         {
             return fmt::format("{} {} {}{}{}", b[0].str(), b[1].str(), b[2].str(), n > 3 ? fmt::format(" {}", b[3].str()) : "",
                                n > 4 ? fmt::format(" {}", b[4].str()) : "");
         }
 
         // print SB, BB or BTN
-        [[nodiscard]] constexpr std::string str_opt_pos(unsigned i) const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_opt_pos(unsigned i) const
         {
             switch (i)
             {
@@ -313,7 +313,7 @@ namespace mkp
         }
 
         // cashed out?
-        [[nodiscard]] constexpr std::string str_opt_cashout(unsigned i) const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_opt_cashout(unsigned i) const
         {
             if (m_game.chips_behind()[i] == 0)
             {
@@ -326,7 +326,7 @@ namespace mkp
         }
 
         // used for 'when did a player fold?'
-        [[nodiscard]] constexpr std::string str_gs_at() const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_gs_at() const
         {
             switch (m_game.gamestate_v())
             {
@@ -377,7 +377,7 @@ namespace mkp
         }
 
         // is the all-in a raise or call?
-        [[nodiscard]] constexpr std::string str_call_or_raise(const player_action_t& a) const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_call_or_raise(const player_action_t& a) const
         {
             if (m_game.current_highest_bet() < (a.m_amount + m_game.chips_front()[static_cast<unsigned>(a.m_pos)]))
             {
@@ -390,7 +390,7 @@ namespace mkp
         }
 
         // community cards
-        [[nodiscard]] constexpr std::string str_ccs() const
+        [[nodiscard]] CONSTEXPR_STD_STR std::string str_ccs() const
         {
             switch (m_game.gamestate_v())
             {

@@ -32,3 +32,10 @@ namespace mkp
     inline void unreachable() {}
 #endif
 }    // namespace mkp
+
+// no constexpr std::string in clang yet
+#ifdef __clang__
+#define CONSTEXPR_STD_STR
+#else
+#define CONSTEXPR_STD_STR constexpr
+#endif
