@@ -365,10 +365,10 @@ namespace mkp
             if (const auto highest_bet = current_highest_bet(); std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
             {
                 assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) != m_chips_front.cend() &&
-                       "at least one player must have the exact highest chip count");
+                       "at least one player must have the exact highest chip count");    // LCOV_EXCL_LINE
                 assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) ==
                            (std::find(m_chips_front.crbegin(), m_chips_front.crend(), highest_bet).base() - 1) &&
-                       "exactly one player must have the exact highest chip count");
+                       "exactly one player must have the exact highest chip count");    // LCOV_EXCL_LINE
 
                 const auto pos =    // player with highest chip count
                     std::distance(m_chips_front.cbegin(), std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet));
@@ -378,7 +378,7 @@ namespace mkp
             }
             else
             {
-                return std::make_pair(gb_pos_t(0), 0);
+                return std::make_pair(gb_pos_t{0}, 0);
             }
         }
 
@@ -605,7 +605,7 @@ namespace mkp
             {
                 // the entire hand ended
 
-                // check if a flop would be dealt, e.g., for all in preflop
+                // check if a flop would be dealt / there is a showdown, for, e.g., all in preflop
                 if (!m_flop_dealt)
                 {
                     if (std::find(m_playerstate.cbegin(), m_playerstate.cend(), gb_playerstate_t::ALLIN) != m_playerstate.cend())
@@ -616,7 +616,7 @@ namespace mkp
 
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
-            // if there is only one player left to act and this player has the highest bet, the round
+            // if there is only one player left to act and this player has the highest bet, the entire hand also ended
             else if (const auto pos_last_player = std::distance(
                          m_playerstate.cbegin(), std::find_if(m_playerstate.cbegin(), m_playerstate.cend(),
                                                               [](const gb_playerstate_t elem) {
@@ -624,16 +624,14 @@ namespace mkp
                                                               }));
                      num_actionable() == 1 && num_future_actionable() == 1 && m_chips_front[pos_last_player] == current_highest_bet())
             {
-                // there are at least 2 players alive (otherwise the 1st if would be true) and the
+                // there are at least 2 players alive (otherwise the 1st if branch would be true) and the
                 // entire hand ended -> there must be a showdown, so there will be a flop dealt
                 m_flop_dealt = true;
                 m_gamestate = gb_gamestate_t::GAME_FIN;
             }
             else if (num_act == 0)
             {
-                //
                 // this betting round ended, reset minbet and player state
-                //
 
                 if (m_gamestate == gb_gamestate_t::RIVER_BET)
                 {
@@ -662,9 +660,7 @@ namespace mkp
             }
             else
             {
-                //
                 // next players turn
-                //
 
                 do
                 {

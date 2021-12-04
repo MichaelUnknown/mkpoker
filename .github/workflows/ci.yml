@@ -152,7 +152,7 @@ jobs:
           ref: ${{env.LIBCXX_INSTALL_TAG}}
           path: llvm-project
       - 
-        name: "install libcxx"
+        name: "install llvm libc++"
         if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
         shell: bash
         run: |
