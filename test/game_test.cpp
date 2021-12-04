@@ -628,12 +628,19 @@ TEST(tgame, game_gamestate_hand_ended_branch2)
     // reach branch 2 in execute_action / entire hand ended, where
     // one player is all in, one player bets/raises and everyone else folds
     std::array<int32_t, 3> chips{3000, 5000, 5000};
-    std::pair<gb_pos_t, int32_t> chips_ret{gb_pos_t{2}, 2000};
-
     auto game = gamestate<3, 0, 1>(chips);
-    game.execute_action(player_action_t{5000, gb_action_t::ALLIN, game.active_player_v()});
+    game.execute_action(player_action_t{3000, gb_action_t::RAISE, game.active_player_v()});
     game.execute_action(player_action_t{2500, gb_action_t::ALLIN, game.active_player_v()});
+    game.execute_action(player_action_t{2000, gb_action_t::CALL, game.active_player_v()});
+    EXPECT_EQ(game.gamestate_v(), gb_gamestate_t::FLOP_BET);
     game.execute_action(player_action_t{0, gb_action_t::FOLD, game.active_player_v()});
     EXPECT_EQ(game.gamestate_v(), gb_gamestate_t::GAME_FIN);
-    EXPECT_EQ(game.chips_to_return(), chips_ret);
+
+
+    std::array<int32_t, 3> chips2{3000, 5000, 1000};
+    std::pair<gb_pos_t, int32_t> chips_ret{gb_pos_t{2}, 2000};
+    auto game2 = gamestate<3, 0, 1>(chips2);
+    game2.execute_action(player_action_t{1000, gb_action_t::ALLIN, game2.active_player_v()});
+    game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
+    EXPECT_EQ(game2.gamestate_v(), gb_gamestate_t::GAME_FIN);
 }

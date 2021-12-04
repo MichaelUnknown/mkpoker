@@ -364,11 +364,11 @@ namespace mkp
         {
             if (const auto highest_bet = current_highest_bet(); std::count(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) < 2)
             {
-                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) != m_chips_front.cend() &&
-                       "at least one player must have the exact highest chip count");    // LCOV_EXCL_LINE
-                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) ==
-                           (std::find(m_chips_front.crbegin(), m_chips_front.crend(), highest_bet).base() - 1) &&
-                       "exactly one player must have the exact highest chip count");    // LCOV_EXCL_LINE
+                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) != m_chips_front.cend() &&    // LCOV_EXCL_LINE
+                       "at least one player must have the exact highest chip count");                                     // LCOV_EXCL_LINE
+                assert(std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet) ==                            // LCOV_EXCL_LINE
+                           (std::find(m_chips_front.crbegin(), m_chips_front.crend(), highest_bet).base() - 1) &&         // LCOV_EXCL_LINE
+                       "exactly one player must have the exact highest chip count");                                      // LCOV_EXCL_LINE
 
                 const auto pos =    // player with highest chip count
                     std::distance(m_chips_front.cbegin(), std::find(m_chips_front.cbegin(), m_chips_front.cend(), highest_bet));

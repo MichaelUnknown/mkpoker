@@ -88,7 +88,7 @@ int main()
 
         std::fflush(f_hh);
 
-        if (cnt > 10)
+        if (cnt > 110)
         {
             std::fclose(f_hh);
 
