@@ -16,7 +16,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
 #pragma once
 
 #include <mkpoker/game/game.hpp>
@@ -25,10 +24,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>       // zoned_time, system_clock::now
+#include <format>       // format zoned_time
 #include <stdexcept>    // std::runtime_error
 #include <string>       //
 #include <utility>      // std::pair, std::get
-#include <vector>
+#include <vector>       //
 
 #include <fmt/core.h>    // std::FILE included by fmt
 
@@ -43,13 +44,19 @@ namespace mkp
         constexpr static auto c_num_players = N;
         constexpr static auto c_pos_button = c_num_players > 2 ? 5u : 1u;
 
+        inline static std::time_t m_time = std::time(nullptr);
+        const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
+        const inline static std::chrono::zoned_time m_timestamp_cet{"Europe/Berlin", m_timestamp};
+        const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
+
         T<N, Ns...> m_game;
         const gamecards<N> m_cards;
         const std::array<std::string, N> m_names;
         std::vector<std::pair<unsigned, std::string>> m_player_resume;
-        std::FILE* m_f;
         const unsigned m_player_id;
         const unsigned m_bb_dollar_ratio;
+        const uint64_t m_hand_id;
+        std::FILE* m_f;
         gb_gamestate_t m_last_state;
 
        public:
@@ -60,13 +67,14 @@ namespace mkp
         hh_ps() = delete;
 
         hh_ps(const T<N, Ns...>& game, gamecards<N> cards, std::array<std::string, N>& names, std::FILE* f, const unsigned player_id,
-              const unsigned bb_dollar_ratio)
+              const unsigned bb_dollar_ratio, const uint64_t hand_id)
             : m_game(game),
               m_cards(cards),
               m_names(names),
-              m_f(f),
               m_player_id(player_id),
               m_bb_dollar_ratio(bb_dollar_ratio),
+              m_hand_id(hand_id),
+              m_f(f),
               m_last_state(m_game.gamestate_v())
         {
             assert(names.size() == N && "size of names must be equal to game size (number of players)");
@@ -78,7 +86,9 @@ namespace mkp
             assert(player_id >= 0 && player_id <= N && "player_id does not fit to game size (number of players)");
 
             // on init, print the base info we already know
-            fmt::print(f, "ratio: {}\n", bb_dollar_ratio);
+            fmt::print(f, "PokerStars Zoom Hand #{:012}:  Hold'em No Limit (${:.2f}/${:.2f}) - {} CET [{} ET]\n", m_hand_id,
+                       static_cast<float>(500) / m_bb_dollar_ratio, static_cast<float>(1000) / m_bb_dollar_ratio,
+                       std::format("{:%Y/%m/%d %H:%M:%S}", m_timestamp_cet), std::format("{:%Y/%m/%d %H:%M:%S}", m_timestamp_et));
             fmt::print(f, "Table '{}' {}-max Seat #{} is the button\n", "Testing", N, c_pos_button);
             for (unsigned int i = 0; i < c_num_players; ++i)
             {

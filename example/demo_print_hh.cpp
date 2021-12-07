@@ -45,6 +45,7 @@ int main()
     std::mt19937 rng{1927};
     mkp::card_generator cgen{};
     std::FILE* f_hh = std::fopen("hh01.txt", "w");
+    uint64_t hand_id = 231000111000;
 
     for (;;)
     {
@@ -57,7 +58,7 @@ int main()
         auto game = mkp::gamestate<c_num_players, 50, 100>(chips);
 
         // create hh printer, $1.00 <=> 50'000 mBB, pov of position 2
-        auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000);
+        auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000, hand_id);
         //mkp::hh_ps<mkp::gamestate, 6> test1 = {};
         //mkp::hh_ps<mkp::gamestate, 6> test{game, gamecards, names, f_hh, 1, 2};
         fmt::print("game {}\n", cnt);
@@ -88,12 +89,14 @@ int main()
 
         std::fflush(f_hh);
 
-        if (cnt > 110)
+        if (cnt > 10)
         {
             std::fclose(f_hh);
 
             return EXIT_SUCCESS;
         }
+
+        ++hand_id;
     }
 
     //std::fclose(f_hh);
