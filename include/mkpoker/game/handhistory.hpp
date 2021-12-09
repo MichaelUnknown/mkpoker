@@ -58,7 +58,7 @@ namespace mkp
         //const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
 #else
         const inline static std::string m_timestamp_cet_str = "Time CET";
-        const inline static std::string m_timestamp_cet_str = "Time ET";
+        const inline static std::string m_timestamp_et_str = "Time ET";
 #endif
 
         T<N, Ns...> m_game;
