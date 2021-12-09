@@ -25,13 +25,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <cassert>
 #include <chrono>       // zoned_time, system_clock::now
-#include <format>       // format zoned_time
 #include <stdexcept>    // std::runtime_error
 #include <string>       //
 #include <utility>      // std::pair, std::get
 #include <vector>       //
 
 #include <fmt/core.h>    // std::FILE included by fmt
+
+#ifdef _MSC_VER
+#include <format>    // format zoned_time
+#endif
 
 namespace mkp
 {
