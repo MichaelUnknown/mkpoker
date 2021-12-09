@@ -44,10 +44,20 @@ namespace mkp
         constexpr static auto c_num_players = N;
         constexpr static auto c_pos_button = c_num_players > 2 ? 5u : 1u;
 
-        inline static std::time_t m_time = std::time(nullptr);
         const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-        const inline static std::chrono::zoned_time m_timestamp_cet{"Europe/Berlin", m_timestamp};
-        const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
+        const inline static auto m_test = std::chrono::zoned_time{"Europe/Berlin", m_timestamp};
+
+#ifdef _MSC_VER
+        const inline static std::string m_timestamp_cet_str =
+            std::format("{:%Y/%m/%d %H:%M:%S}", std::chrono::zoned_time{"Europe/Berlin", m_timestamp});
+        //const inline static std::chrono::zoned_time m_timestamp_cet{"Europe/Berlin", m_timestamp};
+        const inline static std::string m_timestamp_et_str =
+            std::format("{:%Y/%m/%d %H:%M:%S}", std::chrono::zoned_time{"America/New_York", m_timestamp});
+        //const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
+#else
+        const inline static std::string m_timestamp_cet_str = "Time CET";
+        const inline static std::string m_timestamp_cet_str = "Time ET";
+#endif
 
         T<N, Ns...> m_game;
         const gamecards<N> m_cards;
@@ -87,8 +97,8 @@ namespace mkp
 
             // on init, print the base info we already know
             fmt::print(f, "PokerStars Zoom Hand #{:012}:  Hold'em No Limit (${:.2f}/${:.2f}) - {} CET [{} ET]\n", m_hand_id,
-                       static_cast<float>(500) / m_bb_dollar_ratio, static_cast<float>(1000) / m_bb_dollar_ratio,
-                       std::format("{:%Y/%m/%d %H:%M:%S}", m_timestamp_cet), std::format("{:%Y/%m/%d %H:%M:%S}", m_timestamp_et));
+                       static_cast<float>(500) / m_bb_dollar_ratio, static_cast<float>(1000) / m_bb_dollar_ratio, m_timestamp_cet_str,
+                       m_timestamp_et_str);
             fmt::print(f, "Table '{}' {}-max Seat #{} is the button\n", "Testing", N, c_pos_button);
             for (unsigned int i = 0; i < c_num_players; ++i)
             {
