@@ -48,7 +48,6 @@ namespace mkp
         constexpr static auto c_pos_button = c_num_players > 2 ? 5u : 1u;
 
         const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-        const inline static auto m_test = std::chrono::zoned_time{"Europe/Berlin", m_timestamp};
 
 #ifdef _MSC_VER
         const inline static std::string m_timestamp_cet_str =
