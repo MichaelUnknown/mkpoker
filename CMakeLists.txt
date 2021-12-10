@@ -46,9 +46,11 @@ target_include_directories(
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
 # todo: remove c++ latest for msvc when std::format is supported by /std::c++20 set via cmake
-target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive- /std:c++latest>)
+target_compile_features(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:cxx_std_20>)
+target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest>)
+# before: target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
 
 # configure according to options, build examples, tests etc.

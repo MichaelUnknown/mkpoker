@@ -73,16 +73,15 @@ jobs:
             cc: /usr/local/opt/llvm/bin/clang-13
             cxx: /usr/local/opt/llvm/bin/clang++
 
-          # exclude apple clange for the moment because of lacking lib features
-          # apple clang 13?
+          # apple clang 13
           - 
-            name: "macos apple clang 12 Debug"
+            name: "macos apple clang 13 Debug"
             os: macos-latest
             build_type: Debug
             cc: clang
             cxx: clang++
           - 
-            name: "macos apple clang 12 Release"
+            name: "macos apple clang 13 Release"
             os: macos-latest
             build_type: Release
             cc: clang
