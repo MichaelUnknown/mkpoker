@@ -74,19 +74,19 @@ jobs:
             cxx: /usr/local/opt/llvm/bin/clang++
 
           # exclude apple clange for the moment because of lacking lib features
-          # apple clang 12
-          #- 
-          #  name: "macos apple clang 12 Debug"
-          #  os: macos-latest
-          #  build_type: Debug
-          #  cc: clang
-          #  cxx: clang++
-          #- 
-          #  name: "macos apple clang 12 Release"
-          #  os: macos-latest
-          #  build_type: Release
-          #  cc: clang
-          #  cxx: clang++
+          # apple clang 13?
+          - 
+            name: "macos apple clang 12 Debug"
+            os: macos-latest
+            build_type: Debug
+            cc: clang
+            cxx: clang++
+          - 
+            name: "macos apple clang 12 Release"
+            os: macos-latest
+            build_type: Release
+            cc: clang
+            cxx: clang++
 
           # msvc
           - 
@@ -142,6 +142,7 @@ jobs:
           path: "${{env.LIBCXX_INSTALL_PATH}}"
           # we always build as Release, so don't make a separate cache entry for debug
           key: ${{runner.os}}-${{matrix.cfg.os}}-Release-${{steps.init.outputs.llmv-version}}
+
       # if not cached, actually build stuff
       -
         name: "checkout llvm"
@@ -161,7 +162,7 @@ jobs:
           cd llvm-project
 
           echo building libcxx from source...
-          # workaround for cmake 3.22 breaking libc++ install
+          # workaround for cmake 3.22 breaking libc++ install:
           # -D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake \
             -S llvm \
@@ -201,8 +202,7 @@ jobs:
             echo "MKP_MULTI=--config ${{matrix.cfg.build_type}}" >> $GITHUB_ENV
           fi
 
-      # at the moment, only msvc is multi config
-      # other builds need the build_type set during config
+      # at the moment non-msvc builds are 'mono config' and need the build_type set during config
       - 
         name: configure
         shell: bash
@@ -215,8 +215,7 @@ jobs:
           ${{env.LDD_ARGS}} \
           ${{env.MKP_MONO}}
 
-      # at the moment, only msvc is multi config
-      # pass --config $build_type as arg
+      # msvc is 'multi config' so we pass --config $build_type as arg here
       - 
         name: build
         shell: bash
