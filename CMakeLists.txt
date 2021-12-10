@@ -55,10 +55,10 @@ target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/std:
 
 # configure according to options, build examples, tests etc.
 if(MKPOKER_BUILD_FOR_DEV)
-    message(STATUS "mkpoker: using strict compiler warnings enabled")
+    message(STATUS "mkpoker: strict compiler warnings enabled")
     target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
-    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
-    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:-WBLUBB>)
 endif()
 if(MKPOKER_BUILD_EXAMPLES)
     message(STATUS "mkpoker: building samples enabled")
