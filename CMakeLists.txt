@@ -30,7 +30,13 @@ endif()
 # dependencies
 include(cmake/CPM.cmake)
 # until replace by std::format
-CPMAddPackage("gh:fmtlib/fmt#7.1.3")
+CPMAddPackage(
+  NAME fmt
+  GIT_TAG 7.1.3
+  GITHUB_REPOSITORY fmtlib/fmt
+  OPTIONS "FMT_INSTALL YES"
+)
+#CPMAddPackage("gh:fmtlib/fmt@7.1.3#7.1.3;FMT_INSTALL YES")
 # gather all used licenses
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
 # PackageProject.cmake will be used to make our project installable
@@ -47,10 +53,11 @@ target_include_directories(
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
-# todo: remove c++ latest for msvc when std::format is supported by /std::c++20 set via cmake
+# todo: remove c++ latest for msvc when std::format is supported by /std::c++20 set via cmake (or fmt has support for zoned_time)
 target_compile_features(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:cxx_std_20>)
 target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest>)
 # before: target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_link_libraries(${PROJECT_NAME} INTERFACE fmt::fmt)
 
 
 # configure according to options, build examples, tests etc.
@@ -91,5 +98,7 @@ packageProject(
     INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
     INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
     VERSION_HEADER "${VERSION_HEADER_LOCATION}"
-    DEPENDENCIES ""
+    COMPATIBILITY SameMajorVersion
+    DEPENDENCIES "fmt 7.1.3;"
+    ARCH_INDEPENDENT YES
 )

@@ -14,7 +14,7 @@ This is my personal take on a poker library that provides
 ## Usage, building tests & examples
 
 This library comes with fully integrated dependency management via cmake and thus can be used easily on most platforms.
-The library is header only and doesn't need to be built, however you can build and run the tests and examples (see below).
+The library is header-only and doesn't need to be built, however you can build and run the tests and examples (see below).
 
 To take mkpoker as a dependency in your CMake Project, just [add CPM](https://github.com/TheLartians/CPM.cmake#adding-cpm) (you can also take
 a look at the `cmake` directory and the `CMakeLists.txt` in this repository) and include the following code in your `CMakeLists.txt`:
@@ -60,11 +60,13 @@ To install the library (headers) on your system, use (`sudo`) `cmake --build bui
 to create an installable object, [CPMLicenses.cmake](https://github.com/cpm-cmake/CPMLicenses.cmake) to automatically collect all liceneses of our dependencies,
 [Google test](https://github.com/google/googletest) for unit tests and [fmt](https://github.com/fmtlib/fmt) for formatted text output.
 
+However, if you add mkpoker as a header-only dependency to your project, you will only need fmt (and CPM.cmake, if you choose to use it).
+
 
 ## Goals for this library / project that I had in mind when I started:
 
 * cross platform library, support all the major compilers
-* header only
+* header-only
 * clean, good quality code, consistent formatting
 * const correctness, constexpr and  [[nodiscard]] whenevery possible
 * simple api, value types (most of the types are just wrappers around ints/bitfields)

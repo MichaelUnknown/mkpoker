@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <string>
 
+#include <fmt/format.h>
+
 namespace mkp
 {
     inline namespace consts
@@ -67,6 +69,10 @@ namespace mkp
         uint8_t m_debug_major = major_rank().m_rank;
         uint8_t m_debug_minor = minor_rank().m_rank;
 #endif
+
+        const inline static std::array<std::string, 9> str_representation{"high card,",       "a pair of",       "two pairs,",
+                                                                          "three of a kind,", "a straight,",     "a flush,",
+                                                                          "a full house,",    "four of a kind,", "a straight flush,"};
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // private helper functions
@@ -135,32 +141,49 @@ namespace mkp
         // bit representation
         [[nodiscard]] constexpr uint32_t as_bitset() const noexcept { return m_result; };
 
-        // string representation, e.g. "flush: Ace high"
+        // string representation, e.g. "a flush, Ace high"
         [[nodiscard]] std::string str() const
         {
-            static const std::array<std::string, 9> str_representation{
-                "high card:    ", "one pair:     ", "two pair:     ", "trips:        ", "straight:     ",
-                "flush:        ", "full house:   ", "quads:        ", "str8 flush:   "};
-
             switch (const uint8_t t = type(); t)
             {
                 case c_no_pair:
-                    return str_representation[t] + str_kickers();
+                    return fmt::format("{} {})", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str());
+                    // todo: remove kickers here
+                case c_one_pair:
+                case c_three_of_a_kind:
+                    return fmt::format("{} {}s (kickers: {})", str_representation[t], major_rank().str(), str_kickers());
+                case c_four_of_a_kind:
+                    return fmt::format("{} {}s (kicker: {})", str_representation[t], major_rank().str(), str_kickers());
+                case c_two_pair:
+                    return fmt::format("{} {}s and {}s (kicker: {})", str_representation[t], major_rank().str(), minor_rank().str(),
+                                       str_kickers());
+                case c_full_house:
+                    return fmt::format("{} {}s over {}s", str_representation[t], major_rank().str(), minor_rank().str());
+                case c_straight:
+                case c_straight_flush:
+                    return fmt::format("{} {} high", str_representation[t], major_rank().str());
+                case c_flush:
+                    return fmt::format("{} {} high (kickers: {})", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str(),
+                                       str_kickers());
+                default:
+                    throw std::runtime_error("invalid evaluation result");
+            }
+        }
+
+        // string representation, e.g. "flush: Ace high"
+        [[nodiscard]] std::string str_long() const
+        {
+            switch (const uint8_t t = type(); t)
+            {
+                case c_no_pair:
                 case c_one_pair:
                 case c_three_of_a_kind:
                 case c_four_of_a_kind:
-                    return str_representation[t] + major_rank().str() + " high, kickers: " + str_kickers();
                 case c_two_pair:
-                    return str_representation[t] + "(" + major_rank().str() + " & " + minor_rank().str() + "), kickers: " + str_kickers();
-                case c_full_house:
-                    return str_representation[t] + "(" + major_rank().str() + " & " + minor_rank().str() + ")";
-                case c_straight:
-                case c_straight_flush:
-                    return str_representation[t] + major_rank().str() + " high";
                 case c_flush:
-                    return str_representation[t] + str_kickers();
+                    return fmt::format("{} (kicker(s): {})", str(), str_kickers());
                 default:
-                    return "invalid evaluation result";
+                    return str();
             }
         }
 
@@ -198,7 +221,7 @@ namespace mkp
             // should have major rank, check if valid
             case c_straight:
             case c_straight_flush:
-                if (major <= c_rank_four)
+                if (major < c_rank_five)
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
                                              std::to_string(type) + " and major_rank " + std::to_string(major));
@@ -239,22 +262,21 @@ namespace mkp
                 break;
             // should have minor rank, check if valid
             case c_two_pair:
+            case c_full_house:
                 if (minor > major)
                 {
                     throw std::runtime_error(
                         "make_he_result(...): failed to create result, minor rank must be smaller than major rank for type " +
                         std::to_string(type));
                 }
-                [[fallthrough]];
-            case c_full_house:
                 if (minor == major)
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, major and minor rank must differ for type " +
                                              std::to_string(type));
                 }
-                if (minor > c_rank_ace)
+                if (minor > c_rank_ace)    // this is redundant because we checked the major rank first
                 {
-                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal minor rank with type " +
                                              std::to_string(type) + " and minor_rank " + std::to_string(minor));
                 }
                 break;

@@ -76,6 +76,18 @@ TEST(tholdem_eval_result, hevr_kickers)
 
 TEST(tholdem_eval_result, hevr_make_hev_result)
 {
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_no_pair, 0, 0, 0b0010'1111).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_one_pair, c_rank_seven, 0, 0b0111).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_two_pair, c_rank_eight, c_rank_five, 0b0001).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_three_of_a_kind, c_rank_ten, 0, 0b0011).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_straight, c_rank_six, 0, 0).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_flush, 0, 0, 0b0010'1111).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_full_house, c_rank_king, c_rank_jack, 0).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_four_of_a_kind, c_rank_jack, 0, 0b0001).str()));
+    EXPECT_NO_THROW(fmt::print("{}\n", make_he_result(c_straight_flush, c_rank_jack, 0, 0).str()));
+
+    //
+
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 31)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, c_rank_eight, 0, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, c_rank_eight, 0)), std::runtime_error);

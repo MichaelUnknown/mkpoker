@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/utility.hpp>
 
-#include <algorithm>
-#include <array>
-#include <cassert>
+#include <algorithm>    // std::rotate
+#include <array>        //
+#include <cassert>      //
 #include <chrono>       // zoned_time, system_clock::now
 #include <stdexcept>    // std::runtime_error
 #include <string>       //
@@ -44,8 +44,10 @@ namespace mkp
     {
         //using game_type = T<N, Ns...>;
 
-        constexpr static auto c_num_players = N;
-        constexpr static auto c_pos_button = c_num_players > 2 ? 5u : 1u;
+        constexpr static std::size_t c_num_players = N;
+        constexpr static unsigned c_pos_button = 1u;
+        // todo: check if ps hand histories actually always have the button on seat #1
+        // constexpr static unsigned c_pos_button = c_num_players > 2 ? c_num_players : 1u;
 
         const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
 
@@ -64,7 +66,7 @@ namespace mkp
         T<N, Ns...> m_game;
         const gamecards<N> m_cards;
         const std::array<std::string, N> m_names;
-        std::vector<std::pair<unsigned, std::string>> m_player_resume;
+        std::vector<std::pair<unsigned, std::string>> m_players_summary;
         const unsigned m_player_id;
         const unsigned m_bb_dollar_ratio;
         const uint64_t m_hand_id;
@@ -102,11 +104,26 @@ namespace mkp
                        static_cast<float>(500) / m_bb_dollar_ratio, static_cast<float>(1000) / m_bb_dollar_ratio, m_timestamp_cet_str,
                        m_timestamp_et_str);
             fmt::print(f, "Table '{}' {}-max Seat #{} is the button\n", "Testing", N, c_pos_button);
+            // sort and print seats according to ps style
+            //for (unsigned int i = 0; i < c_num_players; ++i)
+            //{
+            //    // native order
+            //    fmt::print(f, "Seat {}: {} (${:.2f} in chips)\n", i + 1, names[i],
+            //               mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i]));
+            //}
+            std::vector<std::string> tmp;
             for (unsigned int i = 0; i < c_num_players; ++i)
             {
-                fmt::print(f, "Seat {}: {} (${:.2f} in chips)\n", i, names[i],
-                           mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i]));
+                tmp.push_back(fmt::format("Seat {{}}: {} (${:.2f} in chips)\n", names[i],
+                                          mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i])));
             }
+            std::rotate(tmp.begin(), tmp.end() - 1, tmp.end());
+            for (unsigned int i = 0; i < c_num_players; ++i)
+            {
+                fmt::print(f, tmp[i], i + 1);
+            }
+
+            // print blinds and hole cards of m_player_id
             if constexpr (c_num_players > 2)
             {
                 fmt::print(f, "{}: posts small blind ${:.2f}\n", names[0], mbb_to_dollar(game.chips_front()[0]));
@@ -118,9 +135,8 @@ namespace mkp
                 fmt::print(f, "{}: posts big blind ${:.2f}\n", names[0], mbb_to_dollar(game.chips_front()[0]));
             }
             fmt::print(f, "*** HOLE CARDS ***\n");
-
-            fmt::print(f, "Dealt to {} [{} {}]\n", names[player_id], cards.m_hands[player_id].m_card1.str(),
-                       cards.m_hands[player_id].m_card2.str());
+            fmt::print(f, "Dealt to {} [{} {}]\n", names[m_player_id], cards.m_hands[m_player_id].m_card1.str(),
+                       cards.m_hands[m_player_id].m_card2.str());
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -133,8 +149,8 @@ namespace mkp
             {
                 case gb_action_t::FOLD:
                     fmt::print(m_f, "{}: folds\n", m_names[pos]);
-                    m_player_resume.push_back(
-                        std::make_pair(pos, fmt::format("Seat {}: {}{} folded {}\n", pos, m_names[pos], str_opt_pos(pos), str_gs_at())));
+                    m_players_summary.push_back(
+                        std::make_pair(pos, fmt::format("Seat {{}}: {}{} folded {}\n", m_names[pos], str_opt_pos(pos), str_gs_at())));
                     break;
 
                 case gb_action_t::CHECK:
@@ -247,19 +263,19 @@ namespace mkp
                             {
                                 // player did win something
                                 const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
-                                m_player_resume.push_back(
-                                    std::make_pair(pos, fmt::format("Seat {}: {}{} showed [{}] and won (${:.2f}) with {}\n", pos,
-                                                                    m_names[pos], str_opt_pos(pos), str_hand(m_cards.m_hands[pos]),
-                                                                    mbb_to_dollar(pot_dist[pos]), eval.str())));
+                                m_players_summary.push_back(std::make_pair(
+                                    pos,
+                                    fmt::format("Seat {{}}: {}{} showed [{}] and won (${:.2f}) with {}\n", m_names[pos], str_opt_pos(pos),
+                                                str_hand(m_cards.m_hands[pos]), mbb_to_dollar(pot_dist[pos]), eval.str())));
                             }
                             else if (pot_dist[pos] <= 0 &&
-                                     std::find_if(m_player_resume.cbegin(), m_player_resume.cend(),
-                                                  [&](const auto& p) { return p.first == pos; }) == m_player_resume.cend())
+                                     std::find_if(m_players_summary.cbegin(), m_players_summary.cend(),
+                                                  [&](const auto& p) { return p.first == pos; }) == m_players_summary.cend())
                             {
                                 // lost, but didn't fold pre
                                 const auto eval = mkp::evaluate_unsafe(m_cards.board_n_as_cs(5).combine(m_cards.m_hands[pos].as_cardset()));
-                                m_player_resume.push_back(std::make_pair(
-                                    pos, fmt::format("Seat {}: {}{} showed [{}] and lost with {}{}\n", pos, m_names[pos], str_opt_pos(pos),
+                                m_players_summary.push_back(std::make_pair(
+                                    pos, fmt::format("Seat {{}}: {}{} showed [{}] and lost with {}{}\n", m_names[pos], str_opt_pos(pos),
                                                      str_hand(m_cards.m_hands[pos]), eval.str(), str_opt_cashout(pos))));
                             }
                         }
@@ -275,19 +291,25 @@ namespace mkp
                         fmt::print(m_f, "{} collected ${:.2f} from pot\n", m_names[pos], mbb_to_dollar(adjusted_pot));
                         fmt::print(m_f, "{}: doesn't show hand\n", m_names[pos]);
 
-                        m_player_resume.push_back(std::make_pair(
-                            pos, fmt::format("Seat {}: {} collected (${:.2f})\n", pos, m_names[pos], mbb_to_dollar(adjusted_pot))));
+                        m_players_summary.push_back(std::make_pair(
+                            pos, fmt::format("Seat {{}}: {} collected (${:.2f})\n", m_names[pos], mbb_to_dollar(adjusted_pot))));
                     }
 
                     fmt::print(m_f, "*** SUMMARY ***\n");
                     fmt::print(m_f, "Total pot ${:.2f} | Rake ${:.2f}\n", mbb_to_dollar(adjusted_pot), mbb_to_dollar(rake));
                     fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board, 5));
 
-                    std::sort(m_player_resume.begin(), m_player_resume.end(),
+                    std::sort(m_players_summary.begin(), m_players_summary.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
-                    for (auto e : m_player_resume)
+                    // sort and print seats according to ps style
+                    //for (auto e : m_players_summary)
+                    //{
+                    //    fmt::print(m_f, e.second);
+                    //}
+                    std::rotate(m_players_summary.begin(), m_players_summary.end() - 1, m_players_summary.end());
+                    for (unsigned int i = 0; i < c_num_players; ++i)
                     {
-                        fmt::print(m_f, e.second);
+                        fmt::print(m_f, m_players_summary[i].second, i + 1);
                     }
                     fmt::print(m_f, "\n\n\n");
                 }
