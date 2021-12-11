@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <mkpoker/util/utility.hpp>
 
+#include <array>
 #include <compare>
 #include <cstdint>
 #include <stdexcept>
@@ -122,7 +123,26 @@ namespace mkp
         [[nodiscard]] constexpr uint16_t as_bitset() const noexcept { return uint16_t(1) << m_rank; }
 
         // return string representation
-        [[nodiscard]] std::string str() const noexcept { return std::string(1, to_char(static_cast<rank_t>(m_rank))); }
+        [[nodiscard]] constexpr std::string str() const noexcept { return std::string(1, to_char(static_cast<rank_t>(m_rank))); }
+
+        // nice printing
+        [[nodiscard]] constexpr std::string_view str_nice_single() const noexcept
+        {
+            constexpr std::array str_representation{"Two",  "Three", "Four", "Five",  "Six",  "Seven", "Eight",
+                                                    "Nine", "Ten",   "Jack", "Queen", "King", "Ace"};
+            return str_representation[m_rank];
+        }
+        [[nodiscard]] constexpr std::string str_nice_mult() const noexcept
+        {
+            if (m_rank == c_rank_six)
+            {
+                return (std::string(str_nice_single()) + "es");
+            }
+            else
+            {
+                return (std::string(str_nice_single()) + "s");
+            }
+        }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS
@@ -145,10 +165,6 @@ namespace mkp
         {
             switch (rt)
             {
-                    // not supported by gcc, clang
-                    // not supported by intellisense
-                    //using enum rank_t;
-
                 case rank_t::two:
                     return '2';
                 case rank_t::three:

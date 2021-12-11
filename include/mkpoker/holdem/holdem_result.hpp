@@ -70,32 +70,6 @@ namespace mkp
         uint8_t m_debug_minor = minor_rank().m_rank;
 #endif
 
-        const inline static std::array<std::string, 9> str_representation{"high card,",       "a pair of",       "two pairs,",
-                                                                          "three of a kind,", "a straight,",     "a flush,",
-                                                                          "a full house,",    "four of a kind,", "a straight flush,"};
-
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // private helper functions
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-        // string representation (ranks) of all kickers
-        std::string str_kickers() const
-        {
-            std::string str;
-            const uint16_t k = kickers();
-
-            int8_t i = c_num_ranks;
-            for (uint64_t mask = uint64_t(1) << c_num_ranks; mask; mask >>= 1, i--)
-            {
-                if (k & mask)
-                {
-                    str += rank(rank_t(i)).str();
-                }
-            }
-
-            return str;
-        }
-
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
@@ -142,36 +116,36 @@ namespace mkp
         [[nodiscard]] constexpr uint32_t as_bitset() const noexcept { return m_result; };
 
         // string representation, e.g. "a flush, Ace high"
-        [[nodiscard]] std::string str() const
+        [[nodiscard]] constexpr std::string str() const
         {
+            constexpr std::array str_representation{"high card,", "a pair of",     "two pairs,",      "three of a kind,", "a straight,",
+                                                    "a flush,",   "a full house,", "four of a kind,", "a straight flush,"};
+
             switch (const uint8_t t = type(); t)
             {
                 case c_no_pair:
-                    return fmt::format("{} {})", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str());
-                    // todo: remove kickers here
+                    return fmt::format("{} {}", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str_nice_single());
                 case c_one_pair:
                 case c_three_of_a_kind:
-                    return fmt::format("{} {}s (kickers: {})", str_representation[t], major_rank().str(), str_kickers());
+                    return fmt::format("{} {}", str_representation[t], major_rank().str_nice_mult());
                 case c_four_of_a_kind:
-                    return fmt::format("{} {}s (kicker: {})", str_representation[t], major_rank().str(), str_kickers());
+                    return fmt::format("{} {}", str_representation[t], major_rank().str_nice_mult());
                 case c_two_pair:
-                    return fmt::format("{} {}s and {}s (kicker: {})", str_representation[t], major_rank().str(), minor_rank().str(),
-                                       str_kickers());
+                    return fmt::format("{} {} and {}", str_representation[t], major_rank().str_nice_mult(), minor_rank().str_nice_mult());
                 case c_full_house:
-                    return fmt::format("{} {}s over {}s", str_representation[t], major_rank().str(), minor_rank().str());
+                    return fmt::format("{} {} over {}", str_representation[t], major_rank().str_nice_mult(), minor_rank().str_nice_mult());
                 case c_straight:
                 case c_straight_flush:
-                    return fmt::format("{} {} high", str_representation[t], major_rank().str());
+                    return fmt::format("{} {} high", str_representation[t], major_rank().str_nice_single());
                 case c_flush:
-                    return fmt::format("{} {} high (kickers: {})", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str(),
-                                       str_kickers());
+                    return fmt::format("{} {} high", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str_nice_single());
                 default:
                     throw std::runtime_error("invalid evaluation result");
             }
         }
 
         // string representation, e.g. "flush: Ace high"
-        [[nodiscard]] std::string str_long() const
+        [[nodiscard]] constexpr std::string str_long() const
         {
             switch (const uint8_t t = type(); t)
             {
@@ -201,6 +175,25 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         constexpr auto operator<=>(const holdem_result&) const = default;
+
+       private:
+        // string representation (ranks) of all kickers
+        std::string str_kickers() const
+        {
+            std::string str;
+            const uint16_t k = kickers();
+
+            int8_t i = c_num_ranks;
+            for (uint64_t mask = uint64_t(1) << c_num_ranks; mask; mask >>= 1, i--)
+            {
+                if (k & mask)
+                {
+                    str += rank(rank_t(i)).str();
+                }
+            }
+
+            return str;
+        }
     };
 
     [[nodiscard]] constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
