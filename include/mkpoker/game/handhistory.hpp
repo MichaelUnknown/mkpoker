@@ -59,6 +59,7 @@ namespace mkp
             std::format("{:%Y/%m/%d %H:%M:%S}", std::chrono::zoned_time{"America/New_York", m_timestamp});
         //const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
 #else
+        // no support for zoned_time in std::format nor fmt::format
         const inline static std::string m_timestamp_cet_str = "Time CET";
         const inline static std::string m_timestamp_et_str = "Time ET";
 #endif

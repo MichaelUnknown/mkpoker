@@ -123,7 +123,10 @@ namespace mkp
         [[nodiscard]] constexpr uint16_t as_bitset() const noexcept { return uint16_t(1) << m_rank; }
 
         // return string representation
-        [[nodiscard]] constexpr std::string str() const noexcept { return std::string(1, to_char(static_cast<rank_t>(m_rank))); }
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str() const noexcept
+        {
+            return std::string(1, to_char(static_cast<rank_t>(m_rank)));
+        }
 
         // nice printing
         [[nodiscard]] constexpr std::string_view str_nice_single() const noexcept
@@ -132,7 +135,7 @@ namespace mkp
                                                     "Nine", "Ten",   "Jack", "Queen", "King", "Ace"};
             return str_representation[m_rank];
         }
-        [[nodiscard]] constexpr std::string str_nice_mult() const noexcept
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str_nice_mult() const noexcept
         {
             if (m_rank == c_rank_six)
             {

@@ -133,7 +133,8 @@ namespace mkp
                 case c_two_pair:
                     return fmt::format("{} {} and {}", str_representation[t], major_rank().str_nice_mult(), minor_rank().str_nice_mult());
                 case c_full_house:
-                    return fmt::format("{} {} over {}", str_representation[t], major_rank().str_nice_mult(), minor_rank().str_nice_mult());
+                    return fmt::format("{} {} full of {}", str_representation[t], major_rank().str_nice_mult(),
+                                       minor_rank().str_nice_mult());
                 case c_straight:
                 case c_straight_flush:
                     return fmt::format("{} {} high", str_representation[t], major_rank().str_nice_single());
@@ -255,13 +256,14 @@ namespace mkp
                 break;
             // should have minor rank, check if valid
             case c_two_pair:
-            case c_full_house:
                 if (minor > major)
                 {
                     throw std::runtime_error(
                         "make_he_result(...): failed to create result, minor rank must be smaller than major rank for type " +
                         std::to_string(type));
                 }
+                [[fallthrough]];
+            case c_full_house:
                 if (minor == major)
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, major and minor rank must differ for type " +
