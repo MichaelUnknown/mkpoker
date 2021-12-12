@@ -269,7 +269,7 @@ namespace mkp
                     throw std::runtime_error("make_he_result(...): failed to create result, major and minor rank must differ for type " +
                                              std::to_string(type));
                 }
-                if (minor > c_rank_ace)    // this is redundant because we checked the major rank first
+                if (minor > c_rank_ace)    // we need to check this case for full house, where minor is independent from major
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, illegal minor rank with type " +
                                              std::to_string(type) + " and minor_rank " + std::to_string(minor));
