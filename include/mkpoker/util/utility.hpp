@@ -34,7 +34,7 @@ namespace mkp
 }    // namespace mkp
 
 // no constexpr std::string in clang yet
-#ifdef __GNUC__    //__clang__
+#if defined(__GNUC__) || defined(__clang__)
 #define MKP_CONSTEXPR_STD_STR
 #else
 #define MKP_CONSTEXPR_STD_STR constexpr
