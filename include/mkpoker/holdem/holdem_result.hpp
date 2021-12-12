@@ -117,7 +117,7 @@ namespace mkp
         [[nodiscard]] constexpr uint32_t as_bitset() const noexcept { return m_result; };
 
         // string representation, e.g. "a flush, Ace high"
-        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str() const
+        [[nodiscard]] std::string str() const
         {
             constexpr std::array str_representation{"high card,", "a pair of",     "two pairs,",      "three of a kind,", "a straight,",
                                                     "a flush,",   "a full house,", "four of a kind,", "a straight flush,"};
@@ -147,7 +147,7 @@ namespace mkp
         }
 
         // string representation, e.g. "flush: Ace high"
-        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str_long() const
+        [[nodiscard]] std::string str_long() const
         {
             switch (const uint8_t t = type(); t)
             {
