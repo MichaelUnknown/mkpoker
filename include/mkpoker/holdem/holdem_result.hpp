@@ -147,7 +147,7 @@ namespace mkp
         }
 
         // string representation, e.g. "flush: Ace high"
-        [[nodiscard]] std::string str_long() const
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str_long() const
         {
             switch (const uint8_t t = type(); t)
             {
@@ -164,7 +164,7 @@ namespace mkp
         }
 
         // all the bits as string
-        [[nodiscard]] std::string bitstr() const noexcept { return std::bitset<25>(m_result).to_string(); }
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string bitstr() const noexcept { return std::bitset<25>(m_result).to_string(); }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS

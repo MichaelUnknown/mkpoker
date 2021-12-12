@@ -26,15 +26,15 @@ namespace mkp
 {
 #ifdef __GNUC__    // GCC 4.8+, Clang, Intel and other compilers compatible with GCC (-std=c++0x or above)
     [[noreturn]] inline __attribute__((always_inline)) void unreachable() { __builtin_unreachable(); }    // LCOV_EXCL_LINE
-#elif defined(_MSC_VER)    // MSVC
+#elif defined(_MSC_VER)                                                                                   // MSVC
     [[noreturn]] __forceinline void unreachable() { __assume(false); }
-#else                      // ???
+#else                                                                                                     // ???
     inline void unreachable() {}
 #endif
 }    // namespace mkp
 
 // no constexpr std::string in clang yet
-#ifdef __clang__
+#ifdef __GNUC__    //__clang__
 #define MKP_CONSTEXPR_STD_STR
 #else
 #define MKP_CONSTEXPR_STD_STR constexpr
