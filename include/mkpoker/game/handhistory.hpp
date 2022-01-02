@@ -52,6 +52,7 @@ namespace mkp
         const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
 
 #ifdef _MSC_VER
+        // todo: requires c++latest instead of c++20 for now, change build params later
         const inline static std::string m_timestamp_cet_str =
             std::format("{:%Y/%m/%d %H:%M:%S}", std::chrono::zoned_time{"Europe/Berlin", m_timestamp});
         //const inline static std::chrono::zoned_time m_timestamp_cet{"Europe/Berlin", m_timestamp};
@@ -60,8 +61,9 @@ namespace mkp
         //const inline static std::chrono::zoned_time m_timestamp_et{"America/New_York", m_timestamp};
 #else
         // no support for zoned_time in std::format nor fmt::format
-        const inline static std::string m_timestamp_cet_str = "Time CET";
-        const inline static std::string m_timestamp_et_str = "Time ET";
+        const inline static std::string m_timestamp_cet_str = fmt::format("{:%Y/%m/%d %H:%M:%S}", fmt::gmtime(m_timestamp));
+        const inline static std::string m_timestamp_et_str =
+            fmt::format("{:%Y/%m/%d %H:%M:%S}", fmt::gmtime(std::chrono::system_clock::to_time_t(m_timestamp - std::chrono::hours(5))));
 #endif
 
         T<N, Ns...> m_game;
@@ -78,6 +80,7 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
         // CTORS
         ///////////////////////////////////////////////////////////////////////////////////////
+
         // no invalid objects
         hh_ps() = delete;
 
@@ -105,6 +108,7 @@ namespace mkp
                        static_cast<float>(500) / m_bb_dollar_ratio, static_cast<float>(1000) / m_bb_dollar_ratio, m_timestamp_cet_str,
                        m_timestamp_et_str);
             fmt::print(f, "Table '{}' {}-max Seat #{} is the button\n", "Testing", N, c_pos_button);
+
             // sort and print seats according to ps style
             //for (unsigned int i = 0; i < c_num_players; ++i)
             //{
@@ -112,16 +116,18 @@ namespace mkp
             //    fmt::print(f, "Seat {}: {} (${:.2f} in chips)\n", i + 1, names[i],
             //               mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i]));
             //}
-            std::vector<std::string> tmp;
-            for (unsigned int i = 0; i < c_num_players; ++i)
             {
-                tmp.push_back(fmt::format("Seat {{}}: {} (${:.2f} in chips)\n", names[i],
-                                          mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i])));
-            }
-            std::rotate(tmp.begin(), tmp.end() - 1, tmp.end());
-            for (unsigned int i = 0; i < c_num_players; ++i)
-            {
-                fmt::print(f, tmp[i], i + 1);
+                std::vector<std::string> tmp;
+                for (unsigned int i = 0; i < c_num_players; ++i)
+                {
+                    tmp.push_back(fmt::format("Seat {{}}: {} (${:.2f} in chips)\n", names[i],
+                                              mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i])));
+                }
+                std::rotate(tmp.begin(), tmp.end() - 1, tmp.end());
+                for (unsigned int i = 0; i < c_num_players; ++i)
+                {
+                    fmt::print(f, tmp[i], i + 1);
+                }
             }
 
             // print blinds and hole cards of m_player_id
@@ -300,13 +306,15 @@ namespace mkp
                     fmt::print(m_f, "Total pot ${:.2f} | Rake ${:.2f}\n", mbb_to_dollar(adjusted_pot), mbb_to_dollar(rake));
                     fmt::print(m_f, "Board [{}]\n", str_board(m_cards.m_board, 5));
 
+                    // sort the summaries
                     std::sort(m_players_summary.begin(), m_players_summary.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
-                    // sort and print seats according to ps style
+                    // native order
                     //for (auto e : m_players_summary)
                     //{
                     //    fmt::print(m_f, e.second);
                     //}
+                    // print seats according to ps style
                     std::rotate(m_players_summary.begin(), m_players_summary.end() - 1, m_players_summary.end());
                     for (unsigned int i = 0; i < c_num_players; ++i)
                     {
