@@ -33,7 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fmt/core.h>    // std::FILE included by fmt
 
 #ifdef _MSC_VER
-#include <format>    // format zoned_time
+#include <format>          // std::format with zoned_time
+#else                      //
+#include <fmt/chrono.h>    // fmt::gmtime
 #endif
 
 namespace mkp
