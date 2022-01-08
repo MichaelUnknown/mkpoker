@@ -76,59 +76,60 @@ TEST(tholdem_eval_result, hevr_kickers)
 
 TEST(tholdem_eval_result, hevr_make_hev_result)
 {
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 31)));
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 0b0010'1111)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, c_rank_eight, 0, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, c_rank_eight, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_no_pair, 0, 0, 63)), std::runtime_error);
 
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 7)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 13, 0, 7)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, c_rank_seven, 7)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 15)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 0b0111)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, 13, 0, 0b0111)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, c_rank_seven, 0b0111)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, 0b1111)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_one_pair, c_rank_eight, 0, uint16_t(1) << c_rank_eight)), std::runtime_error);
 
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 1)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, 13, c_rank_five, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, 13, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 3)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_eight, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_five, c_rank_eight, 1)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 0b0001)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, 13, c_rank_five, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, 13, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, 0b0011)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_eight, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_five, c_rank_eight, 0b0001)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, uint16_t(1) << c_rank_eight)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_two_pair, c_rank_eight, c_rank_five, uint16_t(1) << c_rank_five)), std::runtime_error);
 
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 3)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, 13, 0, 3)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 7)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, c_rank_seven, 3)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 0b0011)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, 13, 0, 0b0011)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, 0b0111)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, c_rank_seven, 0b0011)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_three_of_a_kind, c_rank_ten, 0, uint16_t(1) << c_rank_ten)), std::runtime_error);
 
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, 0, 0)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight, 13, 0, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, c_rank_three, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, 0, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_six, 0, 0b0001)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight, c_rank_four, 0, 0)), std::runtime_error);
 
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 31)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, c_rank_five, 0, 31)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, c_rank_five, 31)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 63)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 0b0010'1111)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, c_rank_five, 0, 0b0010'1111)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, c_rank_five, 0b0010'1111)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_flush, 0, 0, 0b0110'1111)), std::runtime_error);
 
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_king, c_rank_jack, 0)));
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_king, 0)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_jack, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, c_rank_king, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, 13, c_rank_king, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_jack, 13, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_king, c_rank_king, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_king, c_rank_jack, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, 13, c_rank_jack, 0)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_full_house, c_rank_king, 13, 0)), std::runtime_error);
 
-    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, 0, 1)));
-    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, 13, 0, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, c_rank_three, 1)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, 0, 3)), std::runtime_error);
+    EXPECT_NO_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, 0, 0b0001)));
+    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, 13, 0, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, c_rank_three, 0b0001)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, 0, 0b0011)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_four_of_a_kind, c_rank_jack, 0, uint16_t(1) << c_rank_jack)), std::runtime_error);
 
     EXPECT_NO_THROW(static_cast<void>(make_he_result(c_straight_flush, c_rank_jack, 0, 0)));
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush, 13, 0, 0)), std::runtime_error);
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush, c_rank_jack, c_rank_three, 0)), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush, c_rank_jack, 0, 1)), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush, c_rank_jack, 0, 0b0001)), std::runtime_error);
 
     EXPECT_THROW(static_cast<void>(make_he_result(c_straight_flush + 1, 0, 0, 0)), std::runtime_error);
 
@@ -139,9 +140,8 @@ TEST(tholdem_eval_result, hevr_make_hev_result)
         {
             for (auto&& mi : ranks)
             {
-                // for (uint16_t ki = 0; ki < 8192; ++ki)
-                // test for the first 5 kickers only
-                for (uint16_t ki = 0; ki < 31; ++ki)
+                // test for the first 5 kickers only where the lowest 5 kicker bitset is 0b0010'1111
+                for (uint16_t ki = 0; ki < 0b0010'1111; ++ki)
                 {
                     try
                     {
@@ -159,7 +159,12 @@ TEST(tholdem_eval_result, hevr_make_hev_result)
 
 TEST(tholdem_eval_result, print_all_hev_results)
 {
-    EXPECT_EQ(holdem_result(c_straight_flush + 1, c_rank_ace, 0, 0).str(), std::string("invalid evaluation result"));
+    // expect a throw for invalid results
+    EXPECT_THROW(static_cast<void>(holdem_result(c_straight_flush + 1, c_rank_ace, 0, 0).str()), std::runtime_error);
+    // todo: add all the invalid cases
+    // checking at construction might not be suitable if we ever want to evaluate partial hands,
+    // like evaluating 4 cards with trips would trips with one kicker when there should be two kickers
+
     for (uint8_t i = 0; i < 52; ++i)
     {
         for (uint8_t j = i + 1; j < 52; ++j)

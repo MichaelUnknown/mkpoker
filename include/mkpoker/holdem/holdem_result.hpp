@@ -1,5 +1,6 @@
 /*
-Copyright (C) 2020 Michael Knörzer
+
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -20,12 +21,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <mkpoker/base/rank.hpp>
 #include <mkpoker/util/bit.hpp>
+#include <mkpoker/util/utility.hpp>
 
 #include <array>
 #include <bitset>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+
+#include <fmt/format.h>
 
 namespace mkp
 {
@@ -66,28 +70,6 @@ namespace mkp
         uint8_t m_debug_major = major_rank().m_rank;
         uint8_t m_debug_minor = minor_rank().m_rank;
 #endif
-
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // private helper functions
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-        // string representation (ranks) of all kickers
-        std::string str_kickers() const
-        {
-            std::string str;
-            const uint16_t k = kickers();
-
-            int8_t i = c_num_ranks;
-            for (uint64_t mask = uint64_t(1) << c_num_ranks; mask; mask >>= 1, i--)
-            {
-                if (k & mask)
-                {
-                    str += rank(rank_t(i)).str();
-                }
-            }
-
-            return str;
-        }
 
        public:
         ///////////////////////////////////////////////////////////////////////////////////////
@@ -134,32 +116,50 @@ namespace mkp
         // bit representation
         [[nodiscard]] constexpr uint32_t as_bitset() const noexcept { return m_result; };
 
-        // string representation, e.g. "flush: Ace high"
-        [[nodiscard]] std::string str() const
+        // string representation, e.g. "a flush, Ace high"
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str() const
         {
-            static const std::array<std::string, 9> str_representation{
-                "high card:    ", "one pair:     ", "two pair:     ", "trips:        ", "straight:     ",
-                "flush:        ", "full house:   ", "quads:        ", "str8 flush:   "};
+            constexpr std::array str_representation{"high card,", "a pair of",     "two pairs,",      "three of a kind,", "a straight,",
+                                                    "a flush,",   "a full house,", "four of a kind,", "a straight flush,"};
 
             switch (const uint8_t t = type(); t)
             {
                 case c_no_pair:
-                    return str_representation[t] + str_kickers();
+                    return fmt::format("{} {}", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str_nice_single());
+                case c_one_pair:
+                case c_three_of_a_kind:
+                    return fmt::format("{} {}", str_representation[t], major_rank().str_nice_mult());
+                case c_four_of_a_kind:
+                    return fmt::format("{} {}", str_representation[t], major_rank().str_nice_mult());
+                case c_two_pair:
+                    return fmt::format("{} {} and {}", str_representation[t], major_rank().str_nice_mult(), minor_rank().str_nice_mult());
+                case c_full_house:
+                    return fmt::format("{} {} full of {}", str_representation[t], major_rank().str_nice_mult(),
+                                       minor_rank().str_nice_mult());
+                case c_straight:
+                case c_straight_flush:
+                    return fmt::format("{} {} high", str_representation[t], major_rank().str_nice_single());
+                case c_flush:
+                    return fmt::format("{} {} high", str_representation[t], rank{rank_t{cross_idx_high16(kickers())}}.str_nice_single());
+                default:
+                    throw std::runtime_error("invalid evaluation result");
+            }
+        }
+
+        // string representation, e.g. "flush: Ace high"
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str_long() const
+        {
+            switch (const uint8_t t = type(); t)
+            {
+                case c_no_pair:
                 case c_one_pair:
                 case c_three_of_a_kind:
                 case c_four_of_a_kind:
-                    return str_representation[t] + major_rank().str() + " high, kickers: " + str_kickers();
                 case c_two_pair:
-                    return str_representation[t] + "(" + major_rank().str() + " & " + minor_rank().str() + "), kickers: " + str_kickers();
-                case c_full_house:
-                    return str_representation[t] + "(" + major_rank().str() + " & " + minor_rank().str() + ")";
-                case c_straight:
-                case c_straight_flush:
-                    return str_representation[t] + major_rank().str() + " high";
                 case c_flush:
-                    return str_representation[t] + str_kickers();
+                    return fmt::format("{} (kicker(s): {})", str(), str_kickers());
                 default:
-                    return "invalid evaluation result";
+                    return str();
             }
         }
 
@@ -177,6 +177,25 @@ namespace mkp
         ///////////////////////////////////////////////////////////////////////////////////////
 
         constexpr auto operator<=>(const holdem_result&) const = default;
+
+       private:
+        // string representation (ranks) of all kickers
+        std::string str_kickers() const
+        {
+            std::string str;
+            const uint16_t k = kickers();
+
+            int8_t i = c_num_ranks;
+            for (uint64_t mask = uint64_t(1) << c_num_ranks; mask; mask >>= 1, i--)
+            {
+                if (k & mask)
+                {
+                    str += rank(rank_t(i)).str();
+                }
+            }
+
+            return str;
+        }
     };
 
     [[nodiscard]] constexpr auto make_he_result(uint8_t type, uint8_t major, uint8_t minor, uint16_t kickers)
@@ -197,7 +216,7 @@ namespace mkp
             // should have major rank, check if valid
             case c_straight:
             case c_straight_flush:
-                if (major <= c_rank_four)
+                if (major < c_rank_five)
                 {
                     throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
                                              std::to_string(type) + " and major_rank " + std::to_string(major));
@@ -251,9 +270,9 @@ namespace mkp
                     throw std::runtime_error("make_he_result(...): failed to create result, major and minor rank must differ for type " +
                                              std::to_string(type));
                 }
-                if (minor > c_rank_ace)
+                if (minor > c_rank_ace)    // we need to check this case for full house, where minor is independent from major
                 {
-                    throw std::runtime_error("make_he_result(...): failed to create result, illegal major rank with type " +
+                    throw std::runtime_error("make_he_result(...): failed to create result, illegal minor rank with type " +
                                              std::to_string(type) + " and minor_rank " + std::to_string(minor));
                 }
                 break;

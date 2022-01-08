@@ -15,3 +15,7 @@ target_link_libraries(demo_game_w_cards PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_
 find_package(Threads REQUIRED)
 add_executable(demo_cfr demo_cfr.cpp)
 target_link_libraries(demo_cfr PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME} Threads::Threads)
+
+# test print hand history
+add_executable(demo_print_hh demo_print_hh.cpp)
+target_link_libraries(demo_print_hh PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME} fmt::fmt)

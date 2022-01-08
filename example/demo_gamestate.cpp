@@ -4,7 +4,7 @@ mkpoker - demo command line app that starts with a new game state and
 lets the user choose between the different legal actions for each
 player and step through a game
 
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -27,11 +27,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <variant>
 
-using g2 = mkp::gamestate<2>;
-using g3 = mkp::gamestate<3>;
-using g4 = mkp::gamestate<4>;
-using g5 = mkp::gamestate<5>;
-using g6 = mkp::gamestate<6>;
+using g2 = mkp::gamestate<2, 0, 1>;
+using g3 = mkp::gamestate<3, 0, 1>;
+using g4 = mkp::gamestate<4, 0, 1>;
+using g5 = mkp::gamestate<5, 0, 1>;
+using g6 = mkp::gamestate<6, 0, 1>;
 
 int main()
 {
@@ -66,19 +66,19 @@ int main()
         switch (num_players)
         {
             case 2:
-                game = mkp::gamestate<2>(10000);
+                game = mkp::gamestate<2, 0, 1>(10000);
                 break;
             case 3:
-                game = mkp::gamestate<3>(10000);
+                game = mkp::gamestate<3, 0, 1>(10000);
                 break;
             case 4:
-                game = mkp::gamestate<4>(10000);
+                game = mkp::gamestate<4, 0, 1>(10000);
                 break;
             case 5:
-                game = mkp::gamestate<5>(10000);
+                game = mkp::gamestate<5, 0, 1>(10000);
                 break;
             case 6:
-                game = mkp::gamestate<6>(10000);
+                game = mkp::gamestate<6, 0, 1>(10000);
                 break;
         }
 

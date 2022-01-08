@@ -1,5 +1,6 @@
 /*
-Copyright (C) 2020 Michael Knörzer
+
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -18,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <mkpoker/util/utility.hpp>
+
+#include <array>
 #include <compare>
 #include <cstdint>
 #include <stdexcept>
@@ -119,7 +123,29 @@ namespace mkp
         [[nodiscard]] constexpr uint16_t as_bitset() const noexcept { return uint16_t(1) << m_rank; }
 
         // return string representation
-        [[nodiscard]] std::string str() const noexcept { return std::string(1, to_char(static_cast<rank_t>(m_rank))); }
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str() const noexcept
+        {
+            return std::string(1, to_char(static_cast<rank_t>(m_rank)));
+        }
+
+        // nice printing
+        [[nodiscard]] constexpr std::string_view str_nice_single() const noexcept
+        {
+            constexpr std::array str_representation{"Two",  "Three", "Four", "Five",  "Six",  "Seven", "Eight",
+                                                    "Nine", "Ten",   "Jack", "Queen", "King", "Ace"};
+            return str_representation[m_rank];
+        }
+        [[nodiscard]] MKP_CONSTEXPR_STD_STR std::string str_nice_mult() const noexcept
+        {
+            if (m_rank == c_rank_six)
+            {
+                return (std::string(str_nice_single()) + "es");
+            }
+            else
+            {
+                return (std::string(str_nice_single()) + "s");
+            }
+        }
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // MUTATORS
@@ -142,10 +168,6 @@ namespace mkp
         {
             switch (rt)
             {
-                    // not supported by gcc, clang
-                    // not supported by intellisense
-                    //using enum rank_t;
-
                 case rank_t::two:
                     return '2';
                 case rank_t::three:
@@ -172,6 +194,8 @@ namespace mkp
                     return 'K';
                 case rank_t::ace:
                     return 'A';
+                default:                   // LCOV_EXCL_LINE
+                    mkp::unreachable();    // LCOV_EXCL_LINE
             }
         }
 

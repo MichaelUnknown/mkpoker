@@ -2,7 +2,7 @@
 
 mkpoker - demo app that trains an 'AI' with the CFR algorithm
 
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -41,14 +41,14 @@ int main()
     // if you do not restrict the number of actions for each street ('action abstraction'), the number of
     // nodes gets huge really fast... some examples
 
-    using game_type = mkp::gamestate<2>;
+    using game_type = mkp::gamestate<2, 0, 1>;
 
     {
         // 4BB, i.e., very very shallow game, no action abstraction
         // results in ~4000 nodes
-        mkp::gamestate<2> game_2p{4'000};
-        mkp::gamestate_enumerator<mkp::gamestate<2>, uint32_t> enc_2p{};
-        mkp::action_abstraction_noop<mkp::gamestate<2>> aa_2p{};
+        mkp::gamestate<2, 0, 1> game_2p{4'000};
+        mkp::gamestate_enumerator<mkp::gamestate<2, 0, 1>, uint32_t> enc_2p{};
+        mkp::action_abstraction_noop<mkp::gamestate<2, 0, 1>> aa_2p{};
         auto gametree_base_2p = mkp::init_tree(game_2p, &enc_2p, &aa_2p);
 
         const auto [i, t] = tree_size(gametree_base_2p.get());
@@ -149,7 +149,7 @@ int main()
     {
         // use an unrealistic high amount of rake (20%), to show the difference
         // in the resulting strategy
-        using game_type_w_r = mkp::gamestate_w_rake<2, 200, 1'000>;
+        using game_type_w_r = mkp::gamestate<2, 200, 1'000>;
 
         game_type_w_r game_2p{200'000};
         mkp::gamestate_enumerator<game_type_w_r, uint32_t> enc_2p{};

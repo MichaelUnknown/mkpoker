@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2020 Michael Knörzer
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -55,10 +55,7 @@ namespace mkp
     constexpr std::array<int32_t, N>& operator*=(std::array<int32_t, N>& lhs, const float val)
     {
         for (std::size_t i = 0; i < N; ++i)
-        {
-            const float new_val = val * lhs[i];
-            lhs[i] = static_cast<int32_t>(new_val);
-        }
+            lhs[i] = static_cast<int32_t>(val * lhs[i]);
         return lhs;
     }
 

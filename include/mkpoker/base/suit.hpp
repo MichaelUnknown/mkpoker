@@ -1,5 +1,6 @@
 /*
-Copyright (C) 2020 Michael Knörzer
+
+Copyright (C) Michael Knörzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -17,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #pragma once
+
+#include <mkpoker/util/utility.hpp>
 
 #include <compare>
 #include <cstdint>
@@ -128,6 +131,8 @@ namespace mkp
                     return 'h';
                 case suit_t::spades:
                     return 's';
+                default:                   // LCOV_EXCL_LINE
+                    mkp::unreachable();    // LCOV_EXCL_LINE
             }
         }
 

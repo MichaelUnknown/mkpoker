@@ -29,12 +29,18 @@ endif()
 
 # dependencies
 include(cmake/CPM.cmake)
-# PackageProject.cmake will be used to make our project installable
+# until replace by std::format
 CPMAddPackage(
-    NAME PackageProject.cmake
-    GITHUB_REPOSITORY TheLartians/PackageProject.cmake
-    VERSION 1.8.0
+  NAME fmt
+  GIT_TAG 7.1.3
+  GITHUB_REPOSITORY fmtlib/fmt
+  OPTIONS "FMT_INSTALL YES"
 )
+#CPMAddPackage("gh:fmtlib/fmt@7.1.3#7.1.3;FMT_INSTALL YES")
+# gather all used licenses
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
+# PackageProject.cmake will be used to make our project installable
+CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
 
 
 # base library, header only
@@ -46,30 +52,40 @@ target_include_directories(
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/permissive->)
+# todo: remove c++ latest for msvc when std::format is supported by /std::c++20 set via cmake (or fmt has support for zoned_time)
+target_compile_features(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:cxx_std_20>)
+target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest>)
+# before: target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_link_libraries(${PROJECT_NAME} INTERFACE fmt::fmt)
 
 
 # configure according to options, build examples, tests etc.
 if(MKPOKER_BUILD_FOR_DEV)
-    message(STATUS "Using strict compiler warnings enabled")
+    message(STATUS "mkpoker: strict compiler warnings enabled")
     target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/W4>)
-    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>)
-    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+    target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,AppleClang>:-Wall -Wextra -Wpedantic>)
 endif()
 if(MKPOKER_BUILD_EXAMPLES)
-    message(STATUS "Building samples enabled")
+    message(STATUS "mkpoker: building samples enabled")
     add_subdirectory(example)
 else()
-    message(STATUS "Building samples DISABLED")
+    message(STATUS "mkpoker: building samples DISABLED")
 endif()
 if(MKPOKER_BUILD_TESTS)
-    message(STATUS "Testing enabled")
+    message(STATUS "mkpoker: testing enabled")
     enable_testing()
     add_subdirectory(test)
 else()
-    message(STATUS "Testing DISABLED")
+    message(STATUS "mkpoker: testing DISABLED")
 endif()
+
+
+# create licenses file to include into the repository
+# assuming build directory `build`, create with `cmake --build build --target write-licenses`
+cpm_licenses_create_disclaimer_target(
+  write-licenses "${CMAKE_CURRENT_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}"
+)
 
 
 # make installable target
@@ -82,5 +98,7 @@ packageProject(
     INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
     INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
     VERSION_HEADER "${VERSION_HEADER_LOCATION}"
-    DEPENDENCIES ""
+    COMPATIBILITY SameMajorVersion
+    DEPENDENCIES "fmt 7.1.3;"
+    ARCH_INDEPENDENT YES
 )
