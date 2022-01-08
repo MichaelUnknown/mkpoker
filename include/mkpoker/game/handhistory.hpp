@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/game/game.hpp>
 #include <mkpoker/util/utility.hpp>
 
-#include <algorithm>    // std::rotate
 #include <array>        //
 #include <cassert>      //
 #include <chrono>       // zoned_time, system_clock::now
@@ -47,9 +46,8 @@ namespace mkp
         //using game_type = T<N, Ns...>;
 
         constexpr static std::size_t c_num_players = N;
-        constexpr static unsigned c_pos_button = 1u;
-        // todo: check if ps hand histories actually always have the button on seat #1
-        // constexpr static unsigned c_pos_button = c_num_players > 2 ? c_num_players : 1u;
+        //constexpr static unsigned c_pos_button = 1u;
+        constexpr static unsigned c_pos_button = c_num_players > 2 ? c_num_players : 1u;
 
         const inline static auto m_timestamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
 
@@ -111,25 +109,11 @@ namespace mkp
                        m_timestamp_et_str);
             fmt::print(f, "Table '{}' {}-max Seat #{} is the button\n", "Testing", N, c_pos_button);
 
-            // sort and print seats according to ps style
-            //for (unsigned int i = 0; i < c_num_players; ++i)
-            //{
-            //    // native order
-            //    fmt::print(f, "Seat {}: {} (${:.2f} in chips)\n", i + 1, names[i],
-            //               mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i]));
-            //}
+            for (unsigned int i = 0; i < c_num_players; ++i)
             {
-                std::vector<std::string> tmp;
-                for (unsigned int i = 0; i < c_num_players; ++i)
-                {
-                    tmp.push_back(fmt::format("Seat {{}}: {} (${:.2f} in chips)\n", names[i],
-                                              mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i])));
-                }
-                std::rotate(tmp.begin(), tmp.end() - 1, tmp.end());
-                for (unsigned int i = 0; i < c_num_players; ++i)
-                {
-                    fmt::print(f, tmp[i], i + 1);
-                }
+                // native order
+                fmt::print(f, "Seat {}: {} (${:.2f} in chips)\n", i + 1, names[i],
+                           mbb_to_dollar(game.chips_front()[i] + game.chips_behind()[i]));
             }
 
             // print blinds and hole cards of m_player_id
@@ -311,13 +295,6 @@ namespace mkp
                     // sort the summaries
                     std::sort(m_players_summary.begin(), m_players_summary.end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
-                    // native order
-                    //for (auto e : m_players_summary)
-                    //{
-                    //    fmt::print(m_f, e.second);
-                    //}
-                    // print seats according to ps style
-                    std::rotate(m_players_summary.begin(), m_players_summary.end() - 1, m_players_summary.end());
                     for (unsigned int i = 0; i < c_num_players; ++i)
                     {
                         fmt::print(m_f, m_players_summary[i].second, i + 1);

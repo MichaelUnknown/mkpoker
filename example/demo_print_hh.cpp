@@ -42,7 +42,7 @@ int main()
     mkp::card_generator cgen{};
 
     constexpr std::size_t c_num_players_game_6 = 6;
-    uint64_t hand_id = 231000111000;    // arbitrary hand it for hand history
+    uint64_t hand_id = 231000111000;    // arbitrary hand id for hand history
     std::FILE* f_hh = std::fopen("hh01.txt", "w");
     int cnt = 0;
 
@@ -110,7 +110,7 @@ int main()
         const auto chips = mkp::make_array<int, c_num_players_game_3>([&](auto) { return 1000 * distrib(rng); });
         const auto random_cards = cgen.generate_v(5 + 2 * c_num_players_game_3);
         const mkp::gamecards<c_num_players_game_3> gamecards(random_cards);
-        auto game = mkp::gamestate<c_num_players_game_3, 50, 100>(chips);
+        auto game = mkp::gamestate<c_num_players_game_3, 5, 100>(chips);
 
         // create hh printer, $1.00 <=> 50'000 mBB, pov of position 2
         auto hh_printer = mkp::hh_ps(game, gamecards, names, f_hh, 2, 50'000, hand_id);
