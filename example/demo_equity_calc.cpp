@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mkpoker/util/card_generator.hpp>
 
 #include <algorithm>    // std::max_element, std::count
-#include <locale>
 #include <numeric>      // std::reduce
 #include <stdexcept>    // std::runtime_error
 #include <vector>
@@ -39,11 +38,16 @@ struct result_t
     std::vector<float> m_equities;
 };
 
-void pretty_print(const std::vector<mkp::hand_2c>& hands, const result_t& results, const mkp::cardset board = mkp::cardset{})
+void pretty_print(const std::vector<mkp::hand_2c>& hands, const result_t& results, const std::vector<mkp::card>& vec_board = {})
 {
-    if (board.size() > 0)
+    if (vec_board.size() > 0)
     {
-        fmt::print(" Board: {}\n", board.str());
+        std::string str;
+        for (auto&& card : vec_board)
+        {
+            str.append(card.str());
+        }
+        fmt::print(" Board: {}\n", str);
     }
     fmt::print(" Hand | Equity |      Wins |      Ties \n");
     fmt::print("------+--------+-----------+-----------\n");
@@ -53,7 +57,7 @@ void pretty_print(const std::vector<mkp::hand_2c>& hands, const result_t& result
     }
 }
 
-result_t calc_results(const std::vector<mkp::hand_2c>& hands, const mkp::cardset board = mkp::cardset{})
+result_t calc_results(const std::vector<mkp::hand_2c>& hands, const std::vector<mkp::card>& vec_board = {})
 {
     using namespace mkp::constants;
 
@@ -78,9 +82,23 @@ result_t calc_results(const std::vector<mkp::hand_2c>& hands, const mkp::cardset
                         all_hole_cards.size(), hands.size() * 2, hands.size()));
     }
 
-    if (board.size() > 5)
+    if (vec_board.size() > 5)
     {
-        throw std::runtime_error(fmt::format("invalid number of board cards (should be less or equal to five, given {})", board.size()));
+        throw std::runtime_error(
+            fmt::format("invalid number of board cards (should be less or equal to five, given {})", vec_board.size()));
+    }
+    const auto board = [&]() {
+        mkp::cardset cs{};
+        for (auto&& card : vec_board)
+        {
+            cs.insert(card);
+        }
+        return cs;
+    }();
+    if (board.size() != vec_board.size())
+    {
+        throw std::runtime_error(
+            fmt::format("board contains duplicate cards ({} cards given but only {} of them are unique)", vec_board.size(), board.size()));
     }
     if (const auto total = board.combine(all_hole_cards).size(); total != board.size() + all_hole_cards.size())
     {
@@ -101,6 +119,42 @@ result_t calc_results(const std::vector<mkp::hand_2c>& hands, const mkp::cardset
         score.push_back(0);
         equities.push_back(0.0f);
     }
+
+    // calc and store results
+    auto calculate_and_store_results = [&](const mkp::cardset& additional_cards) {
+        const auto runout = additional_cards.combine(board);
+        std::vector<mkp::holdem_result> results;
+        for (auto&& hand : hands)
+        {
+            results.emplace_back(mkp::evaluate_unsafe(runout.combine(hand.as_cardset())));
+        }
+        const auto it_max = std::max_element(results.cbegin(), results.cend());
+        const auto num_max = std::count(results.cbegin(), results.cend(), *it_max);
+        if (num_max > 1)
+        {
+            // more than one winner -> tie
+            for (unsigned n = 0; n < results.size(); ++n)
+            {
+                if (results[n] == *it_max)
+                {
+                    ties[n] += 1;
+                    score[n] += 1;
+                }
+            }
+        }
+        else
+        {
+            // only one winner
+            for (unsigned n = 0; n < results.size(); ++n)
+            {
+                if (results[n] == *it_max)
+                {
+                    wins[n] += 1;
+                    score[n] += 2;
+                }
+            }
+        }
+    };
 
     for (uint8_t i = 0; i < c_deck_size; ++i)
     {
@@ -139,38 +193,8 @@ result_t calc_results(const std::vector<mkp::hand_2c>& hands, const mkp::cardset
                         }
 
                         // calc and store results
-                        const auto runout = mkp::cardset{c1, c2, c3, c4, c5};
-                        std::vector<mkp::holdem_result> results;
-                        for (auto&& hand : hands)
-                        {
-                            results.emplace_back(mkp::evaluate_unsafe(runout.combine(hand.as_cardset())));
-                        }
-                        const auto it_max = std::max_element(results.cbegin(), results.cend());
-                        const auto num_max = std::count(results.cbegin(), results.cend(), *it_max);
-                        if (num_max > 1)
-                        {
-                            // more than one winner -> tie
-                            for (unsigned n = 0; n < results.size(); ++n)
-                            {
-                                if (results[n] == *it_max)
-                                {
-                                    ties[n] += 1;
-                                    score[n] += 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // only one winner
-                            for (unsigned n = 0; n < results.size(); ++n)
-                            {
-                                if (results[n] == *it_max)
-                                {
-                                    wins[n] += 1;
-                                    score[n] += 2;
-                                }
-                            }
-                        }
+                        const auto additional_cards = mkp::cardset{c1, c2, c3, c4, c5};
+                        calculate_and_store_results(additional_cards);
                     }
                 }
             }
@@ -191,14 +215,20 @@ result_t calc_results(const std::vector<mkp::hand_2c>& hands, const mkp::cardset
 int main()
 {
     ////////////////////////////////////////////////////////////////////////////
-    // preflop hand, no board
+    // preflop calculation, no board
     ////////////////////////////////////////////////////////////////////////////
     mkp::hand_2c pf_h1{"AcAd"};
     mkp::hand_2c pf_h2{"Th9h"};
     std::vector<mkp::hand_2c> vec_hands_pf{pf_h1, pf_h2};
 
-    const auto results = calc_results(vec_hands_pf);
-    pretty_print(vec_hands_pf, results);
+    const auto results_pf = calc_results(vec_hands_pf);
+    pretty_print(vec_hands_pf, results_pf);
+    fmt::print("\n");
+
+    // one board card, just to test the code
+    std::vector<mkp::card> board_test{mkp::card{"Ts"}};
+    const auto results_board_test = calc_results(vec_hands_pf, board_test);
+    pretty_print(vec_hands_pf, results_board_test, board_test);
 
     return EXIT_SUCCESS;
 }

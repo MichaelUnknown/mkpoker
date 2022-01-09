@@ -221,13 +221,13 @@ namespace mkp
         constexpr void fill() noexcept { m_cards = c_cardset_full; }
 
         // insert a single card
-        constexpr void insert(const card c) noexcept { m_cards |= c.m_card; }
+        constexpr void insert(const card c) noexcept { m_cards |= c.as_bitset(); }
 
         // join with another set
         constexpr void join(const cardset cs) noexcept { m_cards |= cs.m_cards; }
 
         // remove a single card
-        constexpr void remove(const card c) noexcept { m_cards ^= c.m_card; }
+        constexpr void remove(const card c) noexcept { m_cards ^= c.as_bitset(); }
 
         // remove all cards from cs (if they exist)
         constexpr void remove(const cardset cs) noexcept { m_cards ^= cs.m_cards; }
