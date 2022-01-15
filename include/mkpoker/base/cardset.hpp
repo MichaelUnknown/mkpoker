@@ -130,10 +130,10 @@ namespace mkp
         }
 
         // check if the card is in the set
-        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
+        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & c.as_bitset()) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
-        [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
+        [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == m_cards; }
 
         // check if cs is exclusive to this
         [[nodiscard]] constexpr bool disjoint(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) == 0; }
@@ -142,13 +142,10 @@ namespace mkp
         [[nodiscard]] constexpr bool intersects(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
 
         // returns a new cs, combine with card
-        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
+        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | c.as_bitset()); }
 
         // returns a new cs, combine with cardset
-        [[nodiscard]] constexpr cardset combine(const cardset& cs) const& noexcept { return cardset{}.set(m_cards | cs.m_cards); }
-
-        // rvalue overload
-        [[nodiscard]] constexpr cardset combine(const cardset& cs) && noexcept { return std::move(*this).set(m_cards | cs.m_cards); }
+        [[nodiscard]] constexpr cardset combine(const cardset& cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
         [[nodiscard]] constexpr std::array<uint8_t, 4> get_normalization_vector() const noexcept
@@ -221,13 +218,13 @@ namespace mkp
         constexpr void fill() noexcept { m_cards = c_cardset_full; }
 
         // insert a single card
-        constexpr void insert(const card c) noexcept { m_cards |= c.m_card; }
+        constexpr void insert(const card c) noexcept { m_cards |= c.as_bitset(); }
 
         // join with another set
         constexpr void join(const cardset cs) noexcept { m_cards |= cs.m_cards; }
 
         // remove a single card
-        constexpr void remove(const card c) noexcept { m_cards ^= c.m_card; }
+        constexpr void remove(const card c) noexcept { m_cards ^= c.as_bitset(); }
 
         // remove all cards from cs (if they exist)
         constexpr void remove(const cardset cs) noexcept { m_cards ^= cs.m_cards; }

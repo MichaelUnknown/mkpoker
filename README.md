@@ -24,7 +24,7 @@ include(cmake/CPM.cmake)
 
 # gh means GitHub repository, specify the version after the 'at' or use a hashtag for a specific commit
 CPMAddPackage("gh:MichaelUnknown/mkpoker@0.1.0")
-#CPMAddPackage("gh:MichaelUnknown/mkpoker#6a5693c50d563f13ebb2191a09443754732badfb")
+#CPMAddPackage("gh:MichaelUnknown/mkpoker#05304f2a41a0b91ddea874d1fdd9f2ea9722423d")
 
 # define your executable
 add_executable(MyPokerApp MyPokerApp.cpp MoreSources.cpp ...)

@@ -1,5 +1,6 @@
 #include <mkpoker/base/cardset.hpp>
 
+#include <algorithm>    // std::sort, std::find
 #include <array>
 #include <bitset>
 #include <random>
@@ -75,17 +76,96 @@ TEST(tcardset, cardset_ctor_container)
 
 TEST(tcardset, cardset_fill_clear)
 {
-    cardset all;
+    cardset all{};
     all.fill();
     EXPECT_EQ(all.size(), 52);
     all.clear();
     EXPECT_EQ(all.size(), 0);
 }
 
+TEST(tcardset, cardset_insert_remove_contains)
+{
+    cardset cs{};
+    for (uint8_t i = 0; i < c_deck_size; ++i)
+    {
+        card c{i};
+        cs.insert(c);
+        EXPECT_EQ(cs.size(), (i + 1));
+        EXPECT_EQ(cs.contains(c), true);
+
+        auto cs2 = cs;
+        cs2.remove(c);
+        EXPECT_EQ(cs2.size(), (cs.size() - 1));
+        EXPECT_EQ(cs2.contains(c), false);
+
+        EXPECT_EQ(cs.contains(cs), true);
+        EXPECT_EQ(cs2.contains(cs2), true);
+        EXPECT_EQ(cs.contains(cs2), true);
+        EXPECT_EQ(cs2.contains(cs), false);
+    }
+}
+
 TEST(tcardset, cardset_str)
 {
-    const cardset cs("2cThKs6d3c");
-    EXPECT_EQ(cs.str(), std::string("2c3c6dThKs"));
+    // 10000 random tests: generate cardset from random strings and compare str output with original
+
+    std::mt19937 rng(std::random_device{}());
+
+    const auto all_cards = []() {
+        std::vector<uint8_t> cards{};
+        cards.reserve(c_deck_size);
+        for (uint8_t i = 0; i < c_deck_size; ++i)
+        {
+            cards.emplace_back(static_cast<uint8_t>(i));
+        }
+        return cards;
+    }();
+
+    for (unsigned i = 0; i < 10000; ++i)
+    {
+        // take 5 random unique cards
+        auto cards = all_cards;
+        std::shuffle(cards.begin(), cards.end(), rng);
+        cards.resize(5);
+
+        // create cardset from sorted vector of numbers
+        // cardset str() will always output cards canonically sorted
+        {
+            std::sort(cards.begin(), cards.end());
+            const auto str_cards = [&]() {
+                std::string str{};
+                for (auto&& c : cards)
+                {
+                    str.append(card{c}.str());
+                }
+                return str;
+            }();
+            const cardset cs{str_cards};
+            EXPECT_EQ(cs.str(), str_cards);
+        }
+
+        // create cardset from unsorted (random) vector
+        // check if every card from str is in cardset output
+        {
+            const auto str_cards_unsorted = [&]() {
+                std::string str{};
+                for (auto&& c : cards)
+                {
+                    str.append(card{c}.str());
+                }
+                return str;
+            }();
+            const cardset cs{str_cards_unsorted};
+            const auto str_cs = cs.str();
+
+            for (unsigned j = 0; j < str_cards_unsorted.size(); ++j)
+            {
+                const auto str_card = str_cards_unsorted.substr(j, j + 2);
+                // str_cs must contain every card (string)
+                EXPECT_NE(str_cs.find(str_card), std::string::npos);
+            }
+        }
+    }
 }
 
 TEST(tcardset, cardset_combine)

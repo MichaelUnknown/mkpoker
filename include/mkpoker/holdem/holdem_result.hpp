@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mkp
 {
-    inline namespace consts
+    inline namespace constants
     {
         constexpr uint8_t c_no_pair = 0;
         constexpr uint8_t c_one_pair = 1;
