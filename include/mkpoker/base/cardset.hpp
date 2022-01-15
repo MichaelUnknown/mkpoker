@@ -133,7 +133,7 @@ namespace mkp
         [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
-        [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == cs.m_cards; }
+        [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == m_cards; }
 
         // check if cs is exclusive to this
         [[nodiscard]] constexpr bool disjoint(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) == 0; }
@@ -145,10 +145,7 @@ namespace mkp
         [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
 
         // returns a new cs, combine with cardset
-        [[nodiscard]] constexpr cardset combine(const cardset& cs) const& noexcept { return cardset{}.set(m_cards | cs.m_cards); }
-
-        // rvalue overload
-        [[nodiscard]] constexpr cardset combine(const cardset& cs) && noexcept { return std::move(*this).set(m_cards | cs.m_cards); }
+        [[nodiscard]] constexpr cardset combine(const cardset& cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
 
         // get the suit rotation vector that transforms this cardset into the normalized form
         [[nodiscard]] constexpr std::array<uint8_t, 4> get_normalization_vector() const noexcept

@@ -75,11 +75,33 @@ TEST(tcardset, cardset_ctor_container)
 
 TEST(tcardset, cardset_fill_clear)
 {
-    cardset all;
+    cardset all{};
     all.fill();
     EXPECT_EQ(all.size(), 52);
     all.clear();
     EXPECT_EQ(all.size(), 0);
+}
+
+TEST(tcardset, cardset_insert_remove_contains)
+{
+    cardset cs{};
+    for (uint8_t i = 0; i < c_deck_size; ++i)
+    {
+        card c{i};
+        cs.insert(c);
+        EXPECT_EQ(cs.size(), (i + 1));
+        EXPECT_EQ(cs.contains(c), true);
+
+        auto cs2 = cs;
+        cs2.remove(c);
+        EXPECT_EQ(cs2.size(), (cs.size() - 1));
+        EXPECT_EQ(cs2.contains(c), false);
+
+        EXPECT_EQ(cs.contains(cs), true);
+        EXPECT_EQ(cs2.contains(cs2), true);
+        EXPECT_EQ(cs.contains(cs2), true);
+        EXPECT_EQ(cs2.contains(cs), false);
+    }
 }
 
 TEST(tcardset, cardset_str)
