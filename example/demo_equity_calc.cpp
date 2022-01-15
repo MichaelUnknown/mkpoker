@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#include <mkpoker/base/card.hpp>
 #include <mkpoker/base/hand.hpp>
 #include <mkpoker/holdem/holdem_equity_calculation.hpp>
 #include <mkpoker/holdem/holdem_evaluation.hpp>
-#include <mkpoker/util/card_generator.hpp>
 
 #include <vector>
 
