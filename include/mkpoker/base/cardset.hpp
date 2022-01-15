@@ -130,7 +130,7 @@ namespace mkp
         }
 
         // check if the card is in the set
-        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & uint64_t(1) << c.m_card) != 0; }
+        [[nodiscard]] constexpr bool contains(const card c) const noexcept { return (m_cards & c.as_bitset()) != 0; }
 
         // check if all cards from cs are in the set (i.e. cs is a subset)
         [[nodiscard]] constexpr bool contains(const cardset& cs) const noexcept { return (m_cards | cs.m_cards) == m_cards; }
@@ -142,7 +142,7 @@ namespace mkp
         [[nodiscard]] constexpr bool intersects(const cardset& cs) const noexcept { return (m_cards & cs.m_cards) != 0; }
 
         // returns a new cs, combine with card
-        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | uint64_t(1) << c.m_card); }
+        [[nodiscard]] constexpr cardset combine(const card c) const noexcept { return cardset{}.set(m_cards | c.as_bitset()); }
 
         // returns a new cs, combine with cardset
         [[nodiscard]] constexpr cardset combine(const cardset& cs) const noexcept { return cardset{}.set(m_cards | cs.m_cards); }
