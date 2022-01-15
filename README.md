@@ -23,8 +23,8 @@ a look at the `cmake` directory and the `CMakeLists.txt` in this repository) and
 include(cmake/CPM.cmake)
 
 # gh means GitHub repository, specify the version after the 'at' or use a hashtag for a specific commit
-CPMAddPackage("gh:MichaelUnknown/mkpoker@0.1.0")
-#CPMAddPackage("gh:MichaelUnknown/mkpoker#05304f2a41a0b91ddea874d1fdd9f2ea9722423d")
+CPMAddPackage("gh:MichaelUnknown/mkpoker@0.2.0")
+#CPMAddPackage("gh:MichaelUnknown/mkpoker#abd3bd4077ba3b4fcb8797966433779fe0f0f629")
 
 # define your executable
 add_executable(MyPokerApp MyPokerApp.cpp MoreSources.cpp ...)
@@ -76,7 +76,7 @@ However, if you add mkpoker as a header-only dependency to your project, you wil
 
 ### Roadmap:
 
-- [ ] Equity calculator example
+- [x] Equity calculator example
 - [x] Simple implementation of CFR to play around with
 - [ ] More documentation
 
