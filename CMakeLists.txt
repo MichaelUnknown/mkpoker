@@ -19,6 +19,8 @@ option(MKPOKER_BUILD_EXAMPLES "Enable building the examples" OFF)
 option(MKPOKER_BUILD_TESTS "Enable building the tests" OFF)
 option(MKPOKER_BUILD_FOR_DEV "Use strict compiler warnings" OFF)
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
+# VS Code C/C++ extension IntelliSense needs compile_commands.json for include paths
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 # do not allow building in-source

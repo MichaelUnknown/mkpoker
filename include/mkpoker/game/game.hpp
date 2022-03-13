@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael Knï¿½rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -271,6 +271,9 @@ namespace mkp
 
         // return chip counts (chips behind for each player)
         [[nodiscard]] constexpr std::array<int32_t, N> chips_behind() const noexcept { return m_chips_behind; }
+
+        // return current min raise size
+        [[nodiscard]] constexpr auto minraise() const noexcept { return m_minraise; }
 
         // helper: highest bet
         [[nodiscard]] constexpr int32_t current_highest_bet() const noexcept
