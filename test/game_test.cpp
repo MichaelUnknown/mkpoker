@@ -1,3 +1,22 @@
+/*
+
+Copyright (C) Michael Knörzer
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include <mkpoker/game/game.hpp>
 
 #include <array>
@@ -214,10 +233,12 @@ TEST(tgame, game_gamestate_execute_action)
         EXPECT_THROW(game1.execute_action(player_action_t{1499, gb_action_t::RAISE, game1.active_player_v()}), std::runtime_error);
 #endif
 
+        EXPECT_EQ(game1.minraise(), 1000);
         game1.execute_action(player_action_t{1500, gb_action_t::RAISE, game1.active_player_v()});
         EXPECT_EQ(game1.active_player(), 0);
         EXPECT_EQ(game1.in_terminal_state(), false);
         EXPECT_EQ(game1.gamestate_v(), gb_gamestate_t::PREFLOP_BET);
+        EXPECT_EQ(game1.minraise(), 1000);    // last raise was a min raise
 
         game1.execute_action(player_action_t{2000, gb_action_t::ALLIN, game1.active_player_v()});
         game1.execute_action(player_action_t{1000, gb_action_t::ALLIN, game1.active_player_v()});
@@ -237,7 +258,9 @@ TEST(tgame, game_gamestate_execute_action)
         // all players should be on state init
         EXPECT_EQ(game2.all_players_state(), make_array<3>(gb_playerstate_t::INIT));
         // UTG bets 2BB (3000 total)
+        EXPECT_EQ(game2.minraise(), 1000);
         game2.execute_action(player_action_t{3000, gb_action_t::RAISE, game2.active_player_v()});
+        EXPECT_EQ(game2.minraise(), 2000);
         // SB folds
         game2.execute_action(player_action_t{0, gb_action_t::FOLD, game2.active_player_v()});
         // BB calls (2000 total)
@@ -635,7 +658,6 @@ TEST(tgame, game_gamestate_hand_ended_branch2)
     EXPECT_EQ(game.gamestate_v(), gb_gamestate_t::FLOP_BET);
     game.execute_action(player_action_t{0, gb_action_t::FOLD, game.active_player_v()});
     EXPECT_EQ(game.gamestate_v(), gb_gamestate_t::GAME_FIN);
-
 
     std::array<int32_t, 3> chips2{3000, 5000, 1000};
     std::pair<gb_pos_t, int32_t> chips_ret{gb_pos_t{2}, 2000};
