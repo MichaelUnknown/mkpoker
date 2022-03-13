@@ -1,0 +1,16 @@
+{
+  "cmake.configureOnOpen": true,
+  "cmake.configureArgs": [
+    "-D MKPOKER_BUILD_EXAMPLES=1",
+    "-D MKPOKER_BUILD_TESTS=1"
+  ],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "files.associations": {
+    "array": "cpp"
+  }
+}
