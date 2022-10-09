@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael Knoerzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -350,6 +350,88 @@ namespace mkp
     // part is suited when the first rank is higher
     using hand_2r = hand_helper<rank, true, false>;
     //using hand_2r = v1::hand_helper<rank, true, false, 2>;
+
+    // helper to normalize hand/board combinations
+    auto suit_normalization_permutation(const hand_2c h, const cardset& b) -> std::array<uint8_t, 4>
+    {
+        const auto board_size = b.size();
+        const auto cs_all = b.combine(h.as_cardset());
+
+        if (board_size < 3 || board_size > 5)
+        {
+            throw std::runtime_error("get_normalization_permutation: called with invalid board size");
+        }
+        if (cs_all.size() != (board_size + 2))
+        {
+            throw std::runtime_error("get_normalization_permutation: called with duplicated cards");
+        }
+
+        // clang-format off
+        static constexpr std::array<std::array<std::array<uint8_t, 4>, 4>, 4> choose {{
+            {{ {0,1,2,3}, {0,1,2,3}, {0,2,1,3}, {0,3,1,2} }},
+            {{ {1,0,2,3}, {1,0,2,3}, {1,2,0,3}, {1,3,0,2} }},
+            {{ {2,0,1,3}, {2,1,0,3}, {2,0,1,3}, {2,3,0,1} }},
+            {{ {3,0,1,2}, {3,1,0,2}, {3,2,0,1}, {3,0,1,2} }}
+        }};
+
+        // clang-format on
+        std::array<uint8_t, 4> temp = choose[h.m_card1.suit().m_suit][h.m_card2.suit().m_suit];
+
+        // special case: suited hand
+        if (h.m_card1.suit() == h.m_card2.suit())
+        {
+            using namespace constants;
+
+            const uint16_t mask_1 = (cs_all.as_bitset() >> (temp[1] * c_num_ranks)) & c_mask_ranks;
+            const uint16_t mask_2 = (cs_all.as_bitset() >> (temp[2] * c_num_ranks)) & c_mask_ranks;
+            const uint16_t mask_3 = (cs_all.as_bitset() >> (temp[3] * c_num_ranks)) & c_mask_ranks;
+
+            using pui16 = std::pair<uint8_t, uint16_t>;
+            std::array<pui16, 4> tnew{{{temp[0], uint16_t(0)}, {temp[1], mask_1}, {temp[2], mask_2}, {temp[3], mask_3}}};
+
+            std::sort(tnew.begin() + 1, tnew.end(), [](const pui16& lhs, const pui16& rhs) {
+                if (std::popcount(lhs.second) == std::popcount(rhs.second))
+                {
+                    return lhs.second > rhs.second;
+                }
+                return std::popcount(lhs.second) > std::popcount(rhs.second);
+            });
+
+            temp[1] = tnew[1].first;
+            temp[2] = tnew[2].first;
+            temp[3] = tnew[3].first;
+        }
+        else
+        {
+            using namespace ::mkp::constants;
+
+            if (h.m_card1.rank() == h.m_card2.rank())
+            {
+                const uint16_t mask_1 = (cs_all.as_bitset() >> (temp[0] * c_num_ranks)) & c_mask_ranks;
+                const uint16_t mask_2 = (cs_all.as_bitset() >> (temp[1] * c_num_ranks)) & c_mask_ranks;
+                if (mask_1 < mask_2)
+                {
+                    std::swap(temp[0], temp[1]);
+                }
+            }
+            const uint16_t mask_3 = (cs_all.as_bitset() >> (temp[2] * c_num_ranks)) & c_mask_ranks;
+            const uint16_t mask_4 = (cs_all.as_bitset() >> (temp[3] * c_num_ranks)) & c_mask_ranks;
+            if (mask_3 < mask_4)
+            {
+                std::swap(temp[2], temp[3]);
+            }
+            // else positions 3 and 4 are in correct order from the lookup table
+        }
+
+        // "invert" ranking so we return the wanted permutation to get that ranking
+        std::array<uint8_t, 4> ret{};
+        for (uint8_t u = 0; u < 4; ++u)
+        {
+            ret[temp[u]] = u;
+        }
+
+        return ret;
+    }
 
 #if !defined(__clang__)
     // clang seems to differ with msvc and gcc about these asserts :(
