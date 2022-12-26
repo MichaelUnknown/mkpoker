@@ -142,7 +142,7 @@ jobs:
         run: |
           llvm_tag=llvmorg-15.0.6
           #echo ::set-output name=llmv-version::$llvm_tag
-          echo "{llmv-version}={$llvm_tag}" >> $GITHUB_OUTPUT
+          echo "llmv-version=$llvm_tag" >> $GITHUB_OUTPUT
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
