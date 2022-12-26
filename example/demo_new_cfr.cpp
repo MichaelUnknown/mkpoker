@@ -152,8 +152,7 @@ struct card_abstraction_norm_pf_flop_only final : public mkp::card_abstraction_b
         }
         else if (game_state == mkp::gb_gamestate_t::FLOP_BET)
         {
-            return hands_flops_cs.size() / 4;
-            // return 1;
+            return hands_flops_cs.size();
         }
         else
         {
