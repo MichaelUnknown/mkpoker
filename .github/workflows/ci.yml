@@ -64,14 +64,14 @@ jobs:
             name: "macos clang 14 Debug"
             os: macos-12
             build_type: Debug
-            cc: /usr/local/opt/llvm/bin/clang-14
-            cxx: /usr/local/opt/llvm/bin/clang++
+            cc: /usr/local/opt/llvm@14/bin/clang-14
+            cxx: /usr/local/opt/llvm@14/bin/clang++
           - 
             name: "macos clang 14 Release"
             os: macos-12
             build_type: Release
-            cc: /usr/local/opt/llvm/bin/clang-14
-            cxx: /usr/local/opt/llvm/bin/clang++
+            cc: /usr/local/opt/llvm@14/bin/clang-14
+            cxx: /usr/local/opt/llvm@14/bin/clang++
 
           # apple clang 14
           - 
@@ -194,10 +194,12 @@ jobs:
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
               ls -la /usr/local/opt/
-              ls -la /usr/local/opt/llvm/
-              ls -la /usr/local/opt/llvm/bin/
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
+              echo "---"
+              ls -la /usr/local/opt/llvm@14/
+              echo "---"
+              ls -la /usr/local/opt/llvm@14/bin/
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm@14/include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm@14/lib -Wl,-rpath,/usr/local/opt/llvm@14/lib -lc++abi\"" >> $GITHUB_ENV
             fi
 
           else
