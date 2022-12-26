@@ -141,7 +141,6 @@ jobs:
         shell: bash
         run: |
           llvm_tag=llvmorg-15.0.6
-          #echo ::set-output name=llmv-version::$llvm_tag
           echo "llmv-version=$llvm_tag" >> $GITHUB_OUTPUT
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
@@ -196,8 +195,8 @@ jobs:
             -D CMAKE_CXX_COMPILER=g++-12 \
             -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{env.LIBCXX_INSTALL_PATH}}" \
-            -D CMAKE_BUILD_TYPE=Release \
-            -D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
+            -D CMAKE_BUILD_TYPE=Release
+            #-D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake --build build --target install-cxx
           cmake --build build --target install-cxxabi
 
