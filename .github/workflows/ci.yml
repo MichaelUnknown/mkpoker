@@ -16,72 +16,72 @@ jobs:
       fail-fast: false
       matrix: 
         cfg:
-          # gcc 10
+          # gcc 12
           - 
             name: "ubuntu gcc 10 Debug"
             os: ubuntu-latest
             build_type: Debug
-            cc: gcc-10
-            cxx: g++-10
+            cc: gcc-12
+            cxx: g++-12
             codecov: true
           - 
             name: "ubuntu gcc 10 Release"
             os: ubuntu-latest
             build_type: Release
-            cc: gcc-10
-            cxx: g++-10
+            cc: gcc-12
+            cxx: g++-12
 
-          # clang 13 on ubuntu
+          # clang 15 on ubuntu
           - 
-            name: "ubuntu clang 13 Debug"
+            name: "ubuntu clang 15 Debug"
             os: ubuntu-latest
             build_type: Debug
-            cc: clang-13
-            cxx: clang++-13
+            cc: clang-15
+            cxx: clang++-15
           - 
-            name: "ubuntu clang 13 Release"
+            name: "ubuntu clang 15 Release"
             os: ubuntu-latest
             build_type: Release
-            cc: clang-13
-            cxx: clang++-13
+            cc: clang-15
+            cxx: clang++-15
           - 
-            name: "ubuntu clang 13 libcxx Debug"
+            name: "ubuntu clang 15 libcxx Debug"
             os: ubuntu-latest
             build_type: Debug
-            cc: clang-13
-            cxx: clang++-13
+            cc: clang-15
+            cxx: clang++-15
             libcxx: true
           - 
-            name: "ubuntu clang 13 libcxx Release"
+            name: "ubuntu clang 15 libcxx Release"
             os: ubuntu-latest
             build_type: Release
-            cc: clang-13
-            cxx: clang++-13
+            cc: clang-15
+            cxx: clang++-15
             libcxx: true
 
-          # clang 13 on macos
+          # clang 14 on macos
           - 
-            name: "macos clang 13 Debug"
+            name: "macos clang 14 Debug"
             os: macos-latest
             build_type: Debug
-            cc: /usr/local/opt/llvm/bin/clang-13
+            cc: /usr/local/opt/llvm/bin/clang-14
             cxx: /usr/local/opt/llvm/bin/clang++
           - 
-            name: "macos clang 13 Release"
+            name: "macos clang 14 Release"
             os: macos-latest
             build_type: Release
-            cc: /usr/local/opt/llvm/bin/clang-13
+            cc: /usr/local/opt/llvm/bin/clang-14
             cxx: /usr/local/opt/llvm/bin/clang++
 
-          # apple clang 13
+          # apple clang 14
           - 
-            name: "macos apple clang 13 Debug"
+            name: "macos apple clang 14 Debug"
             os: macos-latest
             build_type: Debug
             cc: clang
             cxx: clang++
           - 
-            name: "macos apple clang 13 Release"
+            name: "macos apple clang 14 Release"
             os: macos-latest
             build_type: Release
             cc: clang
@@ -115,21 +115,21 @@ jobs:
         id: init
         shell: bash
         run: |
-          llvm_tag=llvmorg-13.0.0
+          llvm_tag=llvmorg-15.0.6
           echo ::set-output name=llmv-version::$llvm_tag
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
-      # install clang 13 and libc++ if necessary
+      # install clang 15 and libc++ if necessary
       - 
-        name: "install clang 13"
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-13')
+        name: "install clang 15"
+        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-15')
         working-directory: "${{env.HOME}}"
         shell: bash
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 13
+          sudo ./llvm.sh 15
 
       # cache the llvm installation
       -
@@ -239,4 +239,4 @@ jobs:
         shell: bash
         env:
           CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
-        run: "bash <(curl -s https://codecov.io/bash) -x gcov-10"
+        run: "bash <(curl -s https://codecov.io/bash) -x gcov-12"
