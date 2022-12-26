@@ -131,7 +131,7 @@ jobs:
     ###################################################
     steps: 
       - 
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # init install path and llvm version tag
       -
@@ -141,7 +141,8 @@ jobs:
         shell: bash
         run: |
           llvm_tag=llvmorg-15.0.6
-          echo ::set-output name=llmv-version::$llvm_tag
+          #echo ::set-output name=llmv-version::$llvm_tag
+          echo "{llmv-version}={$llvm_tag}" >> $GITHUB_OUTPUT
           echo "LIBCXX_INSTALL_TAG=$llvm_tag" >> $GITHUB_ENV
           echo "LIBCXX_INSTALL_PATH=`pwd`/local" >> $GITHUB_ENV
 
@@ -160,7 +161,7 @@ jobs:
       -
         name: "cache llvm"
         if: matrix.cfg.libcxx
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-llvm
         with:
           path: "${{env.LIBCXX_INSTALL_PATH}}"
@@ -171,7 +172,7 @@ jobs:
       -
         name: "checkout llvm"
         if: matrix.cfg.libcxx && steps.cache-llvm.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: llvm/llvm-project
           ref: ${{env.LIBCXX_INSTALL_TAG}}
