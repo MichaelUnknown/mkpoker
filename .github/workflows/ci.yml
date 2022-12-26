@@ -166,8 +166,8 @@ jobs:
           cmake \
             -S llvm \
             -B build \
-            -D CMAKE_C_COMPILER=gcc-10 \
-            -D CMAKE_CXX_COMPILER=g++-10 \
+            -D CMAKE_C_COMPILER=gcc-12 \
+            -D CMAKE_CXX_COMPILER=g++-12 \
             -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{env.LIBCXX_INSTALL_PATH}}" \
             -D CMAKE_BUILD_TYPE=Release \
@@ -193,7 +193,9 @@ jobs:
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
             elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
-              ls -l /usr/local/opt/llvm/bin/
+              ls -la /usr/local/opt/
+              ls -la /usr/local/opt/llvm/
+              ls -la /usr/local/opt/llvm/bin/
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -lc++abi\"" >> $GITHUB_ENV
             fi
