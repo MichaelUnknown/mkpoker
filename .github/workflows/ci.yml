@@ -189,14 +189,13 @@ jobs:
           # workaround for cmake 3.22 breaking libc++ install:
           # -D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake \
-            -S llvm \
+            -S runtimes \
             -B build \
             -D CMAKE_C_COMPILER=gcc-12 \
             -D CMAKE_CXX_COMPILER=g++-12 \
-            -D LLVM_ENABLE_PROJECTS='libcxx;libcxxabi' \
+            -D LLVM_ENABLE_RUNTIMES='libcxx;libcxxabi' \
             -D "CMAKE_INSTALL_PREFIX=${{env.LIBCXX_INSTALL_PATH}}" \
             -D CMAKE_BUILD_TYPE=Release
-            #-D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake --build build --target install-cxx
           cmake --build build --target install-cxxabi
 
