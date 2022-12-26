@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(
     mkpoker
-    VERSION 0.1.0
+    VERSION 0.2.2
     LANGUAGES CXX
     DESCRIPTION "A Texas Holdem poker framework written in C++ 20."
 )
@@ -29,20 +29,21 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 endif()
 
 
-# dependencies
+
+# add dependencies via CPM, see https://github.com/cpm-cmake/CPM.cmake for more info
 include(cmake/CPM.cmake)
 # until replace by std::format
 CPMAddPackage(
   NAME fmt
-  GIT_TAG 7.1.3
+  GIT_TAG 9.1.0
   GITHUB_REPOSITORY fmtlib/fmt
   OPTIONS "FMT_INSTALL YES"
 )
-#CPMAddPackage("gh:fmtlib/fmt@7.1.3#7.1.3;FMT_INSTALL YES")
+# CPMAddPackage("gh:fmtlib/fmt@9.1.0#9.1.0")
 # gather all used licenses
-CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.6")
 # PackageProject.cmake will be used to make our project installable
-CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.10.0")
 
 
 # base library, header only
