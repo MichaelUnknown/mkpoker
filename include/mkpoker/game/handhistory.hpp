@@ -187,7 +187,7 @@ namespace mkp
                 if (new_state != gb_gamestate_t::GAME_FIN)
                 {
                     m_last_state = new_state;
-                    fmt::print(m_f, str_ccs());
+                    fmt::print(m_f, "{}", str_ccs());
                 }
                 else
                 {
@@ -297,7 +297,7 @@ namespace mkp
                               [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
                     for (unsigned int i = 0; i < c_num_players; ++i)
                     {
-                        fmt::print(m_f, m_players_summary[i].second, i + 1);
+                        fmt::vprint(m_f, m_players_summary[i].second, fmt::make_format_args(i + 1));
                     }
                     fmt::print(m_f, "\n\n\n");
                 }
