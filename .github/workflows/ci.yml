@@ -16,17 +16,30 @@ jobs:
       fail-fast: false
       matrix: 
         cfg:
-          # gcc 12
+          # gcc 11/12
           - 
-            name: "ubuntu gcc 10 Debug"
-            os: ubuntu-latest
+            name: "ubuntu gcc 11 Debug"
+            os: ubuntu-22.04
+            build_type: Debug
+            cc: gcc-11
+            cxx: g++-11
+            codecov: true
+          - 
+            name: "ubuntu gcc 11 Release"
+            os: ubuntu-22.04
+            build_type: Release
+            cc: gcc-11
+            cxx: g++-11
+          - 
+            name: "ubuntu gcc 12 Debug"
+            os: ubuntu-22.04
             build_type: Debug
             cc: gcc-12
             cxx: g++-12
             codecov: true
           - 
-            name: "ubuntu gcc 10 Release"
-            os: ubuntu-latest
+            name: "ubuntu gcc 12 Release"
+            os: ubuntu-22.04
             build_type: Release
             cc: gcc-12
             cxx: g++-12
@@ -34,26 +47,26 @@ jobs:
           # clang 15 on ubuntu
           - 
             name: "ubuntu clang 15 Debug"
-            os: ubuntu-latest
+            os: ubuntu-22.04
             build_type: Debug
             cc: clang-15
             cxx: clang++-15
           - 
             name: "ubuntu clang 15 Release"
-            os: ubuntu-latest
+            os: ubuntu-22.04
             build_type: Release
             cc: clang-15
             cxx: clang++-15
           - 
             name: "ubuntu clang 15 libcxx Debug"
-            os: ubuntu-latest
+            os: ubuntu-22.04
             build_type: Debug
             cc: clang-15
             cxx: clang++-15
             libcxx: true
           - 
             name: "ubuntu clang 15 libcxx Release"
-            os: ubuntu-latest
+            os: ubuntu-22.04
             build_type: Release
             cc: clang-15
             cxx: clang++-15
@@ -90,13 +103,25 @@ jobs:
           # msvc
           - 
             name: "windows msvc 2019 Debug"
-            os: windows-latest
+            os: windows-2019
             build_type: Debug
             cc: cl
             cxx: cl
           - 
             name: "windows msvc 2019 Release"
-            os: windows-latest
+            os: windows-2019
+            build_type: Release
+            cc: cl
+            cxx: cl
+          - 
+            name: "windows msvc 2022 Debug"
+            os: windows-2022
+            build_type: Debug
+            cc: cl
+            cxx: cl
+          - 
+            name: "windows msvc 2022 Release"
+            os: windows-2022
             build_type: Release
             cc: cl
             cxx: cl
@@ -182,7 +207,7 @@ jobs:
         run: |
           echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
           echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
-          if [[ "${{matrix.cfg.os}}" != "windows-latest" ]]; then
+          if [[ ${{matrix.cfg.os}} != windows-* ]]; then
 
             if [[ "x${{matrix.cfg.codecov}}" == "xtrue" ]]; then
               cov=" -D MKPOKER_ENABLE_CODE_COVERAGE=1"
@@ -192,12 +217,7 @@ jobs:
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
-            elif [[  ${{matrix.cfg.os}} == macos-* ]]; then
-              ls -la /usr/local/opt/
-              echo "---"
-              ls -la /usr/local/opt/llvm@14/
-              echo "---"
-              ls -la /usr/local/opt/llvm@14/bin/
+            elif [[ ${{matrix.cfg.os}} == macos-* ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm@14/include/c++/v1\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm@14/lib -Wl,-rpath,/usr/local/opt/llvm@14/lib -lc++abi\"" >> $GITHUB_ENV
             fi
