@@ -186,8 +186,6 @@ jobs:
           cd llvm-project
 
           echo building libcxx from source...
-          # workaround for cmake 3.22 breaking libc++ install:
-          # -D CMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake \
             -S runtimes \
             -B build \
