@@ -46,7 +46,10 @@ inline void boost_hash_combine(std::size_t& seed, const T& v)
 // h: hand, b: board
 struct hand_board_t
 {
-    mkp::cardset h, b;
+    mkp::cardset h;
+    mkp::cardset b;
+    hand_board_t(const mkp::cardset& h, const mkp::cardset& b) : h(h), b(b){};
+
     [[nodiscard]] std::string str() const noexcept { return fmt::format("{}/{}", h.str(), b.str()); }
     constexpr auto operator<=>(const hand_board_t&) const noexcept = default;
 };
