@@ -23,3 +23,7 @@ target_link_libraries(demo_cfr PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME} Thr
 # demo print hand history
 add_executable(demo_print_hh demo_print_hh.cpp)
 target_link_libraries(demo_print_hh PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME})
+
+# demo buckets
+add_executable(demo_buckets demo_buckets.cpp)
+target_link_libraries(demo_buckets PRIVATE ${PROJECT_NAMESPACE}::${PROJECT_NAME})
