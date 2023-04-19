@@ -1,6 +1,7 @@
 {
   "cmake.configureOnOpen": true,
   "cmake.configureArgs": [
+    "-D MKPOKER_ENABLE_BUCKETS=1",
     "-D MKPOKER_BUILD_EXAMPLES=1",
     "-D MKPOKER_BUILD_TESTS=1"
   ],
@@ -11,6 +12,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": false,
   "files.associations": {
-    "array": "cpp"
+    "array": "cpp",
+    "sstream": "cpp"
   }
 }

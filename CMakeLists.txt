@@ -19,6 +19,7 @@ option(MKPOKER_BUILD_EXAMPLES "Enable building the examples" OFF)
 option(MKPOKER_BUILD_TESTS "Enable building the tests" OFF)
 option(MKPOKER_BUILD_FOR_DEV "Use strict compiler warnings" OFF)
 option(MKPOKER_ENABLE_CODE_COVERAGE "Enable test code coverage" OFF)
+option(MKPOKER_ENABLE_BUCKETS "Enable bucket header (pulls in Boost as dependency!)" OFF)
 # VS Code C/C++ extension IntelliSense needs compile_commands.json for include paths
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -34,12 +35,11 @@ endif()
 include(cmake/CPM.cmake)
 # until replace by std::format
 CPMAddPackage(
-  NAME fmt
-  GIT_TAG 9.1.0
-  GITHUB_REPOSITORY fmtlib/fmt
-  OPTIONS "FMT_INSTALL YES"
+    NAME fmt
+    GIT_TAG 9.1.0
+    GITHUB_REPOSITORY fmtlib/fmt
+    OPTIONS "FMT_INSTALL YES"
 )
-# CPMAddPackage("gh:fmtlib/fmt@9.1.0#9.1.0")
 # gather all used licenses
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.6")
 # PackageProject.cmake will be used to make our project installable
@@ -61,6 +61,26 @@ target_compile_features(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:Clang,GNU,
 target_compile_options(${PROJECT_NAME} INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/std:c++latest>)
 # before: target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} INTERFACE fmt::fmt)
+# add Boost if buckets enabled
+if(MKPOKER_ENABLE_BUCKETS)
+    message(STATUS "mkpoker: bucket header enabled")
+    find_package(Boost 1.74 QUIET COMPONENTS serialization)
+    if(NOT Boost_FOUND)
+    # If not provided as system lib, use CPM.cmake to get Boost from the official repo
+    message(STATUS "mkpoker buckets: Boost system lib NOT found")
+    CPMAddPackage(
+        NAME Boost
+        GITHUB_REPOSITORY "boostorg/boost"
+        GIT_TAG "boost-1.82.0"
+        VERSION "1.82.0"
+    )
+    target_link_libraries(${PROJECT_NAME} INTERFACE Boost::serialization)
+    else()
+        message(STATUS "mkpoker buckets: Boost system lib found")
+    endif()
+else()
+    message(STATUS "mkpoker: bucket header DISABLED")
+endif()
 
 
 # configure according to options, build examples, tests etc.
@@ -102,6 +122,6 @@ packageProject(
     INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
     VERSION_HEADER "${VERSION_HEADER_LOCATION}"
     COMPATIBILITY SameMajorVersion
-    DEPENDENCIES "fmt 7.1.3;"
+    DEPENDENCIES "fmt 9.1.0;"
     ARCH_INDEPENDENT YES
 )
