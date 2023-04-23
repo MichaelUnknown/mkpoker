@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <vector>
 
+#include <fmt/core.h>
+
 namespace mkp
 {
     // With lots of nodes, the goal is to minimize the memory footprint, i.e., keep the node struct
@@ -114,8 +116,8 @@ namespace mkp
         // print for logging / debug
         virtual void print_node() const override
         {
-            const auto ident = std::string(2 * this->m_level, ' ');
-            fmt::print("{}I-Node({}), {}, P:{} || {} children:\n", ident, this->m_id, to_string(this->m_game_state), this->m_active_player,
+            const auto space = std::string(2 * this->m_level, ' ');
+            fmt::print("{}I-Node({}), {}, P:{} || {} children:\n", space, this->m_id, to_string(this->m_game_state), this->m_active_player,
                        this->m_children.size());
 
             for (const auto& child : this->m_children)
@@ -181,8 +183,8 @@ namespace mkp
                 return ret;
             };
 
-            const auto ident = std::string(2 * this->m_level, ' ');
-            fmt::print("{}Terminal({}): showdown: {}{}\n", ident, this->m_id, m_showdown,
+            const auto space = std::string(2 * this->m_level, ' ');
+            fmt::print("{}Terminal({}): showdown: {}{}\n", space, this->m_id, m_showdown,
                        (m_showdown ? "" : " " + array_to_string(m_payouts)));
         }
     };
