@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -39,6 +39,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <numeric>
 #include <vector>
+
+#include <fmt/core.h>
 
 namespace mkp
 {
@@ -178,7 +180,7 @@ namespace mkp
             const auto gs = m_ptr_ga->decode(gs_id);
             const auto all_actions = m_ptr_aa->filter_actions(gs);
 
-            std::cout << space << gs.str_state() << "\n";
+            fmt::print("{}{}\n", space, gs.str_state());
 
             // in case of preflop ranges, use pretty print
             if (ptr_node->m_game_state == gb_gamestate_t::PREFLOP_BET && m_strategy_sum[gs_id].size() == c_range_size)
@@ -195,11 +197,7 @@ namespace mkp
 
                 for (uint8_t i = 0; i < vec_ranges.size(); ++i)
                 {
-                    std::cout << space << (all_actions[i].str()) << ": " << std::fixed << std::setprecision(2)
-                              << std::to_string(vec_ranges[i].percent()) << "%\n";
-
-                    std::cout << vec_ranges[i].str();
-                    std::cout << "\n";
+                    fmt::print("{}{}: {:.2f}%\n{}\n", space, all_actions[i].str(), vec_ranges[i].percent_f(), vec_ranges[i].str());
                 }
             }
             else
@@ -223,23 +221,24 @@ namespace mkp
 
                 for (uint32_t i = 0; i < vec_temp.size(); ++i)
                 {
-                    std::cout << space << (all_actions[i].str()) << ": " << std::fixed << std::setprecision(2)
-                              << std::accumulate(vec_temp[i].cbegin(), vec_temp[i].cend(), 0.0f,
-                                                 [](const float val, const auto& e) { return val + e.second; }) *
-                                     100 / vec_temp[i].size()
-                              << "%\n";
+                    const auto val = std::accumulate(vec_temp[i].cbegin(), vec_temp[i].cend(), 0.0f,
+                                                     [](const float val, const auto& e) { return val + e.second; }) *
+                                     100 / vec_temp[i].size();
+                    fmt::print("y{}{}: {}%y\n", space, all_actions[i].str(), val);
 
                     std::sort(vec_temp[i].begin(), vec_temp[i].end(),
                               [](const auto& lhs, const auto& rhs) { return lhs.second > rhs.second; });
                     for (uint32_t j = 0; j < vec_temp[i].size(); ++j)
                     {
                         if (j < 25 || j > vec_temp[i].size() - 5)
-                            std::cout << space << m_ptr_ca->str_id(ptr_node->m_game_state, vec_temp[i][j].first) << " => "
-                                      << vec_temp[i][j].second << "\n";
+                        {
+                            fmt::print("x{}{} => {}x\n", space, m_ptr_ca->str_id(ptr_node->m_game_state, vec_temp[i][j].first),
+                                       vec_temp[i][j].second);
+                        }
                     }
-                    std::cout << "\n";
+                    fmt::print("\n");
                 }
-                std::cout << "\n";
+                fmt::print("\n");
             }
 
             for (auto&& e : ptr_node->m_children)
@@ -283,7 +282,10 @@ namespace mkp
     }
 
     // return the averaged strategy after training
-    std::vector<float> average_strategy(const std::vector<int32_t>& strategy) { return normalize(strategy); }
+    std::vector<float> average_strategy(const std::vector<int32_t>& strategy)
+    {
+        return normalize(strategy);
+    }
 
     // update the strategy sum
     void update_strategy_sum(std::vector<int32_t>& strategy_sum, const std::vector<float>& new_strategy, const float p)

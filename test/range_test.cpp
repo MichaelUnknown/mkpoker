@@ -191,29 +191,6 @@ TEST(trange, range_hand_index_roundtrip)
     EXPECT_THROW(static_cast<void>(range::hand(c_range_size)), std::runtime_error);
 }
 
-/*
-TEST(trange, range_ctor_handmap)
-{
-    const handmap hm{"AQs+"};
-    const range r{hm};
-    const handmap hm2 = r.to_handmap();
-    const range r2{hm2};
-    EXPECT_EQ(r.str(), r2.str());
-    EXPECT_EQ(hm.str(), hm2.str());
-}
-*/
-
-/*
-TEST(trange, range_handmap_roundtrip)
-{
-    const range r{"88+,A6s+,2Qo+"};
-    //std::cout << r.str();
-    const range r2{r.to_handmap()};
-    EXPECT_EQ(r.str(), r2.str());
-    EXPECT_EQ(r, r2);
-}
-*/
-
 TEST(trange, range_comp_operators)
 {
     const range empty1{};

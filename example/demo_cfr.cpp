@@ -2,7 +2,7 @@
 
 mkpoker - demo app that trains an 'AI' with the CFR algorithm
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -55,7 +55,6 @@ int main()
         const auto cnt_nodes = i + t;
         std::cout << "game with 2 players, stack size 4BB, no action filter\n"
                   << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n\n";
-        //gametree_base_2p->print_node();
     }
 
     {
@@ -84,6 +83,7 @@ int main()
         std::cout << "game with 2 players, stack size 200BB, action filter 'preflop poker'\n"
                   << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n";
         std::cout << "\n------------------------------------------------------\n\n";
+        gametree_base_2p->print_node();
     }
 
     // with the 'preflop' game, we can train an AI using the CFR algorithm
@@ -105,7 +105,7 @@ int main()
             workers.push_back(std::thread([&cfrd_2p, &mu, tid]() {
                 mkp::card_generator cgen{};
                 std::array<std::array<int32_t, 2>, 65536> util{};
-                for (uint32_t i = 0; i < 500'000; ++i)
+                for (uint32_t i = 0; i < 100'000; ++i)
                 {
                     if (i % 50'000 == 0)
                     {

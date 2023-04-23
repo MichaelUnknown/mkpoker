@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -363,12 +363,19 @@ namespace mkp
         }
 
         // percentage of full range
-        [[nodiscard]] constexpr uint16_t percent() const noexcept
+        [[nodiscard]] constexpr float percent_f() const noexcept
         {
             // 13 pairs (x6), the diagonal
             // 78 suited combinations (x4), upper triangle
             // 78 non-suited combinations (x12), lower triangle
-            return static_cast<uint16_t>(total() * 100 / ((13 * 600) + (78 * 400) + (78 * 1200)));
+            return (static_cast<float>(total()) * 100 / ((13 * 600) + (78 * 400) + (78 * 1200)));
+        }
+
+        // percentage of full range
+        [[nodiscard]] constexpr uint16_t percent() const noexcept
+        {
+            // implicit cast to uint16_t
+            return percent_f();
         }
 
         // get the numer of entries (hand_2r objects) with value > 0 (not counting the factor 4/6/12)
@@ -451,7 +458,7 @@ namespace mkp
                     if (value > 0)
                     {
                         const auto tmp = std::to_string(value / 6);
-                        out.append(std::string(" ", 3 - tmp.length()) + tmp);
+                        out.append(std::string(3 - tmp.length(), ' ') + tmp);
                     }
                 }
                 else
@@ -462,7 +469,7 @@ namespace mkp
                     if (value > 0)
                     {
                         const auto tmp = std::to_string(value / (is_suited ? 4 : 12));
-                        out.append(std::string(" ", 3 - tmp.length()) + tmp);
+                        out.append(std::string(3 - tmp.length(), ' ') + tmp);
                     }
                 }
 

@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -25,10 +25,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace mkp
 {
 #ifdef __GNUC__    // GCC 4.8+, Clang, Intel and other compilers compatible with GCC (-std=c++0x or above)
-    [[noreturn]] inline __attribute__((always_inline)) void unreachable() { __builtin_unreachable(); }    // LCOV_EXCL_LINE
-#elif defined(_MSC_VER)                                                                                   // MSVC
-    [[noreturn]] __forceinline void unreachable() { __assume(false); }
-#else                                                                                                     // ???
+    [[noreturn]] inline __attribute__((always_inline)) void unreachable()
+    {
+        __builtin_unreachable();    // LCOV_EXCL_LINE
+    }
+#elif defined(_MSC_VER)    // MSVC
+    [[noreturn]] __forceinline void unreachable()
+    {
+        __assume(false);
+    }
+#else                      // ???
     inline void unreachable() {}
 #endif
 }    // namespace mkp

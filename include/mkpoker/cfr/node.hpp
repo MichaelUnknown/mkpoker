@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <stdexcept>
 #include <vector>
+
+#include <fmt/core.h>
 
 namespace mkp
 {
@@ -114,14 +116,9 @@ namespace mkp
         // print for logging / debug
         virtual void print_node() const override
         {
-            for (uint8_t i = 0; i < this->m_level; ++i)
-            {
-                std::cout << "  ";
-            }
-            std::cout << "I-Node(" << this->m_id << "), ";
-            std::cout << to_string(this->m_game_state) << ", ";
-            std::cout << "P:" << std::to_string(this->m_active_player) << " || ";
-            std::cout << this->m_children.size() << " children: \n";
+            const auto space = std::string(2 * this->m_level, ' ');
+            fmt::print("{}I-Node({}), {}, P:{} || {} children:\n", space, this->m_id, to_string(this->m_game_state), this->m_active_player,
+                       this->m_children.size());
 
             for (const auto& child : this->m_children)
             {
@@ -186,12 +183,9 @@ namespace mkp
                 return ret;
             };
 
-            for (uint8_t i = 0; i < this->m_level; ++i)
-            {
-                std::cout << "  ";
-            }
-            std::cout << "Terminal(" << this->m_id << "): ";
-            std::cout << "showdown: " << std::boolalpha << m_showdown << (m_showdown ? "" : " " + array_to_string(m_payouts)) << "\n";
+            const auto space = std::string(2 * this->m_level, ' ');
+            fmt::print("{}Terminal({}): showdown: {}{}\n", space, this->m_id, m_showdown,
+                       (m_showdown ? "" : " " + array_to_string(m_payouts)));
         }
     };
 
