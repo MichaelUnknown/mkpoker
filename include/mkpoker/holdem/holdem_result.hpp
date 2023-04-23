@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -50,7 +50,7 @@ namespace mkp
         constexpr uint8_t c_offset_minor = c_num_ranks;
         constexpr uint8_t c_offset_major = c_offset_minor + 4;
         constexpr uint8_t c_offset_type = c_offset_major + 4;
-    }    // namespace consts
+    }    // namespace constants
 
     // size: 32 bits
     //

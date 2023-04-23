@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) Michael Knörzer
+Copyright (C) Michael KnÃ¶rzer
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -283,7 +283,10 @@ namespace mkp
     }
 
     // return the averaged strategy after training
-    std::vector<float> average_strategy(const std::vector<int32_t>& strategy) { return normalize(strategy); }
+    std::vector<float> average_strategy(const std::vector<int32_t>& strategy)
+    {
+        return normalize(strategy);
+    }
 
     // update the strategy sum
     void update_strategy_sum(std::vector<int32_t>& strategy_sum, const std::vector<float>& new_strategy, const float p)
