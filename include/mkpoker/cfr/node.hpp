@@ -114,14 +114,9 @@ namespace mkp
         // print for logging / debug
         virtual void print_node() const override
         {
-            for (uint8_t i = 0; i < this->m_level; ++i)
-            {
-                std::cout << "  ";
-            }
-            std::cout << "I-Node(" << this->m_id << "), ";
-            std::cout << to_string(this->m_game_state) << ", ";
-            std::cout << "P:" << std::to_string(this->m_active_player) << " || ";
-            std::cout << this->m_children.size() << " children: \n";
+            const auto ident = std::string(2 * this->m_level, ' ');
+            fmt::print("{}I-Node({}), {}, P:{} || {} children:\n", ident, this->m_id, to_string(this->m_game_state), this->m_active_player,
+                       this->m_children.size());
 
             for (const auto& child : this->m_children)
             {
@@ -186,12 +181,9 @@ namespace mkp
                 return ret;
             };
 
-            for (uint8_t i = 0; i < this->m_level; ++i)
-            {
-                std::cout << "  ";
-            }
-            std::cout << "Terminal(" << this->m_id << "): ";
-            std::cout << "showdown: " << std::boolalpha << m_showdown << (m_showdown ? "" : " " + array_to_string(m_payouts)) << "\n";
+            const auto ident = std::string(2 * this->m_level, ' ');
+            fmt::print("{}Terminal({}): showdown: {}{}\n", ident, this->m_id, m_showdown,
+                       (m_showdown ? "" : " " + array_to_string(m_payouts)));
         }
     };
 

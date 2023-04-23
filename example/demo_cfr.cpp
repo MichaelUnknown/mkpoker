@@ -55,7 +55,7 @@ int main()
         const auto cnt_nodes = i + t;
         std::cout << "game with 2 players, stack size 4BB, no action filter\n"
                   << "number of info nodes (info/terminal/all): " << i << "/" << t << "/" << cnt_nodes << "\n\n";
-        //gametree_base_2p->print_node();
+        gametree_base_2p->print_node();
     }
 
     {
