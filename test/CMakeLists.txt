@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 
 # add gtest
-CPMAddPackage("gh:google/googletest#release-1.11.0")
+CPMAddPackage("gh:google/googletest@1.18.0")
 # for gtest_discover_tests
 include(GoogleTest)
 
