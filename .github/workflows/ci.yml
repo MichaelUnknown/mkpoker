@@ -64,17 +64,17 @@ jobs:
             cxx: clang++-21
             libcxx: true
 
-          # clang 21 on macos
-          - name: "macos clang 21 Debug"
+          # homebrew clang 20 on macos
+          - name: "macos homebrew clang 20 Debug"
             os: macos-26
             build_type: Debug
-            cc: /usr/local/opt/llvm@21/bin/clang-21
-            cxx: /usr/local/opt/llvm@21/bin/clang++
-          - name: "macos clang 21 Release"
+            cc: $(brew --prefix llvm@20)/bin/clang-20
+            cxx: $(brew --prefix llvm@20)/bin/clang++
+          - name: "macos homebrew clang 20 Release"
             os: macos-26
             build_type: Release
-            cc: /usr/local/opt/llvm@21/bin/clang-21
-            cxx: /usr/local/opt/llvm@21/bin/clang++
+            cc: $(brew --prefix llvm@20)/bin/clang-20
+            cxx: $(brew --prefix llvm@20)/bin/clang++
 
           # apple clang 21
           - name: "macos apple clang 21 Debug"
@@ -93,7 +93,10 @@ jobs:
     ## building steps
     ###################################################
     steps:
-      - uses: actions/checkout@v7
+      - name: checkout repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       # init install path and llvm version tag
       - name: "init libcxx env variables"
@@ -159,16 +162,8 @@ jobs:
         shell: bash
         run: |
           echo test
-          which clang++ || true
-          clang++ --version || true
-          echo test2
-          which clang++-20 || true
-          clang++-20 --version || true
-          which clang++-21 || true
-          clang++-21 --version || true
-          echo test gcov
-          which gcov || true
-          gcov --version || true
+          which clang-20 || true
+          clang-20 --version || true
           echo test end
           echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
           echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
@@ -182,9 +177,9 @@ jobs:
             if [[ ${{matrix.cfg.os}} == ubuntu-* && "x${{matrix.cfg.libcxx}}" == "xtrue" ]]; then
               echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem ${{env.LIBCXX_INSTALL_PATH}}/include/c++/v1 -Wno-unused-command-line-argument\"" >> $GITHUB_ENV
               echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L ${{env.LIBCXX_INSTALL_PATH}}/lib -Wl,-rpath,${{env.LIBCXX_INSTALL_PATH}}/lib -lc++abi\"" >> $GITHUB_ENV
-            elif [[ ${{matrix.cfg.os}} == macos-* && "x${{matrix.cfg.cc}}" == "/usr/local/opt/llvm@21/bin/clang-21" ]]; then
-              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem /usr/local/opt/llvm@21/include/c++/v1\"" >> $GITHUB_ENV
-              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L /usr/local/opt/llvm@21/lib -Wl,-rpath,/usr/local/opt/llvm@21/lib -lc++abi\"" >> $GITHUB_ENV
+            elif [[ ${{matrix.cfg.os}} == macos-* && "x${{matrix.cfg.cc}}" == "$(brew --prefix llvm@20)/bin/clang-20" ]]; then
+              echo "CXX_ARGS=-D \"CMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -cxx-isystem $(brew --prefix llvm@20)//include/c++/v1\"" >> $GITHUB_ENV
+              echo "LDD_ARGS=-D \"CMAKE_EXE_LINKER_FLAGS=-L $(brew --prefix llvm@20)/lib -Wl,-rpath,$(brew --prefix llvm@20)/lib -lc++abi\"" >> $GITHUB_ENV
             fi
 
           else
@@ -219,10 +214,12 @@ jobs:
           cd build
           ctest -VV
 
-      # code coverage is only available with gcc debug
+      # code coverage (is only available with gcc debug? to be testet)
       - name: code coverage
         if: matrix.cfg.codecov
-        shell: bash
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
-        run: "bash <(curl -s https://codecov.io/bash) -x gcov-15"
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: true
