@@ -23,7 +23,7 @@ a look at the `cmake` directory and the `CMakeLists.txt` in this repository) and
 include(cmake/CPM.cmake)
 
 # gh means GitHub repository, specify the version after the 'at' or use a hashtag for a specific commit
-CPMAddPackage("gh:MichaelUnknown/mkpoker@0.2.0")
+CPMAddPackage("gh:MichaelUnknown/mkpoker@0.3.1")
 #CPMAddPackage("gh:MichaelUnknown/mkpoker#abd3bd4077ba3b4fcb8797966433779fe0f0f629")
 
 # define your executable
