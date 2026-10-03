@@ -108,7 +108,7 @@ jobs:
 
       # install clang 21 and libc++ if necessary
       - name: "install clang 21"
-        if: startsWith(matrix.cfg.os, 'ubuntu') && (matrix.cfg.cxx == 'clang++-21')
+        if: startsWith(matrix.cfg.os, 'ubuntu') && startsWith(matrix.cfg.cxx, 'clang++')
         working-directory: "${{env.HOME}}"
         shell: bash
         run: |
@@ -148,7 +148,7 @@ jobs:
             -B build \
             -D CMAKE_C_COMPILER=gcc-15 \
             -D CMAKE_CXX_COMPILER=g++-15 \
-            -D LLVM_ENABLE_RUNTIMES='libcxx;libcxxabi' \
+            -D LLVM_ENABLE_RUNTIMES='libcxx;libcxxabi;libunwind' \
             -D "CMAKE_INSTALL_PREFIX=${{env.LIBCXX_INSTALL_PATH}}" \
             -D CMAKE_BUILD_TYPE=Release
           cmake --build build --target install-cxx
@@ -158,6 +158,18 @@ jobs:
       - name: "setup compiler"
         shell: bash
         run: |
+          echo test
+          which clang++ || true
+          clang++ --version || true
+          echo test2
+          which clang++-20 || true
+          clang++-20 --version || true
+          which clang++-21 || true
+          clang++-21 --version || true
+          echo test gcov
+          which gcov || true
+          gcov --version || true
+          echo test end
           echo "CC=${{matrix.cfg.cc}}" >> $GITHUB_ENV
           echo "CXX=${{matrix.cfg.cxx}}" >> $GITHUB_ENV
           if [[ ${{matrix.cfg.os}} != windows-* ]]; then
